@@ -1,0 +1,9 @@
+AllCops:
+  NewCops: disable
+  SuggestExtensions: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "online_migrations/version"
 
 module OnlineMigrations
