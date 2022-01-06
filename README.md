@@ -29,6 +29,7 @@ TODO: Write usage instructions here
 Potentially dangerous operations:
 
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
+- [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
 
@@ -63,6 +64,18 @@ end
 ```
 
 If you intend to drop an existing table, run `drop_table` first.
+
+### Executing SQL directly
+
+Online Migrations does not support inspecting what happens inside an `execute` call, so cannot help you here. Make really sure that what you're doing is safe before proceeding, then wrap it in a `safety_assured { ... }` block:
+
+```ruby
+class ExecuteSQL < ActiveRecord::Migration[7.0]
+  def change
+    safety_assured { execute "..." }
+  end
+end
+```
 
 ### Adding an index non-concurrently
 
@@ -123,6 +136,20 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+## Assuring Safety
+
+To mark a step in the migration as safe, despite using a method that might otherwise be dangerous, wrap it in a `safety_assured` block.
+
+```ruby
+class MySafeMigration < ActiveRecord::Migration[7.0]
+  def change
+    safety_assured { remove_column :users, :some_column }
+  end
+end
+```
+
+Certain methods like `execute` and `change_table` cannot be inspected and are prevented from running by default. Make sure what you're doing is really safe and use this pattern.
 
 ## Development
 

@@ -18,6 +18,15 @@ module OnlineMigrations
     end
     ruby2_keywords(:method_missing) if respond_to?(:ruby2_keywords, true)
 
+    # Mark a command in the migration as safe, despite using a method that might otherwise be dangerous.
+    #
+    # @example
+    #   safety_assured { remove_column(:users, :some_column) }
+    #
+    def safety_assured(&block)
+      command_checker.safety_assured(&block)
+    end
+
     def stop!(message, header: "Dangerous operation detected")
       raise OnlineMigrations::UnsafeMigration, "⚠️  [online_migrations] #{header} ⚠️\n\n#{message}\n\n"
     end

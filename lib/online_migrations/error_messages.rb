@@ -29,6 +29,11 @@ class <%= migration_name %> < <%= migration_parent %>
     <%= command %>
   end
 end",
+
+      execute:
+"Online Migrations does not support inspecting what happens inside an
+execute call, so cannot help you here. Make really sure that what
+you're doing is safe before proceeding, then wrap it in a safety_assured { ... } block.",
     }
   end
 end

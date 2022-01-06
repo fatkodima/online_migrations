@@ -10,12 +10,27 @@ module OnlineMigrations
       @safe = false
     end
 
+    def safety_assured
+      @prev_value = @safe
+      @safe = true
+      yield
+    ensure
+      @safe = @prev_value
+    end
+
     def check(command, *args, **options, &block)
-      do_check(command, *args, **options, &block)
+      unless safe?
+        do_check(command, *args, **options, &block)
+      end
+
       true
     end
 
     private
+      def safe?
+        @safe || ENV["SAFETY_ASSURED"]
+      end
+
       def do_check(command, *args, **options, &block)
         if respond_to?(command, true)
           send(command, *args, **options, &block)
@@ -47,6 +62,10 @@ module OnlineMigrations
           raise_error :remove_index,
             command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
         end
+      end
+
+      def execute(*)
+        raise_error :execute, header: "Possibly dangerous operation"
       end
 
       def raise_error(message_key, **vars)
