@@ -24,6 +24,42 @@ Or install it yourself as:
 
 TODO: Write usage instructions here
 
+## Checks
+
+Potentially dangerous operations:
+
+- [adding an index non-concurrently](#adding-an-index-non-concurrently)
+
+### Adding an index non-concurrently
+
+#### Bad
+
+Adding an index non-concurrently blocks writes.
+
+```ruby
+class AddIndexOnUsersEmail < ActiveRecord::Migration[7.0]
+  def change
+    add_index :users, :email, unique: true
+  end
+end
+```
+
+#### Good
+
+Add indexes concurrently.
+
+```ruby
+class AddIndexOnUsersEmail < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_index :users, :email, unique: true, algorithm: :concurrently
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail. Also, note that indexes on new tables (those created in the same migration) don't require this.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

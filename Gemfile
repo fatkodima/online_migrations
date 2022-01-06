@@ -6,5 +6,6 @@ source "https://rubygems.org"
 gemspec
 
 gem "minitest", "~> 5.0"
+gem "pg", "~> 1.2"
 gem "rake", "~> 12.0"
 gem "rubocop", "~> 1.24"

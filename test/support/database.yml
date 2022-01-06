@@ -1,0 +1,5 @@
+postgresql:
+  adapter: postgresql
+  database: online_migrations_test
+  variables:
+    lock_timeout: 5

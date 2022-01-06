@@ -1,6 +1,30 @@
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "online_migrations"
 
 require "minitest/autorun"
+
+database_yml = File.expand_path("support/database.yml", __dir__)
+ActiveRecord::Base.configurations = YAML.load_file(database_yml)
+ActiveRecord::Base.establish_connection(:postgresql)
+
+if ENV["VERBOSE"]
+  ActiveRecord::Base.logger = ActiveSupport::Logger.new($stdout)
+else
+  ActiveRecord::Migration.verbose = false
+end
+
+def prepare_database
+  connection = ActiveRecord::Base.connection
+  connection.tables.each do |table_name|
+    connection.execute("DROP TABLE #{table_name} CASCADE")
+  end
+
+  ActiveRecord::SchemaMigration.create_table
+end
+
+prepare_database
+
+require_relative "support/minitest_helpers"
+
+TestMigration = OnlineMigrations::Utils.migration_parent
