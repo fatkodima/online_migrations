@@ -25,6 +25,14 @@ module OnlineMigrations
         end
       end
 
+      def create_table(_table_name, **options)
+        raise_error :create_table if options[:force]
+      end
+
+      def create_join_table(_table1, _table2, **options)
+        raise_error :create_table if options[:force]
+      end
+
       def add_index(table_name, column_name, **options)
         if options[:algorithm] != :concurrently
           raise_error :add_index,

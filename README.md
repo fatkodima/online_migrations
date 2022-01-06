@@ -28,8 +28,41 @@ TODO: Write usage instructions here
 
 Potentially dangerous operations:
 
+- [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
+
+### Creating a table with the force option
+
+#### Bad
+
+The `force` option can drop an existing table.
+
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.0]
+  def change
+    create_table :users, force: true do |t|
+      # ...
+    end
+  end
+end
+```
+
+#### Good
+
+Create tables without the `force` option.
+
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.0]
+  def change
+    create_table :users do |t|
+      # ...
+    end
+  end
+end
+```
+
+If you intend to drop an existing table, run `drop_table` first.
 
 ### Adding an index non-concurrently
 
