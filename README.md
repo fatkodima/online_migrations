@@ -29,6 +29,7 @@ TODO: Write usage instructions here
 Potentially dangerous operations:
 
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
+- [removing an index non-concurrently](#removing-an-index-non-concurrently)
 
 ### Adding an index non-concurrently
 
@@ -59,6 +60,36 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail. Also, note that indexes on new tables (those created in the same migration) don't require this.
+
+### Removing an index non-concurrently
+
+#### Bad
+
+While actual removing of an index is usually fast, removing it non-concurrently tries to obtain an `ACCESS EXCLUSIVE` lock on the table, waiting for all existing queries to complete and blocking all the subsequent queries (even `SELECT`s) on that table until the lock is obtained and index is removed.
+
+```ruby
+class RemoveIndexOnUsersEmail < ActiveRecord::Migration[7.0]
+  def change
+    remove_index :users, :email
+  end
+end
+```
+
+#### Good
+
+Remove indexes concurrently.
+
+```ruby
+class RemoveIndexOnUsersEmail < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    remove_index :users, :email, algorithm: :concurrently
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
 
 ## Development
 

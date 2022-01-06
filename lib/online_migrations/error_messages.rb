@@ -14,6 +14,16 @@ class <%= migration_name %> < <%= migration_parent %>
     <%= command %>
   end
 end",
+      remove_index:
+"Removing an index non-concurrently blocks writes. Instead, use:
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= command %>
+  end
+end",
     }
   end
 end

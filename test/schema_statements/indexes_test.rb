@@ -61,6 +61,24 @@ module SchemaStatements
       assert @connection.index_exists?(:users, [:name, :company_id], name: "index_users_on_name_and_company_id")
     end
 
+    def test_remove_index
+      @connection.add_index(:users, :name)
+      @connection.remove_index(:users, :name)
+      assert_not @connection.index_exists?(:users, :name)
+    end
+
+    def test_remove_index_concurrently_in_transaction
+      @connection.add_index(:users, :name)
+      assert_raises_in_transaction do
+        @connection.remove_index(:users, :name, algorithm: :concurrently)
+      end
+    end
+
+    def test_remove_non_existing_index
+      @connection.remove_index(:users, :name)
+      assert_not @connection.index_exists?(:users, :name)
+    end
+
     private
       def index_valid?(index_name)
         @connection.select_value <<~SQL

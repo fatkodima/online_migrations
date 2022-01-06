@@ -35,6 +35,30 @@ module OnlineMigrations
       end
     end
 
+    # Extends default method to be idempotent and accept `:algorithm` option for ActiveRecord <= 4.2.
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_index
+    #
+    def remove_index(table_name, column_name = nil, **options)
+      algorithm = options[:algorithm]
+
+      __ensure_not_in_transaction! if algorithm == :concurrently
+
+      column_names = __index_column_names(column_name || options[:column])
+
+      if index_exists?(table_name, column_name, **options)
+        disable_statement_timeout do
+          # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
+          # It only conflicts with constraint validations, other creating/removing indexes,
+          # and some "ALTER TABLE"s.
+          super(table_name, **options.merge(column: column_names))
+        end
+      else
+        Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration "\
+          "or similar): table_name: #{table_name}, column_name: #{column_name}")
+      end
+    end
+
     # Disables statement timeout while executing &block
     #
     # Long-running migrations may take more than the timeout allowed by the database.

@@ -32,6 +32,15 @@ module OnlineMigrations
         end
       end
 
+      def remove_index(table_name, column_name = nil, **options)
+        options[:column] ||= column_name
+
+        if options[:algorithm] != :concurrently
+          raise_error :remove_index,
+            command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
+        end
+      end
+
       def raise_error(message_key, **vars)
         template = OnlineMigrations.config.error_messages.fetch(message_key)
 
