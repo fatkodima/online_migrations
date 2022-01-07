@@ -28,10 +28,49 @@ TODO: Write usage instructions here
 
 Potentially dangerous operations:
 
+- [removing a column](#removing-a-column)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
+
+### Removing a column
+
+#### Bad
+
+ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
+
+```ruby
+class RemoveNameFromUsers < ActiveRecord::Migration[7.0]
+  def change
+    remove_column :users, :name
+  end
+end
+```
+
+#### Good
+
+1. Ignore the column:
+
+  ```ruby
+  class User < ApplicationRecord
+    self.ignored_columns = ["name"]
+  end
+  ```
+
+2. Deploy
+3. Wrap column removing in a `safety_assured` block:
+
+  ```ruby
+  class RemoveNameFromUsers < ActiveRecord::Migration[7.0]
+    def change
+      safety_assured { remove_column :users, :name }
+    end
+  end
+  ```
+
+4. Remove column ignoring from `User` model
+5. Deploy
 
 ### Creating a table with the force option
 

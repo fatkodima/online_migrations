@@ -32,11 +32,16 @@ module OnlineMigrations
       end
 
       def do_check(command, *args, **options, &block)
-        if respond_to?(command, true)
-          send(command, *args, **options, &block)
+        case command
+        when :remove_column, :remove_columns, :remove_timestamps, :remove_reference, :remove_belongs_to
+          check_columns_removal(command, *args, **options)
         else
-          # assume it is safe
-          true
+          if respond_to?(command, true)
+            send(command, *args, **options, &block)
+          else
+            # assume it is safe
+            true
+          end
         end
       end
 
@@ -46,6 +51,34 @@ module OnlineMigrations
 
       def create_join_table(_table1, _table2, **options)
         raise_error :create_table if options[:force]
+      end
+
+      def check_columns_removal(command, *args, **options)
+        case command
+        when :remove_column
+          table_name, column_name = args
+          columns = [column_name]
+        when :remove_columns
+          table_name, *columns = args
+        when :remove_timestamps
+          table_name = args[0]
+          columns = [:created_at, :updated_at]
+        else
+          table_name, reference = args
+          columns = [:"#{reference}_id"]
+          columns << :"#{reference}_type" if options[:polymorphic]
+        end
+
+        indexes = connection.indexes(table_name).select do |index|
+          (index.columns & columns.map(&:to_s)).any?
+        end
+
+        raise_error :remove_column,
+          model: table_name.to_s.classify,
+          columns: columns.inspect,
+          command: command_str(command, *args),
+          table_name: table_name.inspect,
+          indexes: indexes.map { |i| i.name.to_sym.inspect }
       end
 
       def add_index(table_name, column_name, **options)
@@ -68,11 +101,16 @@ module OnlineMigrations
         raise_error :execute, header: "Possibly dangerous operation"
       end
 
+      def connection
+        @migration.connection
+      end
+
       def raise_error(message_key, **vars)
         template = OnlineMigrations.config.error_messages.fetch(message_key)
 
         vars[:migration_name] = @migration.name
         vars[:migration_parent] = Utils.migration_parent_string
+        vars[:model_parent] = Utils.model_parent_string
 
         message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
 

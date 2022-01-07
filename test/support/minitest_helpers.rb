@@ -59,6 +59,10 @@ module MinitestHelpers
   def migration_parent_string
     OnlineMigrations::Utils.migration_parent_string
   end
+
+  def model_parent_string
+    OnlineMigrations::Utils.model_parent_string
+  end
 end
 
 Minitest::Test.class_eval do

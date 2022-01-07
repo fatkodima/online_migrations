@@ -32,6 +32,14 @@ module OnlineMigrations
           "ActiveRecord::Migration[#{ar_version}]"
         end
       end
+
+      def model_parent_string
+        if ar_version >= 5.0
+          "ApplicationRecord"
+        else
+          "ActiveRecord::Base"
+        end
+      end
     end
   end
 end
