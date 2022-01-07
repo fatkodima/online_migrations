@@ -27,6 +27,12 @@ module OnlineMigrations
     #
     attr_accessor :check_down
 
+    # Error messages
+    #
+    # @return [Hash] Keys are error names, values are error messages
+    # @example To change a message
+    #   OnlineMigrations.config.error_messages[:remove_column] = "Your custom instructions"
+    #
     attr_accessor :error_messages
 
     # Tables that are in the process of being renamed

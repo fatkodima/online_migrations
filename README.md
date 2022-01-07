@@ -801,6 +801,18 @@ By default, checks are disabled when migrating down. Enable them with:
 config.check_down = true
 ```
 
+### Custom Messages
+
+You can customize specific error messages:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.error_messages[:add_column_default] = "Your custom instructions"
+```
+
+Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
+
 ### Existing Migrations
 
 To mark migrations as safe that were created before installing this gem, configure the migration version starting after which checks are performed:

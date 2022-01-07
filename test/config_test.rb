@@ -25,6 +25,16 @@ class ConfigTest < MiniTest::Test
     end
   end
 
+  def test_configurable_error_messages
+    error_messages = OnlineMigrations.config.error_messages
+    prev = error_messages[:remove_column]
+
+    error_messages[:remove_column] = "Your custom instructions"
+    assert_unsafe RemoveNameFromUsers, "Your custom instructions"
+  ensure
+    error_messages[:remove_column] = prev
+  end
+
   def test_start_after_safe
     with_start_after(20200101000001) do
       assert_safe RemoveNameFromUsers
