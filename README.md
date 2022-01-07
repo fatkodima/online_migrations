@@ -40,6 +40,7 @@ Potentially dangerous operations:
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
 - [adding a foreign key](#adding-a-foreign-key)
+- [adding a json column](#adding-a-json-column)
 
 ### Removing a column
 
@@ -522,6 +523,32 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Adding a json column
+
+#### Bad
+
+There's no equality operator for the `json` column type, which can cause errors for existing `SELECT DISTINCT` queries in your application.
+
+```ruby
+class AddSettingsToProjects < ActiveRecord::Migration[7.0]
+  def change
+    add_column :projects, :settings, :json
+  end
+end
+```
+
+#### Good
+
+Use `jsonb` instead.
+
+```ruby
+class AddSettingsToProjects < ActiveRecord::Migration[7.0]
+  def change
+    add_column :projects, :settings, :jsonb
+  end
+end
+```
 
 ## Assuring Safety
 

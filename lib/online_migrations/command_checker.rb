@@ -74,6 +74,11 @@ module OnlineMigrations
             not_null: options[:null] == false,
             volatile_default: volatile_default
         end
+
+        if type.to_s == "json"
+          raise_error :add_column_json,
+            code: command_str(:add_column, table_name, column_name, :jsonb, options)
+        end
       end
 
       def rename_column(table_name, column_name, new_column, **)

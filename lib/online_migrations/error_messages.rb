@@ -65,6 +65,16 @@ class <%= migration_name %> < <%= migration_parent %>
 end
 <% end %>",
 
+      add_column_json:
+"There's no equality operator for the json column type, which can cause errors for
+existing SELECT DISTINCT queries in your application. Use jsonb instead.
+
+class <%= migration_name %> < <%= migration_parent %>
+  def change
+    <%= code %>
+  end
+end",
+
       rename_column:
 "Renaming a column that's in use will cause errors in your application.
 migration_helpers provides a safer approach to do this:
