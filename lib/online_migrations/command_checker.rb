@@ -58,6 +58,41 @@ module OnlineMigrations
         raise_error :create_table if options[:force]
       end
 
+      def change_column_null(table_name, column_name, allow_null, default = nil, **)
+        if !allow_null
+          safe = false
+          # In PostgreSQL 12+ you can add a check constraint to the table
+          # and then "promote" it to NOT NULL for the column.
+          if postgresql_version >= Gem::Version.new("12")
+            safe = check_constraints(table_name).any? do |c|
+              c["def"] == "CHECK ((#{column_name} IS NOT NULL))" ||
+                c["def"] == "CHECK ((#{connection.quote_column_name(column_name)} IS NOT NULL))"
+            end
+          end
+
+          if !safe
+            constraint_name = "#{table_name}_#{column_name}_null"
+            vars = {
+              add_constraint_code: command_str(:add_not_null_constraint, table_name, column_name, name: constraint_name, validate: false),
+              backfill_code: nil,
+              validate_constraint_code: command_str(:validate_not_null_constraint, table_name, column_name, name: constraint_name),
+              remove_constraint_code: nil,
+            }
+
+            if !default.nil?
+              vars[:backfill_code] = command_str(:update_column_in_batches, table_name, column_name, default)
+            end
+
+            if postgresql_version >= Gem::Version.new("12")
+              vars[:remove_constraint_code] = command_str(:remove_check_constraint, table_name, name: constraint_name)
+              vars[:change_column_null_code] = command_str(:change_column_null, table_name, column_name, true)
+            end
+
+            raise_error :change_column_null, **vars
+          end
+        end
+      end
+
       def check_columns_removal(command, *args, **options)
         case command
         when :remove_column
@@ -138,6 +173,23 @@ module OnlineMigrations
         raise_error :execute, header: "Possibly dangerous operation"
       end
 
+      def postgresql_version
+        version =
+          if Utils.developer_env? && (target_version = OnlineMigrations.config.target_version)
+            target_version.to_s
+          else
+            database_version = connection.database_version
+            patch = database_version % 100
+            database_version /= 100
+            minor = database_version % 100
+            database_version /= 100
+            major = database_version
+            "#{major}.#{minor}.#{patch}"
+          end
+
+        Gem::Version.new(version)
+      end
+
       def connection
         @migration.connection
       end
@@ -193,6 +245,18 @@ module OnlineMigrations
         hashed_identifier = OpenSSL::Digest::SHA256.hexdigest(identifier).first(10)
 
         "chk_rails_#{hashed_identifier}"
+      end
+
+      def check_constraints(table_name)
+        constraints_query = <<~SQL
+          SELECT pg_get_constraintdef(oid) AS def
+          FROM pg_constraint
+          WHERE contype = 'c'
+            AND convalidated
+            AND conrelid = #{connection.quote(table_name)}::regclass
+        SQL
+
+        connection.select_all(constraints_query).to_a
       end
   end
 end

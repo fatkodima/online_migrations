@@ -8,6 +8,27 @@ module OnlineMigrations
 "The `:force` option will destroy existing table. If this is intended, drop the existing table first.
 Otherwise, remove the `:force` option.",
 
+      change_column_null:
+"Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
+A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
+add_not_null_constraint and validate_not_null_constraint take care of that.
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= add_constraint_code %>
+<% if backfill_code %>
+    <%= backfill_code %>
+<% end %>
+    <%= validate_constraint_code %>
+<% if remove_constraint_code %>
+    <%= remove_constraint_code %>
+    <%= change_column_null_code %>
+<% end %>
+  end
+end",
+
       remove_column:
 "<% if indexes.any? %>
 Removing a column will automatically remove all of the indexes that involved the removed column.

@@ -98,6 +98,74 @@ module OnlineMigrations
       end
     end
 
+    # Adds a NOT NULL constraint to the column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    # @param validate [Boolean] whether or not the constraint should be validated
+    #
+    # @return [void]
+    #
+    # @example
+    #   add_not_null_constraint(:users, :email, validate: false)
+    #
+    def add_not_null_constraint(table_name, column_name, name: nil, validate: true)
+      if __column_not_nullable?(table_name, column_name) ||
+         __not_null_constraint_exists?(table_name, column_name, name: name)
+        Utils.say("NOT NULL constraint was not created: column #{table_name}.#{column_name} is already defined as `NOT NULL`")
+      else
+        expression = "#{column_name} IS NOT NULL"
+        name ||= __not_null_constraint_name(table_name, column_name)
+        add_check_constraint(table_name, expression, name: name, validate: false)
+
+        if validate
+          validate_not_null_constraint(table_name, column_name, name: name)
+        end
+      end
+    end
+
+    # Validates a NOT NULL constraint on the column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    #
+    # @return [void]
+    #
+    # @example
+    #   validate_not_null_constraint(:users, :email)
+    #
+    # @example Explicit name
+    #   validate_not_null_constraint(:users, :email, name: "check_users_email_null")
+    #
+    def validate_not_null_constraint(table_name, column_name, name: nil)
+      name ||= __not_null_constraint_name(table_name, column_name)
+      validate_check_constraint(table_name, name: name)
+    end
+
+    # Removes a NOT NULL constraint from the column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    #
+    # @return [void]
+    #
+    # @example
+    #   remove_not_null_constraint(:users, :email)
+    #
+    # @example Explicit name
+    #   remove_not_null_constraint(:users, :email, name: "check_users_email_null")
+    #
+    def remove_not_null_constraint(table_name, column_name, name: nil)
+      name ||= __not_null_constraint_name(table_name, column_name)
+      remove_check_constraint(table_name, name: name)
+    end
+
     # Extends default method to be idempotent and automatically recreate invalid indexes.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index
@@ -261,6 +329,26 @@ module OnlineMigrations
             your migration class.
           MSG
         end
+      end
+
+      def __column_not_nullable?(table_name, column_name)
+        query = <<~SQL
+          SELECT is_nullable
+          FROM information_schema.columns
+          WHERE table_name = #{quote(table_name)}
+            AND column_name = #{quote(column_name)}
+        SQL
+
+        select_value(query) == "NO"
+      end
+
+      def __not_null_constraint_exists?(table_name, column_name, name: nil)
+        name ||= __not_null_constraint_name(table_name, column_name)
+        __check_constraint_exists?(table_name, name)
+      end
+
+      def __not_null_constraint_name(table_name, column_name)
+        __check_constraint_name(table_name, expression: "#{column_name}_not_null")
       end
 
       def __index_column_names(column_names)

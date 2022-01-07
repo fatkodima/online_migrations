@@ -56,6 +56,14 @@ module MinitestHelpers
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} not found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 
+  def with_target_version(version)
+    prev = OnlineMigrations.config.target_version
+    OnlineMigrations.config.target_version = version
+    yield
+  ensure
+    OnlineMigrations.config.target_version = prev
+  end
+
   def migration_parent_string
     OnlineMigrations::Utils.migration_parent_string
   end

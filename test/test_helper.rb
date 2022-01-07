@@ -4,6 +4,13 @@ require "online_migrations"
 
 require "minitest/autorun"
 
+# Needed for `developer_env?`
+module Rails
+  def self.env
+    ActiveSupport::StringInquirer.new("test")
+  end
+end
+
 database_yml = File.expand_path("support/database.yml", __dir__)
 ActiveRecord::Base.configurations = YAML.load_file(database_yml)
 ActiveRecord::Base.establish_connection(:postgresql)

@@ -5,6 +5,16 @@ module OnlineMigrations
   class Config
     include ErrorMessages
 
+    # The database version against which the checks will be performed
+    #
+    # If your development database version is different from production, you can specify
+    # the production version so the right checks run in development.
+    #
+    # @example Set specific target version
+    #   MigrationHelpers.config.target_version = 10
+    #
+    attr_accessor :target_version
+
     # Whether to perform checks when migrating down
     #
     # Disabled by default

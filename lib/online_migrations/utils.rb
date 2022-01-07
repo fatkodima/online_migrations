@@ -8,6 +8,10 @@ module OnlineMigrations
         ActiveRecord.version.to_s.to_f
       end
 
+      def developer_env?
+        defined?(Rails) && (Rails.env.development? || Rails.env.test?)
+      end
+
       def say(message)
         message = "[online_migrations] #{message}"
         if (migration = OnlineMigrations.current_migration)

@@ -58,6 +58,10 @@ Layout/LineLength:
 Layout/MultilineMethodCallIndentation:
   Enabled: false
 
+Naming/VariableNumber:
+  Exclude:
+    - test/**/*
+
 Gemspec/RequiredRubyVersion:
   Enabled: false
 

@@ -32,6 +32,7 @@ Potentially dangerous operations:
 - [backfilling data](#backfilling-data)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding a check constraint](#adding-a-check-constraint)
+- [setting NOT NULL on an existing column](#setting-not-null-on-an-existing-column)
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
@@ -176,6 +177,49 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Setting NOT NULL on an existing column
+
+#### Bad
+
+Setting `NOT NULL` on an existing column blocks reads and writes while every row is checked.
+
+```ruby
+class ChangeUsersNameNull < ActiveRecord::Migration[7.0]
+  def change
+    change_column_null :users, :name, false
+  end
+end
+```
+
+#### Good
+
+Instead, add a check constraint and validate it in a separate transaction:
+
+```ruby
+class ChangeUsersNameNull < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_not_null_constraint :users, :name, name: "users_name_null", validate: false
+    validate_not_null_constraint :users, :name, name: "users_name_null"
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+A `NOT NULL` check constraint is functionally equivalent to setting `NOT NULL` on the column (but it won't show up in `schema.rb` in Rails < 6.1). In PostgreSQL 12+, once the check constraint is validated, you can safely set `NOT NULL` on the column and drop the check constraint.
+
+```ruby
+class ChangeUsersNameNullDropCheck < ActiveRecord::Migration[7.0]
+  def change
+    # in PostgreSQL 12+, you can then safely set NOT NULL on the column
+    change_column_null :users, :name, false
+    remove_check_constraint :users, name: "users_name_null"
+  end
+end
+```
 
 ### Executing SQL directly
 
@@ -325,6 +369,18 @@ By default, checks are disabled when migrating down. Enable them with:
 
 config.check_down = true
 ```
+
+### Target Version
+
+If your development database version is different from production, you can specify the production version so the right checks run in development.
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.target_version = 10 # or "12.9" etc
+```
+
+For safety, this option only affects development and test environments. In other environments, the actual server version is always used.
 
 ## Development
 
