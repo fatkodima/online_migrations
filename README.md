@@ -44,6 +44,7 @@ Potentially dangerous operations:
 - [adding a json column](#adding-a-json-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 - [hash indexes](#hash-indexes)
+- [adding multiple foreign keys](#adding-multiple-foreign-keys)
 
 ### Removing a column
 
@@ -636,6 +637,45 @@ Use B-tree indexes instead.
 class AddIndexToUsersOnEmail < ActiveRecord::Migration[7.0]
   def change
     add_index :users, :email, unique: true # B-tree by default
+  end
+end
+```
+
+### Adding multiple foreign keys
+
+#### Bad
+
+Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
+Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.
+
+```ruby
+class CreateUserProjects < ActiveRecord::Migration[7.0]
+  def change
+    create_table :user_projects do |t|
+      t.belongs_to :user, foreign_key: true
+      t.belongs_to :project, foreign_key: true
+    end
+  end
+end
+```
+
+#### Good
+
+Add additional foreign keys in separate migration files. See [adding a foreign key](#adding-a-foreign-key) for how to properly add foreign keys.
+
+```ruby
+class CreateUserProjects < ActiveRecord::Migration[7.0]
+  def change
+    create_table :user_projects do |t|
+      t.belongs_to :user, foreign_key: true
+      t.belongs_to :project, foreign_key: false
+    end
+  end
+end
+
+class AddForeignKeyFromUserProjectsToProject < ActiveRecord::Migration[7.0]
+  def change
+    add_foreign_key :user_projects, :projects
   end
 end
 ```

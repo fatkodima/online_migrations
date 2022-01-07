@@ -2,6 +2,7 @@
 
 require "erb"
 require "openssl"
+require "set"
 
 module OnlineMigrations
   # @private
@@ -11,6 +12,7 @@ module OnlineMigrations
     def initialize(migration)
       @migration = migration
       @safe = false
+      @foreign_key_tables = Set.new
     end
 
     def safety_assured
@@ -24,6 +26,10 @@ module OnlineMigrations
     def check(command, *args, &block)
       unless safe?
         do_check(command, *args, &block)
+
+        if @foreign_key_tables.count > 1
+          raise_error :multiple_foreign_keys
+        end
       end
 
       true
@@ -58,8 +64,9 @@ module OnlineMigrations
         # But I think this check is enough for now.
         raise_error :short_primary_key_type if short_primary_key_type?(options)
 
-        if block && (postgresql_version < Gem::Version.new("10"))
-          check_for_hash_indexes(&block)
+        if block
+          collect_foreign_keys(&block)
+          check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
         end
       end
 
@@ -67,8 +74,9 @@ module OnlineMigrations
         raise_error :create_table if options[:force]
         raise_error :short_primary_key_type if short_primary_key_type?(options)
 
-        if block && (postgresql_version < Gem::Version.new("10"))
-          check_for_hash_indexes(&block)
+        if block
+          collect_foreign_keys(&block)
+          check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
         end
       end
 
@@ -194,6 +202,11 @@ module OnlineMigrations
 
         foreign_key = options.fetch(:foreign_key, false)
 
+        if foreign_key
+          foreign_table_name = Utils.foreign_table_name(ref_name, options)
+          @foreign_key_tables << foreign_table_name.to_s
+        end
+
         validate_foreign_key = !foreign_key.is_a?(Hash) ||
                                (!foreign_key.key?(:validate) || foreign_key[:validate] == true)
         bad_foreign_key = foreign_key && validate_foreign_key
@@ -233,6 +246,8 @@ module OnlineMigrations
             add_code: command_str(:add_foreign_key, from_table, to_table, **options.merge(validate: false)),
             validate_code: command_str(:validate_foreign_key, from_table, to_table)
         end
+
+        @foreign_key_tables << to_table.to_s
       end
 
       def validate_foreign_key(*)
@@ -276,6 +291,12 @@ module OnlineMigrations
           end
 
         pk_type && !["bigserial", "bigint", "uuid"].include?(pk_type.to_s)
+      end
+
+      def collect_foreign_keys(&block)
+        collector = ForeignKeysCollector.new
+        collector.collect(&block)
+        @foreign_key_tables |= collector.referenced_tables
       end
 
       def check_for_hash_indexes(&block)

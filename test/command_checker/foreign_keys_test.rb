@@ -112,5 +112,47 @@ module CommandChecker
     def test_heavy_lock_and_validate_foreign_key_different_tables_in_transaction
       assert_unsafe HeavyLockAndValidateForeignKeyDifferentTablesInTransaction
     end
+
+    class CreateTableMultipleFks < TestMigration
+      def change
+        create_table :user_posts do |t|
+          t.references :user, foreign_key: true
+          t.bigint :project_id
+
+          t.foreign_key :projects
+        end
+      end
+    end
+
+    def test_create_table_with_multiple_fks
+      assert_unsafe CreateTableMultipleFks, "Adding multiple foreign keys"
+    end
+
+    class CreateTableOneFk < TestMigration
+      def change
+        create_table :user_posts do |t|
+          t.references :user, foreign_key: true
+        end
+      end
+    end
+
+    def test_create_table_one_fk
+      assert_safe CreateTableOneFk
+    end
+
+    class MultipleFks < TestMigration
+      def change
+        create_table :user_posts do |t|
+          t.references :user, foreign_key: true # references old table
+          t.bigint :projects
+        end
+
+        add_foreign_key :user_posts, :projects, validate: false # references old table
+      end
+    end
+
+    def test_create_multiple_fks
+      assert_unsafe MultipleFks, "Adding multiple foreign keys"
+    end
   end
 end
