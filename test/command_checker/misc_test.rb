@@ -35,6 +35,59 @@ module CommandChecker
       assert_unsafe ForceCreateJoinTable
     end
 
+    class CreateTable < TestMigration
+      def change
+        create_table :animals
+      end
+    end
+
+    def test_create_table
+      assert_safe CreateTable
+    end
+
+    class RenameTable < TestMigration
+      def change
+        rename_table :clients, :users
+      end
+    end
+
+    def test_rename_table
+      assert_unsafe RenameTable, <<~MSG
+        Renaming a table that's in use will cause errors in your application.
+        migration_helpers provides a safer approach to do this:
+
+        1. Instruct Rails that you are going to rename a table:
+
+          OnlineMigrations.config.table_renames = {
+            "clients" => "users"
+          }
+
+        2. Deploy
+        3. Tell the database that you are going to rename a table. This will not actually rename any tables,
+        nor any data/indexes/foreign keys copying will be made, so will be very fast.
+        It will use a VIEW to work with both table names simultaneously:
+
+          class InitializeCommandChecker::MiscTest::RenameTable < #{migration_parent_string}
+            def change
+              initialize_table_rename :clients, :users
+            end
+          end
+
+        4. Replace usages of the old table with a new table in the codebase
+        5. Remove the table rename config from step 1
+        6. Deploy
+        7. Remove the VIEW created on step 3:
+
+          class FinalizeCommandChecker::MiscTest::RenameTable < #{migration_parent_string}
+            def change
+              finalize_table_rename :clients, :users
+            end
+          end
+
+        8. Deploy
+      MSG
+    end
+
     class RenameColumn < TestMigration
       def change
         rename_column :users, :name, :first_name

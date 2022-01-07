@@ -58,6 +58,12 @@ module OnlineMigrations
         raise_error :create_table if options[:force]
       end
 
+      def rename_table(table_name, new_name, **)
+        raise_error :rename_table,
+          table_name: table_name,
+          new_name: new_name
+      end
+
       def add_column(table_name, column_name, type, **options)
         volatile_default = false
         if !options[:default].nil? &&

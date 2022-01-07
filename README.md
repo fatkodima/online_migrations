@@ -32,6 +32,7 @@ Potentially dangerous operations:
 - [adding a column with a default value](#adding-a-column-with-a-default-value)
 - [backfilling data](#backfilling-data)
 - [renaming a column](#renaming-a-column)
+- [renaming a table](#renaming-a-table)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding a check constraint](#adding-a-check-constraint)
 - [setting NOT NULL on an existing column](#setting-not-null-on-an-existing-column)
@@ -224,6 +225,79 @@ end
 class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
   def change
     finalize_column_rename :users, :name, :first_name
+  end
+end
+```
+
+8. Deploy
+
+### Renaming a table
+
+#### Bad
+
+Renaming a table that's in use will cause errors in your application.
+
+```ruby
+class RenameClientsToUsers < ActiveRecord::Migration[7.0]
+  def change
+    rename_table :clients, :users
+  end
+end
+```
+
+#### Good
+
+The "classic" approach suggests creating a new table and copy data/indexes/etc to it from the old table. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
+
+The technique is built on top of database views, using the following steps:
+
+1. Rename the database table
+2. Create a VIEW using the old table name by pointing to the new table name
+3. Add a workaround for ActiveRecord's schema cache
+
+For the previous example, to rename `name` column to `first_name` of the `users` table, we can run:
+
+```sql
+BEGIN;
+ALTER TABLE clients RENAME TO users;
+CREATE VIEW clients AS SELECT * FROM users;
+COMMIT;
+```
+
+As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. ActiveRecord heavily relies on this data, for example, to initialize new models.
+
+To work around this limitation, we need to tell ActiveRecord to acquire this information from original table using the new table name.
+
+**Online Migrations** provides several helpers to implement table renaming:
+
+1. Instruct Rails that you are going to rename a table:
+
+```ruby
+OnlineMigrations.config.table_renames = {
+  "clients" => "users"
+}
+```
+
+2. Deploy
+3. Create a VIEW:
+
+```ruby
+class InitializeRenameClientsToUsers < ActiveRecord::Migration[7.0]
+  def change
+    initialize_table_rename :clients, :users
+  end
+end
+```
+
+4. Replace usages of the old table with a new table in the codebase
+5. Remove the table rename config from step 1
+6. Deploy
+7. Remove the VIEW created in step 3:
+
+```ruby
+class FinalizeRenameClientsToUsers < ActiveRecord::Migration[7.0]
+  def change
+    finalize_table_rename :clients, :users
   end
 end
 ```

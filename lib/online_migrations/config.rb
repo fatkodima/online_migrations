@@ -24,6 +24,14 @@ module OnlineMigrations
 
     attr_accessor :error_messages
 
+    # Tables that are in the process of being renamed
+    #
+    # @return [Hash] Keys are old table names, values - new table names
+    # @example To add a table
+    #   OnlineMigrations.config.table_renames["users"] = "clients"
+    #
+    attr_accessor :table_renames
+
     # Columns that are in the process of being renamed
     #
     # @return [Hash] Keys are table names, values - hashes with old column names as keys
@@ -34,6 +42,7 @@ module OnlineMigrations
     attr_accessor :column_renames
 
     def initialize
+      @table_renames = {}
       @column_renames = {}
       @error_messages = ERROR_MESSAGES
       @check_down = false

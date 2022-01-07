@@ -8,6 +8,40 @@ module OnlineMigrations
 "The `:force` option will destroy existing table. If this is intended, drop the existing table first.
 Otherwise, remove the `:force` option.",
 
+      rename_table:
+"Renaming a table that's in use will cause errors in your application.
+migration_helpers provides a safer approach to do this:
+
+1. Instruct Rails that you are going to rename a table:
+
+  OnlineMigrations.config.table_renames = {
+    <%= table_name.to_s.inspect %> => <%= new_name.to_s.inspect %>
+  }
+
+2. Deploy
+3. Tell the database that you are going to rename a table. This will not actually rename any tables,
+nor any data/indexes/foreign keys copying will be made, so will be very fast.
+It will use a VIEW to work with both table names simultaneously:
+
+  class Initialize<%= migration_name %> < <%= migration_parent %>
+    def change
+      initialize_table_rename <%= table_name.inspect %>, <%= new_name.inspect %>
+    end
+  end
+
+4. Replace usages of the old table with a new table in the codebase
+5. Remove the table rename config from step 1
+6. Deploy
+7. Remove the VIEW created on step 3:
+
+  class Finalize<%= migration_name %> < <%= migration_parent %>
+    def change
+      finalize_table_rename <%= table_name.inspect %>, <%= new_name.inspect %>
+    end
+  end
+
+8. Deploy",
+
       add_column_with_default:
 "Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
 

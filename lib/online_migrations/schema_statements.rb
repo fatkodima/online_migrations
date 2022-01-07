@@ -204,6 +204,99 @@ module OnlineMigrations
       end
     end
 
+    # Renames a table without requiring downtime
+    #
+    # The technique is built on top of database views, using the following steps:
+    #   1. Rename the database table
+    #   2. Create a database view using the old table name by pointing to the new table name
+    #   3. Add a workaround for ActiveRecord's schema cache
+    #
+    # For example, to rename `clients` table name to `users`, we can run:
+    #
+    #     BEGIN;
+    #     ALTER TABLE clients RENAME TO users;
+    #     CREATE VIEW clients AS SELECT * FROM users;
+    #     COMMIT;
+    #
+    # As database views do not expose the underlying table schema (default values, not null constraints,
+    # indexes, etc), further steps are needed to update the application to use the new table name.
+    # ActiveRecord heavily relies on this data, for example, to initialize new models.
+    #
+    # To work around this limitation, we need to tell ActiveRecord to acquire this information
+    # from original table using the new table name (see notes).
+    #
+    # @param table_name [String, Symbol]
+    # @param new_name [String, Symbol] table's new name
+    #
+    # @return [void]
+    #
+    # @example
+    #   initialize_table_rename(:clients, :users)
+    #
+    # @note
+    #   Prior to using this method, you need to register the database table so that
+    #   it instructs ActiveRecord to fetch the database table information (for SchemaCache)
+    #   using the new table name (if it's present). Otherwise, fall back to the old table name:
+    #
+    #   ```
+    #     OnlineMigrations.config.table_renames[old_table_name] = new_table_name
+    #   ```
+    #
+    #   Deploy this change before proceeding with this helper.
+    #   This is necessary to avoid errors during a zero-downtime deployment.
+    #
+    # @note None of the DDL operations involving original table name can be performed
+    #   until `finalize_table_rename` is run
+    #
+    def initialize_table_rename(table_name, new_name)
+      transaction do
+        rename_table(table_name, new_name)
+        execute("CREATE VIEW #{table_name} AS SELECT * FROM #{new_name}")
+      end
+    end
+
+    # Reverts operations performed by initialize_table_rename
+    #
+    # @param (see #initialize_table_rename)
+    # @return [void]
+    #
+    # @example
+    #   revert_initialize_table_rename(:clients, :users)
+    #
+    def revert_initialize_table_rename(table_name, new_name)
+      transaction do
+        execute("DROP VIEW IF EXISTS #{table_name}")
+        rename_table(new_name, table_name)
+      end
+    end
+
+    # Finishes the process of table rename
+    #
+    # @param table_name [String, Symbol]
+    # @param _new_name [String, Symbol] table's new name. Passing this argument will make
+    #   this change reversible in migration
+    # @return [void]
+    #
+    # @example
+    #   finalize_table_rename(:users, :clients)
+    #
+    def finalize_table_rename(table_name, _new_name = nil)
+      execute("DROP VIEW IF EXISTS #{table_name}")
+    end
+
+    # Reverts operations performed by finalize_table_rename
+    #
+    # @param table_name [String, Symbol]
+    # @param new_name [String, Symbol] table's new name
+    # @return [void]
+    #
+    # @example
+    #   revert_finalize_table_rename(:users, :clients)
+    #
+    def revert_finalize_table_rename(table_name, new_name)
+      execute("CREATE VIEW #{table_name} AS SELECT * FROM #{new_name}")
+    end
+
     # Adds a column with a default value without durable locks of the entire table
     #
     # This method runs the following steps:

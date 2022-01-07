@@ -4,7 +4,9 @@ module OnlineMigrations
   # @private
   module SchemaCache
     def primary_keys(table_name)
-      if renamed_columns.key?(table_name)
+      if renamed_tables.key?(table_name)
+        super(renamed_tables[table_name])
+      elsif renamed_columns.key?(table_name)
         super(column_rename_table(table_name))
       else
         super
@@ -12,7 +14,9 @@ module OnlineMigrations
     end
 
     def columns(table_name)
-      if renamed_columns.key?(table_name)
+      if renamed_tables.key?(table_name)
+        super(renamed_tables[table_name])
+      elsif renamed_columns.key?(table_name)
         columns = super(column_rename_table(table_name))
 
         old_column_name, new_column_name = renamed_columns[table_name].first.to_a
@@ -31,7 +35,9 @@ module OnlineMigrations
     end
 
     def indexes(table_name)
-      if renamed_columns.key?(table_name)
+      if renamed_tables.key?(table_name)
+        super(renamed_tables[table_name])
+      elsif renamed_columns.key?(table_name)
         super(column_rename_table(table_name))
       else
         super
@@ -44,6 +50,10 @@ module OnlineMigrations
     end
 
     def clear_data_source_cache!(name)
+      if renamed_tables.key?(name)
+        super(renamed_tables[name])
+      end
+
       if renamed_columns.key?(name)
         super(column_rename_table(name))
       end
@@ -53,6 +63,15 @@ module OnlineMigrations
     end
 
     private
+      def renamed_tables
+        @renamed_tables ||= begin
+          table_renames = OnlineMigrations.config.table_renames
+          table_renames.select do |old_name, _|
+            connection.views.include?(old_name)
+          end
+        end
+      end
+
       def renamed_columns
         @renamed_columns ||= begin
           column_renames = OnlineMigrations.config.column_renames
@@ -68,6 +87,7 @@ module OnlineMigrations
 
       def clear_renames_cache!
         @renamed_columns = nil
+        @renamed_tables = nil
       end
   end
 end
