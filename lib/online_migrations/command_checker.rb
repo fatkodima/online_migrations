@@ -173,6 +173,32 @@ module OnlineMigrations
         end
       end
 
+      def add_reference(table_name, ref_name, **options)
+        # Always added by default in 5.0+
+        index = options.fetch(:index) { Utils.ar_version >= 5.0 }
+
+        if index.is_a?(Hash) && index[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
+          raise_error :add_hash_index
+        end
+
+        concurrently_set = index.is_a?(Hash) && index[:algorithm] == :concurrently
+        bad_index = index && !concurrently_set
+
+        foreign_key = options.fetch(:foreign_key, false)
+
+        validate_foreign_key = !foreign_key.is_a?(Hash) ||
+                               (!foreign_key.key?(:validate) || foreign_key[:validate] == true)
+        bad_foreign_key = foreign_key && validate_foreign_key
+
+        if bad_index || bad_foreign_key
+          raise_error :add_reference,
+            code: command_str(:add_reference_concurrently, table_name, ref_name, **options),
+            bad_index: bad_index,
+            bad_foreign_key: bad_foreign_key
+        end
+      end
+      alias add_belongs_to add_reference
+
       def add_index(table_name, column_name, **options)
         if options[:algorithm] != :concurrently
           raise_error :add_index,

@@ -56,6 +56,17 @@ module MinitestHelpers
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} not found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 
+  def refute_sql(*patterns_to_match, &block)
+    queries = track_queries(&block)
+
+    failed_patterns = []
+    patterns_to_match.each do |pattern|
+      failed_patterns << pattern if queries.any? { |sql| sql.include?(pattern) }
+    end
+    assert failed_patterns.empty?,
+      "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
+  end
+
   def with_target_version(version)
     prev = OnlineMigrations.config.target_version
     OnlineMigrations.config.target_version = version

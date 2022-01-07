@@ -58,6 +58,12 @@ module OnlineMigrations
         end
       end
 
+      def foreign_table_name(ref_name, options)
+        options.fetch(:to_table) do
+          ActiveRecord::Base.pluralize_table_names ? ref_name.to_s.pluralize : ref_name
+        end
+      end
+
       def ar_partial_writes?
         ActiveRecord::Base.public_send(ar_partial_writes_setting)
       end

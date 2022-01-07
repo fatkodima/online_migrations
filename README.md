@@ -39,6 +39,7 @@ Potentially dangerous operations:
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
+- [adding a reference](#adding-a-reference)
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding a json column](#adding-a-json-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
@@ -478,6 +479,37 @@ class RemoveIndexOnUsersEmail < ActiveRecord::Migration[7.0]
 
   def change
     remove_index :users, :email, algorithm: :concurrently
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Adding a reference
+
+#### Bad
+
+Rails adds an index non-concurrently to references by default, which blocks writes. Additionally, if `foreign_key` option (without `validate: false`) is provided, both tables are blocked while it is validated.
+
+```ruby
+class AddUserToProjects < ActiveRecord::Migration[7.0]
+  def change
+    add_reference :projects, :user, foreign_key: true
+  end
+end
+```
+
+#### Good
+
+Make sure the index is added concurrently and the foreign key is added in a separate migration.
+Or you can use `add_reference_concurrently` helper. It will create a reference and take care of safely adding index and/or foreign key.
+
+```ruby
+class AddUserToProjects < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_reference_concurrently :projects, :user
   end
 end
 ```

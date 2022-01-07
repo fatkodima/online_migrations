@@ -201,6 +201,23 @@ class <%= migration_name %> < <%= migration_parent %>
 end
 <% end %>",
 
+      add_reference:
+"<% if bad_foreign_key %>
+Adding a foreign key blocks writes on both tables.
+<% end %>
+<% if bad_index %>
+Adding an index non-concurrently blocks writes.
+<% end %>
+Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding <% if bad_foreign_key %>a foreign key<% end %><% if bad_index && bad_foreign_key %> and <% end %><% if bad_index %>index<% end %>.
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= code %>
+  end
+end",
+
       add_index:
 "Adding an index non-concurrently blocks writes. Instead, use:
 

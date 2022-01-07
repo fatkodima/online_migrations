@@ -448,6 +448,65 @@ module OnlineMigrations
       remove_check_constraint(table_name, name: name)
     end
 
+    # Adds a reference to the table with minimal locking
+    #
+    # ActiveRecord adds an index non-`CONCURRENTLY` to references by default, which blocks writes.
+    # It also adds a validated foreign key by default, which blocks writes on both tables while
+    # validating existing rows.
+    #
+    # This method makes sure that an index is added `CONCURRENTLY` and the foreign key creation is performed
+    # in 2 steps: addition of invalid foreign key and a separate validation.
+    #
+    # @param table_name [String, Symbol] table name
+    # @param ref_name [String, Symbol] new column name
+    # @param options [Hash] look at
+    #   https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_reference for available options
+    #
+    # @return [void]
+    #
+    # @example
+    #   add_reference_concurrently(:projects, :user)
+    #
+    # @note This method should not be run within a transaction
+    #
+    def add_reference_concurrently(table_name, ref_name, **options)
+      __ensure_not_in_transaction!
+
+      column_name = "#{ref_name}_id"
+      unless column_exists?(table_name, column_name)
+        type = options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)
+        allow_null = options.fetch(:null, true)
+        add_column(table_name, column_name, type, null: allow_null)
+      end
+
+      # Always added by default in 5.0+
+      index = options.fetch(:index) { Utils.ar_version >= 5.0 }
+
+      if index
+        index = {} if index == true
+        index_columns = [column_name]
+        if options[:polymorphic]
+          index[:name] ||= "index_#{table_name}_on_#{ref_name}"
+          index_columns.unshift("#{ref_name}_type")
+        end
+
+        add_index(table_name, index_columns, **index.merge(algorithm: :concurrently))
+      end
+
+      foreign_key = options[:foreign_key]
+
+      if foreign_key
+        foreign_key = {} if foreign_key == true
+
+        foreign_table_name = Utils.foreign_table_name(ref_name, foreign_key)
+        add_foreign_key(table_name, foreign_table_name, **foreign_key.merge(validate: false))
+
+        if foreign_key[:validate] != false
+          validate_foreign_key(table_name, foreign_table_name, **foreign_key)
+        end
+      end
+    end
+
     # Extends default method to be idempotent and automatically recreate invalid indexes.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index
