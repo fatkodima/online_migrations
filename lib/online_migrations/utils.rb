@@ -57,6 +57,28 @@ module OnlineMigrations
           end
         end
       end
+
+      FUNCTION_CALL_RE = /(\w+)\s*\(/
+      private_constant :FUNCTION_CALL_RE
+
+      def volatile_default?(connection, type, value)
+        return false unless value.is_a?(Proc) || (type.to_s == "uuid" && value.is_a?(String))
+
+        value = value.call if value.is_a?(Proc)
+        return false if !value.is_a?(String)
+
+        value.scan(FUNCTION_CALL_RE).any? { |(function_name)| volatile_function?(connection, function_name.downcase) }
+      end
+
+      def volatile_function?(connection, function_name)
+        query = <<~SQL
+          SELECT provolatile
+          FROM pg_catalog.pg_proc
+          WHERE proname = #{connection.quote(function_name)}
+        SQL
+
+        connection.select_value(query) == "v"
+      end
     end
   end
 end

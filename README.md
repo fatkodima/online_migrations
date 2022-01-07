@@ -29,6 +29,7 @@ TODO: Write usage instructions here
 Potentially dangerous operations:
 
 - [removing a column](#removing-a-column)
+- [adding a column with a default value](#adding-a-column-with-a-default-value)
 - [backfilling data](#backfilling-data)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding a check constraint](#adding-a-check-constraint)
@@ -75,6 +76,44 @@ end
 
 4. Remove column ignoring from `User` model
 5. Deploy
+
+### Adding a column with a default value
+
+#### Bad
+
+In earlier versions of PostgreSQL adding a column with a non-null default value to an existing table blocks reads and writes while the entire table is rewritten.
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :admin, :boolean, default: false
+  end
+end
+```
+
+In PostgreSQL 11+ this no longer requires a table rewrite and is safe. Volatile expressions, however, such as `random()`, will still result in table rewrites.
+
+#### Good
+
+A safer approach is to:
+
+1. add the column without a default value
+2. change the column default
+3. backfill existing rows with the new value
+
+`add_column_with_default` helper takes care of all this steps:
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_column_with_default :users, :admin, :boolean, default: false
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
 
 ### Backfilling data
 

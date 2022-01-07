@@ -8,6 +8,29 @@ module OnlineMigrations
 "The `:force` option will destroy existing table. If this is intended, drop the existing table first.
 Otherwise, remove the `:force` option.",
 
+      add_column_with_default:
+"Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
+
+A safer approach is to:
+1. add the column without a default value
+2. change the column default
+3. backfill existing rows with the new value
+<% if not_null %>
+4. add the NOT NULL constraint
+<% end %>
+
+<% unless volatile_default %>
+add_column_with_default takes care of all this steps:
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= code %>
+  end
+end
+<% end %>",
+
       change_column_null:
 "Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
 A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
@@ -64,6 +87,29 @@ A safer approach is to:
 
 4. Remove columns ignoring
 5. Deploy
+<% end %>",
+
+      add_timestamps_with_default:
+"Adding timestamps columns with non-null defaults blocks reads and writes while the entire table is rewritten.
+
+A safer approach is to, for both timestamps columns:
+1. add the column without a default value
+2. change the column default
+3. backfill existing rows with the new value
+<% if not_null %>
+4. add the NOT NULL constraint
+<% end %>
+
+<% unless volatile_default %>
+add_column_with_default takes care of all this steps:
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= code %>
+  end
+end
 <% end %>",
 
       add_index:

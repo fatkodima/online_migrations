@@ -21,9 +21,9 @@ module OnlineMigrations
       @safe = @prev_value
     end
 
-    def check(command, *args, **options, &block)
+    def check(command, *args, &block)
       unless safe?
-        do_check(command, *args, **options, &block)
+        do_check(command, *args, &block)
       end
 
       true
@@ -56,6 +56,18 @@ module OnlineMigrations
 
       def create_join_table(_table1, _table2, **options)
         raise_error :create_table if options[:force]
+      end
+
+      def add_column(table_name, column_name, type, **options)
+        volatile_default = false
+        if !options[:default].nil? &&
+           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, options[:default])))
+
+          raise_error :add_column_with_default,
+            code: command_str(:add_column_with_default, table_name, column_name, type, options),
+            not_null: options[:null] == false,
+            volatile_default: volatile_default
+        end
       end
 
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
@@ -119,6 +131,19 @@ module OnlineMigrations
           command: command_str(command, *args),
           table_name: table_name.inspect,
           indexes: indexes.map { |i| i.name.to_sym.inspect }
+      end
+
+      def add_timestamps(table_name, **options)
+        volatile_default = false
+        if !options[:default].nil? &&
+           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, :datetime, options[:default])))
+
+          raise_error :add_timestamps_with_default,
+            code: [command_str(:add_column_with_default, table_name, :created_at, :datetime, options),
+                   command_str(:add_column_with_default, table_name, :updated_at, :datetime, options)].join("\n    "),
+            not_null: options[:null] == false,
+            volatile_default: volatile_default
+        end
       end
 
       def add_index(table_name, column_name, **options)
@@ -219,6 +244,8 @@ module OnlineMigrations
                 "#{k}: { #{v.map { |k2, v2| "#{k2}: #{v2.inspect}" }.join(', ')} }"
               when Array, Numeric, String, Symbol, TrueClass, FalseClass
                 "#{k}: #{v.inspect}"
+              else
+                "<paste value here>"
               end
             end.join(", ")
           end

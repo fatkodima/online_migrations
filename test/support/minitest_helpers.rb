@@ -64,6 +64,15 @@ module MinitestHelpers
     OnlineMigrations.config.target_version = prev
   end
 
+  def with_postgres(major_version, &block)
+    pg_connection = ActiveRecord::Base.connection.instance_variable_get(:@connection)
+    pg_connection.stub(:server_version, major_version * 1_00_00, &block)
+  end
+
+  def ar_version
+    OnlineMigrations::Utils.ar_version
+  end
+
   def migration_parent_string
     OnlineMigrations::Utils.migration_parent_string
   end

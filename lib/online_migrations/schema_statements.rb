@@ -98,6 +98,89 @@ module OnlineMigrations
       end
     end
 
+    # Adds a column with a default value without durable locks of the entire table
+    #
+    # This method runs the following steps:
+    #
+    # 1. Add the column allowing NULLs
+    # 2. Change the default value of the column to the specified value
+    # 3. Backfill all existing rows in batches
+    # 4. Set a `NOT NULL` constraint on the column if desired (the default).
+    #
+    # These steps ensure a column can be added to a large and commonly used table
+    # without locking the entire table for the duration of the table modification.
+    #
+    # For extra large tables (100s of millions of records) you may consider implementing
+    #   the steps from this helper method yourself as a separate migrations, replacing step #3
+    #   with the help of background migrations (see `backfill_column_in_background`).
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param type [Symbol] type of new column
+    #
+    # @param options [Hash] `:batch_size`, `:batch_column_name`, `:progress`, and `:pause_ms`
+    #     are directly passed to `update_column_in_batches` to control the backfilling process.
+    #     Additional options (like `:limit`, etc) are forwarded to `add_column`
+    # @option options :default The column's default value
+    # @option options [Boolean] :null (true) Allows or disallows NULL values in the column
+    #
+    # @return [void]
+    #
+    # @example
+    #   add_column_with_default(:users, :admin, :boolean, default: false, null: false)
+    #
+    # @example Additional column options
+    #   add_column_with_default(:users, :twitter, :string, default: "", limit: 64)
+    #
+    # @example Additional batching options
+    #   add_column_with_default(:users, :admin, :boolean, default: false,
+    #                           batch_size: 10_000, pause_ms: 100)
+    #
+    # @note This method should not be run within a transaction
+    # @note For PostgreSQL 11+ you can use `add_column` instead
+    #
+    def add_column_with_default(table_name, column_name, type, **options)
+      default = options.fetch(:default)
+      if default.is_a?(Proc) &&
+         ActiveRecord.version < Gem::Version.new("5.0.0.beta2") # https://github.com/rails/rails/pull/20005
+        raise ArgumentError, "Expressions as default are not supported"
+      end
+
+      if @connection.server_version >= 11_00_00 && !Utils.volatile_default?(self, type, default)
+        add_column(table_name, column_name, type, **options)
+      else
+        __ensure_not_in_transaction!
+
+        batch_options = options.extract!(:batch_size, :batch_column_name, :progress, :pause_ms)
+
+        if column_exists?(table_name, column_name)
+          Utils.say("Column was not created because it already exists (this may be due to an aborted migration "\
+            "or similar) table_name: #{table_name}, column_name: #{column_name}")
+        else
+          transaction do
+            add_column(table_name, column_name, type, **options.merge(default: nil, null: true))
+            change_column_default(table_name, column_name, default)
+          end
+        end
+
+        update_column_in_batches(table_name, column_name, default, **batch_options)
+
+        allow_null = options.delete(:null) != false
+        if !allow_null
+          # A `NOT NULL` constraint for the column is functionally equivalent
+          # to creating a CHECK constraint `CHECK (column IS NOT NULL)` for the table
+          add_not_null_constraint(table_name, column_name, validate: false)
+          validate_not_null_constraint(table_name, column_name)
+
+          if @connection.server_version >= 12_00_00
+            # In PostgreSQL 12+ it is safe to "promote" a CHECK constraint to `NOT NULL` for the column
+            change_column_null(table_name, column_name, false)
+            remove_not_null_constraint(table_name, column_name)
+          end
+        end
+      end
+    end
+
     # Adds a NOT NULL constraint to the column
     #
     # @param table_name [String, Symbol]

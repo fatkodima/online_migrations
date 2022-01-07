@@ -43,6 +43,9 @@ Style/ConditionalAssignment:
 Style/SafeNavigation:
   Enabled: false
 
+Style/NumericLiterals:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 
