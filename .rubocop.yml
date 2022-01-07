@@ -30,6 +30,9 @@ Style/MissingRespondToMissing:
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: comma
 
+Style/NumericPredicate:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 

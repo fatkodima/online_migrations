@@ -84,6 +84,24 @@ end",
 "Validating a foreign key while holding heavy locks on tables is dangerous.
 Use disable_ddl_transaction! or a separate migration.",
 
+      add_check_constraint:
+"Adding a check constraint blocks reads and writes while every row is checked.
+A safer approach is to add the check constraint without validating existing rows,
+and then validating them in a separate transaction.
+
+class <%= migration_name %> < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= add_code %>
+    <%= validate_code %>
+  end
+end",
+
+      validate_constraint:
+"Validating a constraint while holding heavy locks on tables is dangerous.
+Use disable_ddl_transaction! or a separate migration.",
+
       execute:
 "Online Migrations does not support inspecting what happens inside an
 execute call, so cannot help you here. Make really sure that what

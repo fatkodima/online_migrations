@@ -94,6 +94,41 @@ module OnlineMigrations
       end
     end
 
+    # Extends default method to be idempotent
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
+    # @note This method was added in ActiveRecord 6.1
+    #
+    def add_check_constraint(table_name, expression, validate: true, **options)
+      constraint_name = __check_constraint_name(table_name, expression: expression, **options)
+
+      if __check_constraint_exists?(table_name, constraint_name)
+        Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration "\
+          "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
+      else
+        super
+      end
+    end
+
+    # Extends default method with disabled statement timeout while validation is run
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_check_constraint
+    # @note This method was added in ActiveRecord 6.1
+    #
+    def validate_check_constraint(table_name, **options)
+      constraint_name = __check_constraint_name!(table_name, **options)
+
+      # Skip costly operation if already validated.
+      return if __constraint_validated?(table_name, constraint_name, type: :check)
+
+      disable_statement_timeout do
+        # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
+        # It only conflicts with other validations, creating/removing indexes,
+        # and some other "ALTER TABLE"s.
+        super
+      end
+    end
+
     # Disables statement timeout while executing &block
     #
     # Long-running migrations may take more than the timeout allowed by the database.
@@ -165,6 +200,40 @@ module OnlineMigrations
             AND con.conname = #{quote(name)}
             AND con.contype = '#{contype}'
         SQL
+      end
+
+      def __check_constraint_name!(table_name, expression: nil, **options)
+        constraint_name = __check_constraint_name(table_name, expression: expression, **options)
+
+        if __check_constraint_exists?(table_name, constraint_name)
+          constraint_name
+        else
+          raise(ArgumentError, "Table '#{table_name}' has no check constraint for #{expression || options}")
+        end
+      end
+
+      def __check_constraint_name(table_name, **options)
+        options.fetch(:name) do
+          expression = options.fetch(:expression)
+          identifier = "#{table_name}_#{expression}_chk"
+          hashed_identifier = Digest::SHA256.hexdigest(identifier).first(10)
+
+          "chk_rails_#{hashed_identifier}"
+        end
+      end
+
+      def __check_constraint_exists?(table_name, constraint_name)
+        check_sql = <<~SQL.squish
+          SELECT COUNT(*)
+          FROM pg_catalog.pg_constraint con
+            INNER JOIN pg_catalog.pg_class cl
+              ON cl.oid = con.conrelid
+          WHERE con.contype = 'c'
+            AND con.conname = #{quote(constraint_name)}
+            AND cl.relname = #{quote(table_name)}
+        SQL
+
+        select_value(check_sql).to_i > 0
       end
   end
 end

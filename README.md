@@ -30,6 +30,7 @@ Potentially dangerous operations:
 
 - [removing a column](#removing-a-column)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
+- [adding a check constraint](#adding-a-check-constraint)
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
@@ -104,6 +105,37 @@ end
 ```
 
 If you intend to drop an existing table, run `drop_table` first.
+
+### Adding a check constraint
+
+#### Bad
+
+Adding a check constraint blocks reads and writes while every row is checked.
+
+```ruby
+class AddCheckConstraint < ActiveRecord::Migration[7.0]
+  def change
+    add_check_constraint :users, "char_length(name) >= 1", name: "name_check"
+  end
+end
+```
+
+#### Good
+
+Add the check constraint without validating existing rows, and then validate them in a separate transaction:
+
+```ruby
+class AddCheckConstraint < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_check_constraint :users, "char_length(name) >= 1", name: "name_check", validate: false
+    validate_check_constraint :users, name: "name_check"
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
 
 ### Executing SQL directly
 

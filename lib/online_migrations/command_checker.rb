@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "erb"
+require "openssl"
 
 module OnlineMigrations
   # @private
@@ -113,6 +114,22 @@ module OnlineMigrations
         end
       end
 
+      def add_check_constraint(table_name, expression, **options)
+        if options[:validate] != false
+          name = options[:name] || check_constraint_name(table_name, expression)
+
+          raise_error :add_check_constraint,
+            add_code: command_str(:add_check_constraint, table_name, expression, **options.merge(validate: false)),
+            validate_code: command_str(:validate_check_constraint, table_name, name: name)
+        end
+      end
+
+      def validate_check_constraint(*)
+        if crud_blocked?
+          raise_error :validate_constraint
+        end
+      end
+
       def execute(*)
         raise_error :execute, header: "Possibly dangerous operation"
       end
@@ -165,6 +182,13 @@ module OnlineMigrations
         SQL
 
         connection.select_values(locks_query).any?
+      end
+
+      def check_constraint_name(table_name, expression)
+        identifier = "#{table_name}_#{expression}_chk"
+        hashed_identifier = OpenSSL::Digest::SHA256.hexdigest(identifier).first(10)
+
+        "chk_rails_#{hashed_identifier}"
       end
   end
 end
