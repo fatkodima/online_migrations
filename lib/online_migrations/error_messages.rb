@@ -218,6 +218,13 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
+      add_hash_index:
+"Hash index operations are not WAL-logged, so hash indexes might need to be rebuilt with REINDEX
+after a database crash if there were unwritten changes. Also, changes to hash indexes are not replicated
+over streaming or file-based replication after the initial base backup, so they give wrong answers
+to queries that subsequently use them. For these reasons, hash index use is discouraged.
+Use B-tree indexes instead.",
+
       add_index:
 "Adding an index non-concurrently blocks writes. Instead, use:
 

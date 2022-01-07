@@ -50,18 +50,26 @@ module OnlineMigrations
         end
       end
 
-      def create_table(_table_name, **options)
+      def create_table(_table_name, **options, &block)
         raise_error :create_table if options[:force]
 
         # Probably, it would be good idea to also check for foreign keys
         # with short integer types, and for mismatched primary key vs foreign key types.
         # But I think this check is enough for now.
         raise_error :short_primary_key_type if short_primary_key_type?(options)
+
+        if block && (postgresql_version < Gem::Version.new("10"))
+          check_for_hash_indexes(&block)
+        end
       end
 
-      def create_join_table(_table1, _table2, **options)
+      def create_join_table(_table1, _table2, **options, &block)
         raise_error :create_table if options[:force]
         raise_error :short_primary_key_type if short_primary_key_type?(options)
+
+        if block && (postgresql_version < Gem::Version.new("10"))
+          check_for_hash_indexes(&block)
+        end
       end
 
       def rename_table(table_name, new_name, **)
@@ -200,7 +208,9 @@ module OnlineMigrations
       alias add_belongs_to add_reference
 
       def add_index(table_name, column_name, **options)
-        if options[:algorithm] != :concurrently
+        if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
+          raise_error :add_hash_index
+        elsif options[:algorithm] != :concurrently
           raise_error :add_index,
             command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
         end
@@ -266,6 +276,19 @@ module OnlineMigrations
           end
 
         pk_type && !["bigserial", "bigint", "uuid"].include?(pk_type.to_s)
+      end
+
+      def check_for_hash_indexes(&block)
+        indexes = collect_indexes(&block)
+        if indexes.any? { |index| index.using == "hash" }
+          raise_error :add_hash_index
+        end
+      end
+
+      def collect_indexes(&block)
+        collector = IndexesCollector.new
+        collector.collect(&block)
+        collector.indexes
       end
 
       def postgresql_version

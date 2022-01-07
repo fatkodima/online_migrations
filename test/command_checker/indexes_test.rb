@@ -9,10 +9,13 @@ module CommandChecker
       @connection.create_table(:users, force: :cascade) do |t|
         t.string :email
       end
+
+      @connection.create_table(:projects, force: :cascade)
     end
 
     def teardown
       @connection.drop_table(:users) rescue nil
+      @connection.drop_table(:projects) rescue nil
     end
 
     class AddIndexNonConcurrently < TestMigration
@@ -45,6 +48,87 @@ module CommandChecker
 
     def test_add_index_concurrently
       assert_safe AddIndexConcurrently
+    end
+
+    class AddHashIndex < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_index :users, :email, algorithm: :concurrently, using: :hash
+      end
+    end
+
+    def test_add_hash_index
+      with_target_version(10) do
+        assert_safe AddHashIndex
+      end
+    end
+
+    def test_add_hash_index_before_10
+      with_target_version(9) do
+        assert_unsafe AddHashIndex, "hash index use is discouraged"
+      end
+    end
+
+    class AddHashIndexTableDefinition < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :email
+          t.index :email, using: :hash
+        end
+      end
+    end
+
+    def test_add_hash_index_table_definition
+      with_target_version(10) do
+        assert_safe AddHashIndexTableDefinition
+      end
+    end
+
+    def test_add_hash_index_table_definition_before_10
+      with_target_version(9) do
+        assert_unsafe AddHashIndexTableDefinition, "hash index use is discouraged"
+      end
+    end
+
+    class AddHashIndexColumnDefinition < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :email, index: { using: :hash }
+        end
+      end
+    end
+
+    def test_add_hash_index_column_definition
+      with_target_version(10) do
+        assert_safe AddHashIndexTableDefinition
+      end
+    end
+
+    def test_add_hash_index_column_definition_before_10
+      with_target_version(9) do
+        assert_unsafe AddHashIndexColumnDefinition, "hash index use is discouraged"
+      end
+    end
+
+    class AddHashIndexReferenceDefinition < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_reference :projects, :user, index: { algorithm: :concurrently, using: :hash }
+      end
+    end
+
+    def test_add_hash_index_reference_definition
+      with_target_version(10) do
+        assert_safe AddHashIndexReferenceDefinition
+      end
+    end
+
+    def test_add_hash_index_reference_definition_before_10
+      with_target_version(9) do
+        assert_unsafe AddHashIndexReferenceDefinition, "hash index use is discouraged"
+      end
     end
 
     class RemoveIndexNonConcurrently < TestMigration

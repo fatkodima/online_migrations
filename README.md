@@ -43,6 +43,7 @@ Potentially dangerous operations:
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding a json column](#adding-a-json-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
+- [hash indexes](#hash-indexes)
 
 ### Removing a column
 
@@ -609,6 +610,32 @@ class CreateUsers < ActiveRecord::Migration[7.0]
     create_table :users, id: :bigint do |t| # bigint is the default for Active Record >= 5.1
       # ...
     end
+  end
+end
+```
+
+### Hash indexes
+
+#### Bad - PostgreSQL < 10
+
+Hash index operations are not WAL-logged, so hash indexes might need to be rebuilt with `REINDEX` after a database crash if there were unwritten changes. Also, changes to hash indexes are not replicated over streaming or file-based replication after the initial base backup, so they give wrong answers to queries that subsequently use them. For these reasons, hash index use is discouraged.
+
+```ruby
+class AddIndexToUsersOnEmail < ActiveRecord::Migration[7.0]
+  def change
+    add_index :users, :email, unique: true, using: :hash
+  end
+end
+```
+
+#### Good - PostgreSQL < 10
+
+Use B-tree indexes instead.
+
+```ruby
+class AddIndexToUsersOnEmail < ActiveRecord::Migration[7.0]
+  def change
+    add_index :users, :email, unique: true # B-tree by default
   end
 end
 ```
