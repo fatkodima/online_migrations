@@ -37,6 +37,9 @@ def prepare_database
     connection.execute("DROP TABLE #{table_name} CASCADE")
   end
 
+  # For gen_random_uuid
+  connection.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+
   ActiveRecord::SchemaMigration.create_table
 end
 

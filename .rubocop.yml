@@ -15,6 +15,9 @@ Style/IfUnlessModifier:
 Style/SymbolArray:
   EnforcedStyle: brackets
 
+Style/WordArray:
+  EnforcedStyle: brackets
+
 Style/GuardClause:
   Enabled: false
 

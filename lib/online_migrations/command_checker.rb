@@ -52,10 +52,16 @@ module OnlineMigrations
 
       def create_table(_table_name, **options)
         raise_error :create_table if options[:force]
+
+        # Probably, it would be good idea to also check for foreign keys
+        # with short integer types, and for mismatched primary key vs foreign key types.
+        # But I think this check is enough for now.
+        raise_error :short_primary_key_type if short_primary_key_type?(options)
       end
 
       def create_join_table(_table1, _table2, **options)
         raise_error :create_table if options[:force]
+        raise_error :short_primary_key_type if short_primary_key_type?(options)
       end
 
       def rename_table(table_name, new_name, **)
@@ -217,6 +223,23 @@ module OnlineMigrations
 
       def execute(*)
         raise_error :execute, header: "Possibly dangerous operation"
+      end
+
+      def short_primary_key_type?(options)
+        pk_type =
+          case options[:id]
+          when false
+            nil
+          when Hash
+            options[:id][:type]
+          when nil
+            # default type is used
+            connection.native_database_types[:primary_key].split.first
+          else
+            options[:id]
+          end
+
+        pk_type && !["bigserial", "bigint", "uuid"].include?(pk_type.to_s)
       end
 
       def postgresql_version

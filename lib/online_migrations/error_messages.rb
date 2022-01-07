@@ -4,6 +4,10 @@ module OnlineMigrations
   # @private
   module ErrorMessages
     ERROR_MESSAGES = {
+      short_primary_key_type:
+"Using short integer types for primary keys is dangerous due to the risk of running
+out of IDs on inserts. Better to use one of 'bigint', 'bigserial' or 'uuid'.",
+
       create_table:
 "The `:force` option will destroy existing table. If this is intended, drop the existing table first.
 Otherwise, remove the `:force` option.",

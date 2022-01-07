@@ -41,6 +41,7 @@ Potentially dangerous operations:
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding a json column](#adding-a-json-column)
+- [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 
 ### Removing a column
 
@@ -546,6 +547,36 @@ Use `jsonb` instead.
 class AddSettingsToProjects < ActiveRecord::Migration[7.0]
   def change
     add_column :projects, :settings, :jsonb
+  end
+end
+```
+
+### Using primary key with short integer type
+
+#### Bad
+
+When using short integer types as primary key types, [there is a risk](https://m.signalvnoise.com/update-on-basecamp-3-being-stuck-in-read-only-as-of-nov-8-922am-cst/) of running out of IDs on inserts. The default type in ActiveRecord < 5.1 for primary and foreign keys is `INTEGER`, which allows a little over of 2 billion records. Active Record 5.1 changed the default type to `BIGINT`.
+
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.0]
+  def change
+    create_table :users, id: :integer do |t|
+      # ...
+    end
+  end
+end
+```
+
+#### Good
+
+Use one of `bigint`, `bigserial`, `uuid` instead.
+
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.0]
+  def change
+    create_table :users, id: :bigint do |t| # bigint is the default for Active Record >= 5.1
+      # ...
+    end
   end
 end
 ```

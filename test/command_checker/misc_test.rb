@@ -45,6 +45,19 @@ module CommandChecker
       assert_safe CreateTable
     end
 
+    class IntegerPrimaryKey < TestMigration
+      def change
+        create_table :animals, id: :integer
+      end
+    end
+
+    def test_integer_primary_key
+      assert_unsafe IntegerPrimaryKey, <<~MSG
+        Using short integer types for primary keys is dangerous due to the risk of running
+        out of IDs on inserts. Better to use one of 'bigint', 'bigserial' or 'uuid'.
+      MSG
+    end
+
     class RenameTable < TestMigration
       def change
         rename_table :clients, :users
