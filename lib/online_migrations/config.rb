@@ -35,6 +35,15 @@ module OnlineMigrations
     #
     attr_accessor :error_messages
 
+    # Maximum allowed lock timeout value (in seconds)
+    #
+    # If set lock timeout is greater than this value, the migration will fail.
+    # The default value is 10 seconds.
+    #
+    # @return [Numeric]
+    #
+    attr_accessor :lock_timeout_limit
+
     # Tables that are in the process of being renamed
     #
     # @return [Hash] Keys are old table names, values - new table names
@@ -56,6 +65,7 @@ module OnlineMigrations
       @table_renames = {}
       @column_renames = {}
       @error_messages = ERROR_MESSAGES
+      @lock_timeout_limit = 10.seconds
       @start_after = 0
       @check_down = false
     end

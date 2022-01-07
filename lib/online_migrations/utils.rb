@@ -21,6 +21,10 @@ module OnlineMigrations
         end
       end
 
+      def warn(message)
+        Kernel.warn("[online_migrations] #{message}")
+      end
+
       def migration_parent
         if ar_version <= 4.2
           ActiveRecord::Migration

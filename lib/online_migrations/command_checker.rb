@@ -12,6 +12,7 @@ module OnlineMigrations
     def initialize(migration)
       @migration = migration
       @safe = false
+      @lock_timeout_checked = false
       @foreign_key_tables = Set.new
     end
 
@@ -24,6 +25,8 @@ module OnlineMigrations
     end
 
     def check(command, *args, &block)
+      check_lock_timeout
+
       unless safe?
         do_check(command, *args, &block)
 
@@ -36,6 +39,44 @@ module OnlineMigrations
     end
 
     private
+      def check_lock_timeout
+        limit = OnlineMigrations.config.lock_timeout_limit
+
+        if limit && !@lock_timeout_checked
+          lock_timeout = connection.select_value("SHOW lock_timeout")
+          lock_timeout_sec = timeout_to_sec(lock_timeout)
+
+          if lock_timeout_sec == 0
+            Utils.warn("DANGER: No lock timeout set")
+          elsif lock_timeout_sec > limit
+            Utils.warn("DANGER: Lock timeout is longer than #{limit} seconds: #{lock_timeout}")
+          end
+
+          @lock_timeout_checked = true
+        end
+      end
+
+      def timeout_to_sec(timeout)
+        units = {
+          "us" => 10**-6,
+          "ms" => 10**-3,
+          "s" => 1,
+          "min" => 60,
+          "h" => 60 * 60,
+          "d" => 60 * 60 * 24,
+        }
+
+        timeout_sec = timeout.to_i
+
+        units.each do |k, v|
+          if timeout.end_with?(k)
+            timeout_sec *= v
+            break
+          end
+        end
+        timeout_sec
+      end
+
       def safe?
         @safe ||
           ENV["SAFETY_ASSURED"] ||
