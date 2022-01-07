@@ -5,6 +5,11 @@ module OnlineMigrations
   class Config
     include ErrorMessages
 
+    # The migration version starting from which checks are performed
+    # @return [Integer]
+    #
+    attr_accessor :start_after
+
     # The database version against which the checks will be performed
     #
     # If your development database version is different from production, you can specify
@@ -45,6 +50,7 @@ module OnlineMigrations
       @table_renames = {}
       @column_renames = {}
       @error_messages = ERROR_MESSAGES
+      @start_after = 0
       @check_down = false
     end
   end

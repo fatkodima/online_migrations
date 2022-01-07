@@ -801,6 +801,18 @@ By default, checks are disabled when migrating down. Enable them with:
 config.check_down = true
 ```
 
+### Existing Migrations
+
+To mark migrations as safe that were created before installing this gem, configure the migration version starting after which checks are performed:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.start_after = 20220101000000
+```
+
+Use the version from your latest migration.
+
 ### Target Version
 
 If your development database version is different from production, you can specify the production version so the right checks run in development.

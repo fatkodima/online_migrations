@@ -15,6 +15,28 @@ class ConfigTest < MiniTest::Test
     @connection.drop_table(:users) rescue nil
   end
 
+  class RemoveNameFromUsers < TestMigration
+    def change
+      remove_column :users, :name, :string
+    end
+
+    def version
+      20200101000001
+    end
+  end
+
+  def test_start_after_safe
+    with_start_after(20200101000001) do
+      assert_safe RemoveNameFromUsers
+    end
+  end
+
+  def test_start_after_unsafe
+    with_start_after(20200101000000) do
+      assert_unsafe RemoveNameFromUsers
+    end
+  end
+
   class CheckDownMigration < TestMigration
     disable_ddl_transaction!
 
@@ -39,6 +61,15 @@ class ConfigTest < MiniTest::Test
   end
 
   private
+    def with_start_after(value)
+      previous = config.start_after
+      config.start_after = value
+
+      yield
+    ensure
+      config.start_after = previous
+    end
+
     def with_check_down
       previous = config.check_down
       config.check_down = true

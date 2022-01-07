@@ -39,7 +39,12 @@ module OnlineMigrations
       def safe?
         @safe ||
           ENV["SAFETY_ASSURED"] ||
-          (direction == :down && !OnlineMigrations.config.check_down)
+          (direction == :down && !OnlineMigrations.config.check_down) ||
+          version <= OnlineMigrations.config.start_after
+      end
+
+      def version
+        @migration.version || @migration.class.version
       end
 
       def do_check(command, *args, **options, &block)

@@ -48,3 +48,4 @@ prepare_database
 require_relative "support/minitest_helpers"
 
 TestMigration = OnlineMigrations::Utils.migration_parent
+TestMigration.version = 20200101000001
