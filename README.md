@@ -304,6 +304,28 @@ end
 
 Certain methods like `execute` and `change_table` cannot be inspected and are prevented from running by default. Make sure what you're doing is really safe and use this pattern.
 
+## Configuring the gem
+
+There are a few configurable options for the gem. Custom configurations should be placed in a `online_migrations.rb` initializer.
+
+```ruby
+OnlineMigrations.configure do |config|
+  # ...
+end
+```
+
+**Note**: Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/config.rb) for the list of all available configuration options.
+
+### Down Migrations / Rollbacks
+
+By default, checks are disabled when migrating down. Enable them with:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.check_down = true
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

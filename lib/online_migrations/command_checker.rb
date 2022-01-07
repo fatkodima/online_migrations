@@ -6,6 +6,8 @@ require "openssl"
 module OnlineMigrations
   # @private
   class CommandChecker
+    attr_accessor :direction
+
     def initialize(migration)
       @migration = migration
       @safe = false
@@ -29,7 +31,9 @@ module OnlineMigrations
 
     private
       def safe?
-        @safe || ENV["SAFETY_ASSURED"]
+        @safe ||
+          ENV["SAFETY_ASSURED"] ||
+          (direction == :down && !OnlineMigrations.config.check_down)
       end
 
       def do_check(command, *args, **options, &block)

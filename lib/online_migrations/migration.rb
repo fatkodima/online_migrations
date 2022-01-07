@@ -5,6 +5,7 @@ module OnlineMigrations
     # @private
     def migrate(direction)
       OnlineMigrations.current_migration = self
+      command_checker.direction = direction
       super
     end
 
