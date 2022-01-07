@@ -70,6 +70,16 @@ module OnlineMigrations
         end
       end
 
+      def rename_column(table_name, column_name, new_column, **)
+        raise_error :rename_column,
+          table_name: table_name,
+          column_name: column_name,
+          new_column: new_column,
+          model: table_name.to_s.classify,
+          partial_writes: Utils.ar_partial_writes?,
+          partial_writes_setting: Utils.ar_partial_writes_setting
+      end
+
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
         if !allow_null
           safe = false

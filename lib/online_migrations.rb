@@ -9,6 +9,7 @@ require "online_migrations/batch_iterator"
 require "online_migrations/migration"
 require "online_migrations/database_tasks"
 require "online_migrations/command_checker"
+require "online_migrations/schema_cache"
 require "online_migrations/schema_statements"
 require "online_migrations/version"
 
@@ -35,6 +36,7 @@ module OnlineMigrations
       ActiveRecord::Migration.prepend(OnlineMigrations::Migration)
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
+      ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
     end
   end
 end

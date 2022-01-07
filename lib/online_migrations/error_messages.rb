@@ -31,6 +31,47 @@ class <%= migration_name %> < <%= migration_parent %>
 end
 <% end %>",
 
+      rename_column:
+"Renaming a column that's in use will cause errors in your application.
+migration_helpers provides a safer approach to do this:
+
+1. Instruct Rails that you are going to rename a column:
+
+  OnlineMigrations.config.column_renames = {
+    <%= table_name.to_s.inspect %> => {
+      <%= column_name.to_s.inspect %> => <%= new_column.to_s.inspect %>
+    }
+  }
+<% unless partial_writes %>
+  NOTE: You also need to temporarily enable partial writes until the process of column rename is fully done.
+  # config/application.rb
+  config.active_record.<%= partial_writes_setting %> = true
+<% end %>
+
+2. Deploy
+3. Tell the database that you are going to rename a column. This will not actually rename any columns,
+nor any data/indexes/foreign keys copying will be made, so will be instantaneous.
+It will use a combination of a VIEW and column aliasing to work with both column names simultaneously:
+
+  class Initialize<%= migration_name %> < <%= migration_parent %>
+    def change
+      initialize_column_rename <%= table_name.inspect %>, <%= column_name.inspect %>, <%= new_column.inspect %>
+    end
+  end
+
+4. Replace usages of the old column with a new column in the codebase
+5. Deploy
+6. Remove the column rename config from step 1
+7. Remove the VIEW created in step 3:
+
+  class Finalize<%= migration_name %> < <%= migration_parent %>
+    def change
+      finalize_column_rename <%= table_name.inspect %>, <%= column_name.inspect %>, <%= new_column.inspect %>
+    end
+  end
+
+8. Deploy",
+
       change_column_null:
 "Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
 A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.

@@ -98,6 +98,112 @@ module OnlineMigrations
       end
     end
 
+    # Renames a column without requiring downtime
+    #
+    # The technique is built on top of database views, using the following steps:
+    #   1. Rename the table to some temporary name
+    #   2. Create a VIEW using the old table name with addition of a new column as an alias of the old one
+    #   3. Add a workaround for ActiveRecord's schema cache
+    #
+    # For example, to rename `name` column to `first_name` of the `users` table, we can run:
+    #
+    #     BEGIN;
+    #     ALTER TABLE users RENAME TO users_column_rename;
+    #     CREATE VIEW users AS SELECT *, first_name AS name FROM users;
+    #     COMMIT;
+    #
+    # As database views do not expose the underlying table schema (default values, not null constraints,
+    # indexes, etc), further steps are needed to update the application to use the new table name.
+    # ActiveRecord heavily relies on this data, for example, to initialize new models.
+    #
+    # To work around this limitation, we need to tell ActiveRecord to acquire this information
+    # from original table using the new table name (see notes).
+    #
+    # @param table_name [String, Symbol] table name
+    # @param column_name [String, Symbol] the name of the column to be renamed
+    # @param new_column_name [String, Symbol] new new name of the column
+    #
+    # @return [void]
+    #
+    # @example
+    #   initialize_column_rename(:users, :name, :first_name)
+    #
+    # @note
+    #   Prior to using this method, you need to register the database table so that
+    #   it instructs ActiveRecord to fetch the database table information (for SchemaCache)
+    #   using the original table name (if it's present). Otherwise, fall back to the old table name:
+    #
+    #   ```OnlineMigrations.config.column_renames[table_name] = { old_column_name => new_column_name }```
+    #
+    #   Deploy this change before proceeding with this helper.
+    #   This is necessary to avoid errors during a zero-downtime deployment.
+    #
+    # @note None of the DDL operations involving original table name can be performed
+    #   until `finalize_column_rename` is run
+    #
+    def initialize_column_rename(table_name, column_name, new_column_name)
+      tmp_table = "#{table_name}_column_rename"
+
+      transaction do
+        rename_table(table_name, tmp_table)
+        execute("CREATE VIEW #{table_name} AS SELECT *, #{column_name} AS #{new_column_name} FROM #{tmp_table}")
+      end
+    end
+
+    # Reverts operations performed by initialize_column_rename
+    #
+    # @param table_name [String, Symbol] table name
+    # @param _column_name [String, Symbol] the name of the column to be renamed.
+    #     Passing this argument will make this change reversible in migration
+    # @param _new_column_name [String, Symbol] new new name of the column.
+    #     Passing this argument will make this change reversible in migration
+    #
+    # @return [void]
+    #
+    # @example
+    #   revert_initialize_column_rename(:users, :name, :first_name)
+    #
+    def revert_initialize_column_rename(table_name, _column_name = nil, _new_column_name = nil)
+      transaction do
+        execute("DROP VIEW #{table_name}")
+        rename_table("#{table_name}_column_rename", table_name)
+      end
+    end
+
+    # Finishes the process of column rename
+    #
+    # @param (see #initialize_column_rename)
+    # @return [void]
+    #
+    # @example
+    #   finalize_column_rename(:users, :name, :first_name)
+    #
+    def finalize_column_rename(table_name, column_name, new_column_name)
+      transaction do
+        execute("DROP VIEW #{table_name}")
+        rename_table("#{table_name}_column_rename", table_name)
+        rename_column(table_name, column_name, new_column_name)
+      end
+    end
+
+    # Reverts operations performed by finalize_column_rename
+    #
+    # @param (see #initialize_column_rename)
+    # @return [void]
+    #
+    # @example
+    #   revert_finalize_column_rename(:users, :name, :first_name)
+    #
+    def revert_finalize_column_rename(table_name, column_name, new_column_name)
+      tmp_table = "#{table_name}_column_rename"
+
+      transaction do
+        rename_column(table_name, new_column_name, column_name)
+        rename_table(table_name, tmp_table)
+        execute("CREATE VIEW #{table_name} AS SELECT *, #{column_name} AS #{new_column_name} FROM #{tmp_table}")
+      end
+    end
+
     # Adds a column with a default value without durable locks of the entire table
     #
     # This method runs the following steps:

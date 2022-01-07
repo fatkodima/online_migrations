@@ -31,6 +31,7 @@ Potentially dangerous operations:
 - [removing a column](#removing-a-column)
 - [adding a column with a default value](#adding-a-column-with-a-default-value)
 - [backfilling data](#backfilling-data)
+- [renaming a column](#renaming-a-column)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding a check constraint](#adding-a-check-constraint)
 - [setting NOT NULL on an existing column](#setting-not-null-on-an-existing-column)
@@ -153,6 +154,81 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+## Renaming a column
+
+#### Bad
+
+Renaming a column that's in use will cause errors in your application.
+
+```ruby
+class RenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
+  def change
+    rename_column :users, :name, :first_name
+  end
+end
+```
+
+#### Good
+
+The "classic" approach suggests creating a new column and copy data/indexes/etc to it from the old column. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
+
+The technique is built on top of database views, using the following steps:
+
+1. Rename the table to some temporary name
+2. Create a VIEW using the old table name with addition of a new column as an alias of the old one
+3. Add a workaround for ActiveRecord's schema cache
+
+For the previous example, to rename `name` column to `first_name` of the `users` table, we can run:
+
+```sql
+BEGIN;
+ALTER TABLE users RENAME TO users_column_rename;
+CREATE VIEW users AS SELECT *, first_name AS name FROM users;
+COMMIT;
+```
+
+As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. ActiveRecord heavily relies on this data, for example, to initialize new models.
+
+To work around this limitation, we need to tell ActiveRecord to acquire this information from original table using the new table name.
+
+**Online Migrations** provides several helpers to implement column renaming:
+
+1. Instruct Rails that you are going to rename a column:
+
+```ruby
+OnlineMigrations.config.column_renames = {
+  "users" => {
+    "name" => "first_name"
+  }
+}
+```
+
+2. Deploy
+3. Create a VIEW with aliased column:
+
+```ruby
+class InitializeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
+  def change
+    initialize_column_rename :users, :name, :first_name
+  end
+end
+```
+
+4. Replace usages of the old column with a new column in the codebase
+5. Deploy
+6. Remove the column rename config from step 1
+7. Remove the VIEW created in step 3:
+
+```ruby
+class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
+  def change
+    finalize_column_rename :users, :name, :first_name
+  end
+end
+```
+
+8. Deploy
 
 ### Creating a table with the force option
 

@@ -11,7 +11,7 @@ module OnlineMigrations
     # the production version so the right checks run in development.
     #
     # @example Set specific target version
-    #   MigrationHelpers.config.target_version = 10
+    #   OnlineMigrations.config.target_version = 10
     #
     attr_accessor :target_version
 
@@ -24,7 +24,17 @@ module OnlineMigrations
 
     attr_accessor :error_messages
 
+    # Columns that are in the process of being renamed
+    #
+    # @return [Hash] Keys are table names, values - hashes with old column names as keys
+    #   and new column names as values
+    # @example To add a column
+    #   OnlineMigrations.config.column_renames["users] = { "name" => "first_name" }
+    #
+    attr_accessor :column_renames
+
     def initialize
+      @column_renames = {}
       @error_messages = ERROR_MESSAGES
       @check_down = false
     end

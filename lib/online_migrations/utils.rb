@@ -58,6 +58,18 @@ module OnlineMigrations
         end
       end
 
+      def ar_partial_writes?
+        ActiveRecord::Base.public_send(ar_partial_writes_setting)
+      end
+
+      def ar_partial_writes_setting
+        if Utils.ar_version >= 7.0
+          "partial_inserts"
+        else
+          "partial_writes"
+        end
+      end
+
       FUNCTION_CALL_RE = /(\w+)\s*\(/
       private_constant :FUNCTION_CALL_RE
 
