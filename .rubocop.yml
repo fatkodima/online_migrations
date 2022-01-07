@@ -33,6 +33,16 @@ Style/TrailingCommaInHashLiteral:
 Style/NumericPredicate:
   Enabled: false
 
+Style/NegatedIf:
+  Enabled: false
+
+Style/ConditionalAssignment:
+  Enabled: false
+
+# only for ruby 2.3+
+Style/SafeNavigation:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 
@@ -43,6 +53,9 @@ Layout/ArgumentAlignment:
   Enabled: false
 
 Layout/LineLength:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
   Enabled: false
 
 Gemspec/RequiredRubyVersion:

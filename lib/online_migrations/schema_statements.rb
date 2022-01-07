@@ -2,6 +2,102 @@
 
 module OnlineMigrations
   module SchemaStatements
+    # Updates the value of a column in batches.
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param value value for the column. It is typically a literal. To perform a computed
+    #     update, an Arel literal can be used instead
+    # @option options [Integer] :batch_size (1000) size of the batch
+    # @option options [String, Symbol] :batch_column_name (primary key) option is for tables without primary key, in this
+    #     case another unique integer column can be used. Example: `:user_id`
+    # @option options [Proc, Boolean] :progress (false) whether to show progress while running.
+    #   - when `true` - will show progress (prints "." for each batch)
+    #   - when `false` - will not show progress
+    #   - when `Proc` - will call the proc on each iteration with the batched relation as argument.
+    #     Example: `proc { |_relation| print "." }`
+    # @option options [Integer] :pause_ms (50) The number of milliseconds to sleep between each batch execution.
+    #     This helps to reduce database pressure while running updates and gives time to do maintenance tasks
+    #
+    # @yield [relation] a block to be called to add extra conditions to the queries being executed
+    # @yieldparam relation [ActiveRecord::Relation] an instance of `ActiveRecord::Relation`
+    #     to add extra conditions to
+    #
+    # @return [void]
+    #
+    # @example
+    #   update_column_in_batches(:users, :admin, false)
+    #
+    # @example With extra conditions
+    #   update_column_in_batches(:users, :name, "Guest") do |relation|
+    #     relation.where(name: nil)
+    #   end
+    #
+    # @example From other column
+    #   update_column_in_batches(:users, :name_for_type_change, Arel.sql("name"))
+    #
+    # @example With computed value
+    #   truncated_name = Arel.sql("substring(name from 1 for 64)")
+    #   update_column_in_batches(:users, :name, truncated_name) do |relation|
+    #     relation.where("length(name) > 64")
+    #   end
+    #
+    # @note This method should not be run within a transaction
+    # @note Consider `update_columns_in_batches` when updating multiple columns
+    #   to avoid rewriting the table multiple times.
+    #
+    def update_column_in_batches(table_name, column_name, value, **options, &block)
+      update_columns_in_batches(table_name, [[column_name, value]], **options, &block)
+    end
+
+    # Same as `update_column_in_batches`, but for multiple columns.
+    #
+    # This is useful to avoid multiple costly disk rewrites of large tables
+    # when updating each column separately.
+    #
+    # @param columns_and_values
+    # columns_and_values is an array of arrays (first item is a column name, second - new value)
+    #
+    # @see #update_column_in_batches
+    #
+    def update_columns_in_batches(table_name, columns_and_values,
+                                  batch_size: 1000, batch_column_name: primary_key(table_name), progress: false, pause_ms: 50)
+      __ensure_not_in_transaction!
+
+      if !columns_and_values.is_a?(Array) || !columns_and_values.all? { |e| e.is_a?(Array) }
+        raise ArgumentError, "columns_and_values must be an array of arrays"
+      end
+
+      if progress
+        if progress == true
+          progress = ->(_) { print(".") }
+        elsif !progress.respond_to?(:call)
+          raise ArgumentError, "The progress body needs to be a callable."
+        end
+      end
+
+      model = Utils.define_model(self, table_name)
+
+      conditions = columns_and_values.map do |(column_name, value)|
+        arel_column = model.arel_table[column_name]
+        arel_column.not_eq(value).or(arel_column.eq(nil))
+      end
+
+      batch_relation = model.where(conditions.inject(:and))
+      batch_relation = yield batch_relation if block_given?
+
+      iterator = BatchIterator.new(batch_relation)
+      iterator.each_batch(of: batch_size, column: batch_column_name) do |relation|
+        updates = columns_and_values.to_h
+
+        relation.update_all(updates)
+
+        progress.call(relation) if progress
+
+        sleep(pause_ms * 0.001) if pause_ms > 0
+      end
+    end
+
     # Extends default method to be idempotent and automatically recreate invalid indexes.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index

@@ -29,6 +29,7 @@ TODO: Write usage instructions here
 Potentially dangerous operations:
 
 - [removing a column](#removing-a-column)
+- [backfilling data](#backfilling-data)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
 - [adding a check constraint](#adding-a-check-constraint)
 - [executing SQL directly](#executing-SQL-directly)
@@ -73,6 +74,45 @@ end
 
 4. Remove column ignoring from `User` model
 5. Deploy
+
+### Backfilling data
+
+#### Bad
+
+ActiveRecord wraps each migration in a transaction, and backfilling in the same transaction that alters a table keeps the table locked for the [duration of the backfill](https://wework.github.io/data/2015/11/05/add-columns-with-default-values-to-large-tables-in-rails-postgres/).
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :admin, :boolean
+    User.update_all(admin: false)
+  end
+end
+```
+
+Also, running a single query to update data can cause issues for large tables.
+
+#### Good
+
+There are three keys to backfilling safely: batching, throttling, and running it outside a transaction. Use a `update_column_in_batches` helper in a separate migration with `disable_ddl_transaction!`.
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :admin, :boolean
+  end
+end
+
+class BackfillUsersAdminColumn < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def up
+    update_column_in_batches(:users, :admin, false, pause_ms: 10)
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
 
 ### Creating a table with the force option
 
