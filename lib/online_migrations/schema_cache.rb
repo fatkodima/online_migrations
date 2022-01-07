@@ -30,7 +30,7 @@ module OnlineMigrations
         # Correspond to the ActiveRecord freezing of each column
         columns << new_column.freeze
       else
-        super
+        super.reject { |column| column.name.end_with?("_for_type_change") }
       end
     end
 

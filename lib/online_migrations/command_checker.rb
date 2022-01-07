@@ -113,6 +113,68 @@ module OnlineMigrations
           partial_writes_setting: Utils.ar_partial_writes_setting
       end
 
+      def change_column(table_name, column_name, type, **options)
+        type = type.to_sym
+
+        existing_column = connection.columns(table_name).find { |c| c.name == column_name.to_s }
+        if existing_column
+          existing_type = existing_column.type.to_sym
+
+          safe =
+            case type
+            when :string
+              # safe to increase limit or remove it
+              # not safe to decrease limit or add a limit
+              case existing_type
+              when :string
+                !options[:limit] || (existing_column.limit && options[:limit] >= existing_column.limit)
+              when :text
+                !options[:limit]
+              end
+            when :text
+              # safe to change varchar to text (and text to text)
+              [:string, :text].include?(existing_type)
+            when :numeric, :decimal
+              # numeric and decimal are equivalent and can be used interchangably
+              [:numeric, :decimal].include?(existing_type) &&
+              (
+                (
+                  # unconstrained
+                  !options[:precision] && !options[:scale]
+                ) || (
+                  # increased precision, same scale
+                  options[:precision] && existing_column.precision &&
+                  options[:precision] >= existing_column.precision &&
+                  options[:scale] == existing_column.scale
+                )
+              )
+            when :datetime, :timestamp, :timestamptz
+              [:timestamp, :timestamptz].include?(existing_type) &&
+              postgresql_version >= Gem::Version.new("12") &&
+              connection.select_value("SHOW timezone") == "UTC"
+            else
+              type == existing_type &&
+              options[:limit] == existing_column.limit &&
+              options[:precision] == existing_column.precision &&
+              options[:scale] == existing_column.scale
+            end
+
+          # unsafe to set NOT NULL for safe types
+          if safe && existing_column.null && options[:null] == false
+            raise_error :change_column_with_not_null
+          end
+
+          if !safe
+            raise_error :change_column,
+              initialize_change_code: command_str(:initialize_column_type_change, table_name, column_name, type, **options),
+              backfill_code: command_str(:backfill_column_for_type_change, table_name, column_name, **options),
+              finalize_code: command_str(:finalize_column_type_change, table_name, column_name),
+              cleanup_code: command_str(:cleanup_change_column_type_concurrently, table_name, column_name),
+              cleanup_down_code: command_str(:initialize_column_type_change, table_name, column_name, existing_type)
+          end
+        end
+      end
+
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
         if !allow_null
           safe = false

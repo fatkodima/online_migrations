@@ -49,6 +49,9 @@ Style/SafeNavigation:
 Style/NumericLiterals:
   Enabled: false
 
+Style/Next:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 
@@ -67,6 +70,11 @@ Layout/MultilineMethodCallIndentation:
 Naming/VariableNumber:
   Exclude:
     - test/**/*
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - of
+    - fk
 
 Gemspec/RequiredRubyVersion:
   Enabled: false

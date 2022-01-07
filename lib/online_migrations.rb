@@ -12,6 +12,8 @@ require "online_migrations/foreign_keys_collector"
 require "online_migrations/indexes_collector"
 require "online_migrations/command_checker"
 require "online_migrations/schema_cache"
+require "online_migrations/copy_trigger"
+require "online_migrations/change_column_type_helpers"
 require "online_migrations/schema_statements"
 require "online_migrations/version"
 

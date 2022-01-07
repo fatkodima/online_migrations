@@ -120,6 +120,60 @@ It will use a combination of a VIEW and column aliasing to work with both column
 
 8. Deploy",
 
+      change_column_with_not_null:
+"Changing the type is safe, but setting NOT NULL is not.",
+
+      change_column:
+"Changing the type of an existing column blocks reads and writes while the entire table is rewritten.
+A safer approach can be accomplished in several steps:
+
+1. Create a new column and keep column's data in sync:
+
+  class Initialize<%= migration_name %> < <%= migration_parent %>
+    def change
+      <%= initialize_change_code %>
+    end
+  end
+
+2. Backfill data from the old column to the new column:
+
+  class Backfill<%= migration_name %> < <%= migration_parent %>
+    disable_ddl_transaction!
+
+    def up
+      <%= backfill_code %>
+    end
+
+    def down
+      # no op
+    end
+  end
+
+3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
+
+  class Finalize<%= migration_name %> < <%= migration_parent %>
+    disable_ddl_transaction!
+
+    def change
+      <%= finalize_code %>
+    end
+  end
+
+4. Deploy
+5. Finally, if everything is working as expected, remove copy trigger and old column:
+
+  class Cleanup<%= migration_name %> < <%= migration_parent %>
+    def up
+      <%= cleanup_code %>
+    end
+
+    def down
+      <%= cleanup_down_code %>
+    end
+  end
+
+6. Deploy",
+
       change_column_null:
 "Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
 A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.

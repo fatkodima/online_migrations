@@ -31,6 +31,7 @@ Potentially dangerous operations:
 - [removing a column](#removing-a-column)
 - [adding a column with a default value](#adding-a-column-with-a-default-value)
 - [backfilling data](#backfilling-data)
+- [changing the type of a column](#changing-the-type-of-a-column)
 - [renaming a column](#renaming-a-column)
 - [renaming a table](#renaming-a-table)
 - [creating a table with the force option](#creating-a-table-with-the-force-option)
@@ -160,6 +161,90 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Changing the type of a column
+
+#### Bad
+
+Changing the type of an existing column blocks reads and writes while the entire table is rewritten.
+
+```ruby
+class ChangeFilesSizeType < ActiveRecord::Migration[7.0]
+  def change
+    change_column :files, :size, :bigint
+  end
+end
+```
+
+A few changes don't require a table rewrite (and are safe) in PostgreSQL:
+
+- Increasing the length limit of a `varchar` column (or removing the limit)
+- Changing a `varchar` column to a `text` column
+- Changing a `text` column to a `varchar` column with no length limit
+- Increasing the precision of a `decimal` or `numeric` column
+- Making a `decimal` or `numeric` column unconstrained
+- Changing between `timestamp` and `timestamptz` columns when session time zone is UTC in PostgreSQL 12+
+
+#### Good
+
+**Note**: The following steps can also be used to change the primary key's type (e.g., from `integer` to `bigint`).
+
+A safer approach can be accomplished in several steps:
+
+1. Create a new column and keep column's data in sync:
+
+  ```ruby
+  class InitializeChangeFilesSizeType < ActiveRecord::Migration[7.0]
+    def change
+      initialize_column_type_change :files, :size, :bigint
+    end
+  end
+  ```
+
+2. Backfill data from the old column to the new column:
+
+  ```ruby
+  class BackfillChangeFilesSizeType < ActiveRecord::Migration[7.0]
+    disable_ddl_transaction!
+
+    def up
+      backfill_column_for_type_change :files, :size
+    end
+
+    def down
+      # no op
+    end
+  end
+  ```
+
+3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
+
+  ```ruby
+  class FinalizeChangeFilesSizeType < ActiveRecord::Migration[7.0]
+    disable_ddl_transaction!
+
+    def change
+      finalize_column_type_change :files, :size
+    end
+  end
+  ```
+
+4. Deploy
+5. Finally, if everything is working as expected, remove copy trigger and old column:
+
+  ```ruby
+  class CleanupChangeFilesSizeType < ActiveRecord::Migration[7.0]
+    def up
+      cleanup_change_column_type_concurrently :files, :size
+    end
+
+    def down
+      initialize_column_type_change :files, :size, :integer
+    end
+  end
+  ```
+
+6. Deploy
 
 ## Renaming a column
 

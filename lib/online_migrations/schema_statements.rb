@@ -2,6 +2,8 @@
 
 module OnlineMigrations
   module SchemaStatements
+    include ChangeColumnTypeHelpers
+
     # Updates the value of a column in batches.
     #
     # @param table_name [String, Symbol]
@@ -295,6 +297,27 @@ module OnlineMigrations
     #
     def revert_finalize_table_rename(table_name, new_name)
       execute("CREATE VIEW #{table_name} AS SELECT * FROM #{new_name}")
+    end
+
+    # Swaps two column names in a table
+    #
+    # This method is mostly intended for use as one of the steps for
+    # concurrent column type change
+    #
+    # @param table_name [String, Symbol]
+    # @param column1 [String, Symbol]
+    # @param column2 [String, Symbol]
+    # @return [void]
+    #
+    # @example
+    #   swap_column_names(:files, :size_for_type_change, :size)
+    #
+    def swap_column_names(table_name, column1, column2)
+      transaction do
+        rename_column(table_name, column1, "#{column1}_tmp")
+        rename_column(table_name, column2, column1)
+        rename_column(table_name, "#{column1}_tmp", column2)
+      end
     end
 
     # Adds a column with a default value without durable locks of the entire table
@@ -708,6 +731,34 @@ module OnlineMigrations
             ON i.indexrelid = c.oid
           WHERE c.relname = #{quote(index_name)}
         SQL
+      end
+
+      def __column_for(table_name, column_name)
+        column_name = column_name.to_s
+
+        columns(table_name).find { |c| c.name == column_name } ||
+          raise("No such column: #{table_name}.#{column_name}")
+      end
+
+      def __copy_foreign_key(fk, to_column, **options)
+        fkey_options = {
+          column: to_column,
+          primary_key: options[:primary_key] || fk.primary_key,
+          on_delete: fk.on_delete,
+          on_update: fk.on_update,
+          validate: false,
+        }
+        fkey_options[:name] = options[:name] if options[:name]
+
+        add_foreign_key(
+          fk.from_table,
+          fk.to_table,
+          **fkey_options
+        )
+
+        if !fk.respond_to?(:validated?) || fk.validated?
+          validate_foreign_key(fk.from_table, fk.to_table, column: to_column, **options)
+        end
       end
 
       def __foreign_key_for!(from_table, **options)
