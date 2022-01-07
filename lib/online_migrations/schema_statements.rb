@@ -59,6 +59,41 @@ module OnlineMigrations
       end
     end
 
+    # Extends default method to be idempotent and accept `:validate` option for ActiveRecord < 5.2.
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key
+    #
+    def add_foreign_key(from_table, to_table, validate: true, **options)
+      if foreign_key_exists?(from_table, **options.merge(to_table: to_table))
+        message = +"Foreign key was not created because it already exists " \
+          "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}"
+        message << ", #{options.inspect}" if options.any?
+
+        Utils.say(message)
+      else
+        super
+      end
+    end
+
+    # Extends default method with disabled statement timeout while validation is run
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_foreign_key
+    # @note This method was added in ActiveRecord 5.2
+    #
+    def validate_foreign_key(from_table, to_table = nil, **options)
+      fk_name_to_validate = __foreign_key_for!(from_table, to_table: to_table, **options).name
+
+      # Skip costly operation if already validated.
+      return if __constraint_validated?(from_table, fk_name_to_validate, type: :foreign_key)
+
+      disable_statement_timeout do
+        # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
+        # It only conflicts with other validations, creating/removing indexes,
+        # and some other "ALTER TABLE"s.
+        execute("ALTER TABLE #{from_table} VALIDATE CONSTRAINT #{fk_name_to_validate}")
+      end
+    end
+
     # Disables statement timeout while executing &block
     #
     # Long-running migrations may take more than the timeout allowed by the database.
@@ -112,6 +147,23 @@ module OnlineMigrations
           JOIN pg_class c
             ON i.indexrelid = c.oid
           WHERE c.relname = #{quote(index_name)}
+        SQL
+      end
+
+      def __foreign_key_for!(from_table, **options)
+        foreign_key_for(from_table, **options) ||
+          raise(ArgumentError, "Table '#{from_table}' has no foreign key for #{options[:to_table] || options}")
+      end
+
+      def __constraint_validated?(table_name, name, type:)
+        contype = type == :check ? "c" : "f"
+
+        select_value(<<~SQL)
+          SELECT convalidated
+          FROM pg_catalog.pg_constraint con
+          WHERE con.conrelid = #{quote(table_name)}::regclass
+            AND con.conname = #{quote(name)}
+            AND con.contype = '#{contype}'
         SQL
       end
   end

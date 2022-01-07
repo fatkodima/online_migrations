@@ -33,6 +33,7 @@ Potentially dangerous operations:
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
+- [adding a foreign key](#adding-a-foreign-key)
 
 ### Removing a column
 
@@ -170,6 +171,47 @@ class RemoveIndexOnUsersEmail < ActiveRecord::Migration[7.0]
 
   def change
     remove_index :users, :email, algorithm: :concurrently
+  end
+end
+```
+
+**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Adding a foreign key
+
+#### Bad
+
+Adding a foreign key blocks writes on both tables.
+
+```ruby
+class AddForeignKeyToProjectsUser < ActiveRecord::Migration[7.0]
+  def change
+    add_foreign_key :projects, :users
+  end
+end
+```
+
+or
+
+```ruby
+class AddReferenceToProjectsUser < ActiveRecord::Migration[7.0]
+  def change
+    add_reference :projects, :user, foreign_key: true
+  end
+end
+```
+
+#### Good
+
+Add the foreign key without validating existing rows, and then validate them in a separate transaction.
+
+```ruby
+class AddForeignKeyToProjectsUser < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_foreign_key :projects, :users, validate: false
+    validate_foreign_key :projects, :users
   end
 end
 ```

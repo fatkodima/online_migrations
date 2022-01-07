@@ -97,6 +97,22 @@ module OnlineMigrations
         end
       end
 
+      def add_foreign_key(from_table, to_table, **options)
+        validate = options.fetch(:validate, true)
+
+        if validate
+          raise_error :add_foreign_key,
+            add_code: command_str(:add_foreign_key, from_table, to_table, **options.merge(validate: false)),
+            validate_code: command_str(:validate_foreign_key, from_table, to_table)
+        end
+      end
+
+      def validate_foreign_key(*)
+        if crud_blocked?
+          raise_error :validate_foreign_key
+        end
+      end
+
       def execute(*)
         raise_error :execute, header: "Possibly dangerous operation"
       end
@@ -138,6 +154,17 @@ module OnlineMigrations
         end
 
         "#{command} #{arg_list.join(', ')}"
+      end
+
+      def crud_blocked?
+        locks_query = <<~SQL
+          SELECT relation::regclass::text
+          FROM pg_locks
+          WHERE mode IN ('ShareLock', 'ShareRowExclusiveLock', 'ExclusiveLock', 'AccessExclusiveLock')
+            AND pid = pg_backend_pid()
+        SQL
+
+        connection.select_values(locks_query).any?
       end
   end
 end
