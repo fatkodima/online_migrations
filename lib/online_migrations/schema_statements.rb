@@ -713,7 +713,10 @@ module OnlineMigrations
         Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration "\
           "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
       else
-        super
+        query = "ALTER TABLE #{table_name} ADD CONSTRAINT #{constraint_name} CHECK (#{expression})"
+        query += " NOT VALID" if !validate
+
+        execute(query)
       end
     end
 
@@ -732,7 +735,17 @@ module OnlineMigrations
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        super
+        execute("ALTER TABLE #{table_name} VALIDATE CONSTRAINT #{constraint_name}")
+      end
+    end
+
+    if Utils.ar_version < 6.1
+      # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
+      # @note This method was added in ActiveRecord 6.1
+      #
+      def remove_check_constraint(table_name, expression = nil, **options)
+        constraint_name = __check_constraint_name!(table_name, expression: expression, **options)
+        execute("ALTER TABLE #{table_name} DROP CONSTRAINT #{constraint_name}")
       end
     end
 
