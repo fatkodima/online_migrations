@@ -505,7 +505,16 @@ module OnlineMigrations
         vars[:migration_parent] = Utils.migration_parent_string
         vars[:model_parent] = Utils.model_parent_string
 
-        message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
+        if RUBY_VERSION >= "2.6"
+          message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
+        else
+          # `result_with_hash` was added in ruby 2.5
+          b = TOPLEVEL_BINDING.dup
+          vars.each_pair do |key, value|
+            b.local_variable_set(key, value)
+          end
+          message = ERB.new(template, nil, "<>").result(b)
+        end
 
         @migration.stop!(message, header: header || "Dangerous operation detected")
       end

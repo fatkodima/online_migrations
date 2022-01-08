@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+@ar_gem_requirement = "~> 4.2.0"
+@pg_gem_requirement = "< 1"
+
+eval_gemfile "../Gemfile"

@@ -181,7 +181,8 @@ module CommandChecker
 
       def change
         add_index :users, :email, algorithm: :concurrently
-        remove_index :users, :email, algorithm: :concurrently
+        # For <= ActiveRecord 4.2 need to specify a :column to be reversible
+        remove_index :users, column: :email, algorithm: :concurrently
       end
     end
 

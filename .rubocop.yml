@@ -56,6 +56,10 @@ Style/GlobalVars:
   Exclude:
     - test/**/*
 
+# we can not use new syntax for older rubies
+Lint/ErbNewArguments:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 

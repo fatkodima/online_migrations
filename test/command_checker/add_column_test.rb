@@ -127,9 +127,15 @@ module CommandChecker
     end
 
     class AddColumnDefaultSafe < TestMigration
-      def change
+      def up
         add_column :users, :admin, :boolean
-        change_column_default :users, :admin, from: nil, to: false
+        # ActiveRecord <= 4.2 does not support reversible change_column_default,
+        # so needs to split to up/down methods
+        change_column_default :users, :admin, false
+      end
+
+      def down
+        remove_column :users, :admin
       end
     end
 

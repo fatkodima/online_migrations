@@ -669,13 +669,21 @@ module OnlineMigrations
       __ensure_not_in_transaction! if algorithm == :concurrently
 
       column_names = __index_column_names(column_name || options[:column])
+      index_name = options[:name]
+      index_name ||= index_name(table_name, column_names)
 
       if index_exists?(table_name, column_name, **options)
         disable_statement_timeout do
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
-          super(table_name, **options.merge(column: column_names))
+
+          # ActiveRecord <= 4.2 does not support removing indexes concurrently
+          if Utils.ar_version <= 4.2 && algorithm == :concurrently
+            execute("DROP INDEX CONCURRENTLY #{quote_table_name(index_name)}")
+          else
+            super(table_name, **options.merge(column: column_names))
+          end
         end
       else
         Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration "\
@@ -786,6 +794,19 @@ module OnlineMigrations
       end
     end
 
+    if Utils.ar_version <= 4.2
+      # @private
+      def views
+        select_values(<<-SQL, "SCHEMA")
+          SELECT c.relname
+          FROM pg_class c
+          LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE c.relkind IN ('v','m') -- (v)iew, (m)aterialized view
+          AND n.nspname = ANY (current_schemas(false))
+        SQL
+      end
+    end
+
     # Disables statement timeout while executing &block
     #
     # Long-running migrations may take more than the timeout allowed by the database.
@@ -874,13 +895,16 @@ module OnlineMigrations
       end
 
       def __index_valid?(index_name)
-        select_value <<~SQL
+        # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
+        valid = select_value <<~SQL
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c
             ON i.indexrelid = c.oid
           WHERE c.relname = #{quote(index_name)}
         SQL
+
+        Utils.to_bool(valid)
       end
 
       def __column_for(table_name, column_name)
@@ -931,6 +955,12 @@ module OnlineMigrations
         "fk_rails_#{hashed_identifier}"
       end
 
+      if Utils.ar_version <= 4.2
+        def foreign_key_for(from_table, **options)
+          foreign_keys(from_table).detect { |fk| fk.defined_for?(**options) }
+        end
+      end
+
       def __foreign_key_for!(from_table, **options)
         foreign_key_for(from_table, **options) ||
           raise(ArgumentError, "Table '#{from_table}' has no foreign key for #{options[:to_table] || options}")
@@ -939,13 +969,15 @@ module OnlineMigrations
       def __constraint_validated?(table_name, name, type:)
         contype = type == :check ? "c" : "f"
 
-        select_value(<<~SQL)
+        validated = select_value(<<~SQL)
           SELECT convalidated
           FROM pg_catalog.pg_constraint con
           WHERE con.conrelid = #{quote(table_name)}::regclass
             AND con.conname = #{quote(name)}
             AND con.contype = '#{contype}'
         SQL
+
+        Utils.to_bool(validated)
       end
 
       def __check_constraint_name!(table_name, expression: nil, **options)

@@ -81,13 +81,16 @@ module SchemaStatements
 
     private
       def index_valid?(index_name)
-        @connection.select_value <<~SQL
+        # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
+        valid = @connection.select_value <<~SQL
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c
             ON i.indexrelid = c.oid
           WHERE c.relname = #{@connection.quote(index_name)}
         SQL
+
+        OnlineMigrations::Utils.to_bool(valid)
       end
   end
 end
