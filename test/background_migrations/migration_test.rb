@@ -165,6 +165,29 @@ module BackgroundMigrations
       assert_equal [user3.id, user3.id], m.next_batch_range
     end
 
+    def test_mark_as_succeeded_when_not_all_jobs_succeeded
+      2.times { User.create! }
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+      job = run_migration_job(m)
+      assert job.succeeded?
+      job.update_column(:status, :failed) # bypass status validation
+
+      run_migration_job(m)
+
+      assert_raises(ActiveRecord::RecordInvalid, /all migration jobs must be succeeded/) do
+        m.succeeded!
+      end
+    end
+
+    def test_mark_as_succeeded_when_all_jobs_succeeded
+      2.times { User.create! }
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+      2.times { run_migration_job(m) }
+
+      m.succeeded!
+      assert m.succeeded?
+    end
+
     private
       def create_migration(attributes = {})
         migration = build_migration(attributes)

@@ -35,6 +35,8 @@ module OnlineMigrations
         SQL
       end
 
+      scope :except_succeeded, -> { where("status != ?", statuses[:succeeded]) }
+
       enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
 
       delegate :migration_class, :migration_object, :migration_relation, :batch_column_name,

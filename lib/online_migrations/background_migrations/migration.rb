@@ -36,6 +36,7 @@ module OnlineMigrations
 
       validate :validate_batch_column_values
       validate :validate_batch_sizes
+      validate :validate_jobs_status, if: -> { status_changed? && succeeded? }
 
       validates_with MigrationStatusValidator, on: :update
 
@@ -161,6 +162,12 @@ module OnlineMigrations
         def validate_batch_sizes
           if sub_batch_size.to_i > batch_size.to_i
             errors.add(:base, "sub_batch_size should be smaller than or equal to batch_size")
+          end
+        end
+
+        def validate_jobs_status
+          if migration_jobs.except_succeeded.exists?
+            errors.add(:base, "all migration jobs must be succeeded")
           end
         end
 
