@@ -28,7 +28,18 @@ module OnlineMigrations
       command_checker.safety_assured(&block)
     end
 
-    def stop!(message, header: "Dangerous operation detected")
+    # Stop running migrations.
+    #
+    # It is intended for use in custom checks.
+    #
+    # @example
+    #   OnlineMigrations.config.add_check do |method, args|
+    #     if method == :add_column && args[0].to_s == "users"
+    #       stop!("No more columns on the users table")
+    #     end
+    #   end
+    #
+    def stop!(message, header: "Custom check")
       raise OnlineMigrations::UnsafeMigration, "⚠️  [online_migrations] #{header} ⚠️\n\n#{message}\n\n"
     end
 

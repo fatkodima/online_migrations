@@ -71,11 +71,20 @@ module OnlineMigrations
     #
     attr_accessor :column_renames
 
+    # Returns a list of custom checks
+    #
+    # Use `add_check` to add custom checks
+    #
+    # @return [Array<Array<Hash>, Proc>]
+    #
+    attr_reader :checks
+
     def initialize
       @table_renames = {}
       @column_renames = {}
       @error_messages = ERROR_MESSAGES
       @lock_timeout_limit = 10.seconds
+      @checks = []
       @start_after = 0
       @small_tables = []
       @check_down = false
@@ -83,6 +92,29 @@ module OnlineMigrations
 
     def small_tables=(table_names)
       @small_tables = table_names.map(&:to_s)
+    end
+
+    # Adds custom check
+    #
+    # @param start_after [Integer] migration version from which this check will be performed
+    #
+    # @yield [method, args] a block to be called with custom check
+    # @yieldparam method [Symbol] method name
+    # @yieldparam args [Array] method arguments
+    #
+    # @return [void]
+    #
+    # Use `stop!` method to stop the migration
+    #
+    # @example
+    #   OnlineMigrations.config.add_check do |method, args|
+    #     if method == :add_column && args[0].to_s == "users"
+    #       stop!("No more columns on the users table")
+    #     end
+    #   end
+    #
+    def add_check(start_after: nil, &block)
+      @checks << [{ start_after: start_after }, block]
     end
   end
 end

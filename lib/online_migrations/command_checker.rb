@@ -31,6 +31,8 @@ module OnlineMigrations
       unless safe?
         do_check(command, *args, &block)
 
+        run_custom_checks(command, args)
+
         if @foreign_key_tables.count { |t| !new_table?(t) } > 1
           raise_error :multiple_foreign_keys
         end
@@ -492,7 +494,7 @@ module OnlineMigrations
         @migration.connection
       end
 
-      def raise_error(message_key, **vars)
+      def raise_error(message_key, header: nil, **vars)
         template = OnlineMigrations.config.error_messages.fetch(message_key)
 
         vars[:migration_name] = @migration.name
@@ -501,7 +503,7 @@ module OnlineMigrations
 
         message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
 
-        @migration.stop!(message)
+        @migration.stop!(message, header: header || "Dangerous operation detected")
       end
 
       def command_str(command, *args)
@@ -562,6 +564,14 @@ module OnlineMigrations
       # From ActiveRecord
       def derive_join_table_name(table1, table2)
         [table1.to_s, table2.to_s].sort.join("\0").gsub(/^(.*_)(.+)\0\1(.+)/, '\1\2_\3').tr("\0", "_")
+      end
+
+      def run_custom_checks(method, args)
+        OnlineMigrations.config.checks.each do |options, check|
+          if !options[:start_after] || version > options[:start_after]
+            @migration.instance_exec(method, args, &check)
+          end
+        end
       end
   end
 end

@@ -47,6 +47,8 @@ Potentially dangerous operations:
 - [hash indexes](#hash-indexes)
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
 
+You can also add [custom checks](#custom-checks).
+
 ### Removing a column
 
 #### Bad
@@ -790,6 +792,24 @@ end
 ```
 
 **Note**: Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/config.rb) for the list of all available configuration options.
+
+### Custom checks
+
+Add your own custom checks with:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.add_check do |method, args|
+  if method == :add_column && args[0].to_s == "users"
+    stop!("No more columns on the users table")
+  end
+end
+```
+
+Use the `stop!` method to stop migrations.
+
+**Note**: Since `remove_column`, `execute` and `change_table` always require a `safety_assured` block, it's not possible to add a custom check for these operations.
 
 ### Down Migrations / Rollbacks
 
