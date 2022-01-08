@@ -46,6 +46,35 @@ module BackgroundMigrations
       assert job.finished_at.present?
     end
 
+    def test_active_support_instrumentation
+      2.times { User.create! }
+      job = create_migration_job(migration_name: "FailingBatch", batch_size: 1, sub_batch_size: 1)
+
+      process_batch_called = 0
+      ActiveSupport::Notifications.subscribe("process_batch.background_migrations") do |*, payload|
+        process_batch_called += 1
+        assert_kind_of OnlineMigrations::BackgroundMigrations::MigrationJob, payload[:background_migration_job]
+      end
+
+      retry_called = 0
+      ActiveSupport::Notifications.subscribe("retried.background_migrations") do |*, payload|
+        retry_called += 1
+        assert_kind_of OnlineMigrations::BackgroundMigrations::MigrationJob, payload[:background_migration_job]
+      end
+
+      run_migration_job(job)
+      assert_equal 0, retry_called
+      assert_equal 1, process_batch_called
+
+      # retry failing job
+      run_migration_job(job)
+      assert_equal 1, retry_called
+      assert_equal 2, process_batch_called
+    ensure
+      ActiveSupport::Notifications.unsubscribe("process_batch.background_migrations")
+      ActiveSupport::Notifications.unsubscribe("retried.background_migrations")
+    end
+
     private
       def create_migration_job(migration_attributes)
         m = OnlineMigrations::BackgroundMigrations::Migration.create!(migration_attributes)

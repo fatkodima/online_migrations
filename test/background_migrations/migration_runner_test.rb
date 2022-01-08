@@ -104,6 +104,33 @@ module BackgroundMigrations
       assert m.running?
     end
 
+    def test_active_support_migration_instrumentation
+      _user = User.create!
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+
+      start_called = false
+      ActiveSupport::Notifications.subscribe("started.background_migrations") do |*, payload|
+        start_called = true
+        assert_equal m, payload[:background_migration]
+      end
+
+      complete_called = false
+      ActiveSupport::Notifications.subscribe("completed.background_migrations") do |*, payload|
+        complete_called = true
+        assert_equal m, payload[:background_migration]
+      end
+
+      run_migration_job(m)
+      assert start_called
+      assert_not complete_called
+
+      run_migration_job(m)
+      assert complete_called
+    ensure
+      ActiveSupport::Notifications.unsubscribe("started.background_migrations")
+      ActiveSupport::Notifications.unsubscribe("completed.background_migrations")
+    end
+
     def test_run_all_migration_jobs
       4.times { User.create! }
       m = create_migration(batch_size: 2, sub_batch_size: 2)

@@ -32,6 +32,7 @@ GEM
       tzinfo (~> 2.0)
     ast (2.4.2)
     builder (3.2.4)
+    byebug (11.1.3)
     concurrent-ruby (1.1.9)
     crass (1.0.6)
     erubi (1.10.0)
@@ -93,6 +94,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord
+  byebug
   minitest (~> 5.0)
   online_migrations!
   pg (~> 1.2)

@@ -13,6 +13,11 @@ module OnlineMigrations
       # Runs one background migration job.
       def run_migration_job
         migration.running! if migration.enqueued?
+        migration_payload = { background_migration: migration }
+
+        if !migration.migration_jobs.exists?
+          ActiveSupport::Notifications.instrument("started.background_migrations", migration_payload)
+        end
 
         next_migration_job = find_or_create_next_migration_job
 
@@ -25,6 +30,8 @@ module OnlineMigrations
           else
             migration.succeeded!
           end
+
+          ActiveSupport::Notifications.instrument("completed.background_migrations", migration_payload)
         end
 
         next_migration_job

@@ -14,6 +14,11 @@ module OnlineMigrations
       end
 
       def run
+        job_payload = { background_migration_job: migration_job }
+        if migration_job.attempts >= 1
+          ActiveSupport::Notifications.instrument("retried.background_migrations", job_payload)
+        end
+
         migration_job.update!(
           attempts: attempts + 1,
           status: :running,
@@ -21,7 +26,9 @@ module OnlineMigrations
           finished_at: nil
         )
 
-        run_batch
+        ActiveSupport::Notifications.instrument("process_batch.background_migrations", job_payload) do
+          run_batch
+        end
 
         migration_job.update!(status: :succeeded, finished_at: Time.current)
       rescue Exception # rubocop:disable Lint/RescueException
