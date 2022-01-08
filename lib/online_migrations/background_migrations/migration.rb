@@ -3,6 +3,15 @@
 module OnlineMigrations
   module BackgroundMigrations
     class Migration < ActiveRecord::Base
+      STATUSES = [
+        :enqueued,    # The migration has been enqueued by the user.
+        :running,     # The migration is being performed by a migration executor.
+        :paused,      # The migration was paused in the middle of the run by the user.
+        :finishing,   # The migration is being manually finishing inline by the user.
+        :failed,      # The migration raises an exception when running.
+        :succeeded,   # The migration finished without error.
+      ]
+
       self.table_name = :background_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
@@ -12,7 +21,7 @@ module OnlineMigrations
         for_migration_name(migration_name).where("arguments = ?", arguments.to_json)
       end
 
-      enum status: { enqueued: 0, running: 1, paused: 2, finishing: 3, failed: 4, succeeded: 5 }
+      enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
 
       has_many :migration_jobs
 

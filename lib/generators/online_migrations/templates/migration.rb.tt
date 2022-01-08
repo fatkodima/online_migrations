@@ -12,7 +12,7 @@ class InstallOnlineMigrations < <%= migration_parent %>
       t.integer :batch_pause, null: false
       t.integer :sub_batch_pause_ms, null: false
       t.integer :batch_max_attempts, null: false
-      t.integer :status, default: 0, null: false # enqueued
+      t.string :status, default: "enqueued", null: false
       t.timestamps null: false
 
       t.index [:migration_name, :arguments],
@@ -28,7 +28,7 @@ class InstallOnlineMigrations < <%= migration_parent %>
       t.integer :pause_ms, null: false
       t.datetime :started_at
       t.datetime :finished_at
-      t.integer :status, default: 0, null: false # enqueued
+      t.string :status, default: "enqueued", null: false
       t.integer :max_attempts, null: false
       t.integer :attempts, default: 0, null: false
       t.timestamps null: false

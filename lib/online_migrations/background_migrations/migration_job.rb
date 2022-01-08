@@ -3,6 +3,13 @@
 module OnlineMigrations
   module BackgroundMigrations
     class MigrationJob < ActiveRecord::Base
+      STATUSES = [
+        :enqueued,
+        :running,
+        :failed,
+        :succeeded,
+      ]
+
       self.table_name = :background_migration_jobs
 
       # For ActiveRecord <= 4.2 needs to fully specify enum values
@@ -28,7 +35,7 @@ module OnlineMigrations
         SQL
       end
 
-      enum status: { enqueued: 0, running: 1, failed: 2, succeeded: 3 }
+      enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
 
       delegate :migration_class, :migration_object, :migration_relation, :batch_column_name,
         :arguments, :batch_pause, to: :migration

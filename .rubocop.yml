@@ -33,6 +33,9 @@ Style/MissingRespondToMissing:
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: comma
 
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
 Style/NumericPredicate:
   Enabled: false
 
