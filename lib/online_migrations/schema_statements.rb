@@ -695,7 +695,23 @@ module OnlineMigrations
 
         Utils.say(message)
       else
-        super
+        # ActiveRecord >= 5.2 supports adding non-validated foreign keys natively
+        options = options.dup
+        options[:column] ||= "#{to_table.to_s.singularize}_id"
+        options[:primary_key] ||= "id"
+        options[:name] ||= __foreign_key_name(to_table, options[:column])
+
+        query = +<<~SQL
+          ALTER TABLE #{from_table}
+          ADD CONSTRAINT #{options[:name]}
+          FOREIGN KEY (#{options[:column]})
+          REFERENCES #{to_table} (#{options[:primary_key]})
+        SQL
+        query << "#{__action_sql('DELETE', options[:on_delete])}\n" if options[:on_delete].present?
+        query << "#{__action_sql('UPDATE', options[:on_update])}\n" if options[:on_update].present?
+        query << "NOT VALID\n" if !validate
+
+        execute(query.squish)
       end
     end
 
@@ -874,6 +890,19 @@ module OnlineMigrations
           raise("No such column: #{table_name}.#{column_name}")
       end
 
+      def __action_sql(action, dependency)
+        case dependency
+        when :nullify then "ON #{action} SET NULL"
+        when :cascade  then "ON #{action} CASCADE"
+        when :restrict then "ON #{action} RESTRICT"
+        else
+          raise ArgumentError, <<~MSG
+            '#{dependency}' is not supported for :on_update or :on_delete.
+            Supported values are: :nullify, :cascade, :restrict
+          MSG
+        end
+      end
+
       def __copy_foreign_key(fk, to_column, **options)
         fkey_options = {
           column: to_column,
@@ -893,6 +922,13 @@ module OnlineMigrations
         if !fk.respond_to?(:validated?) || fk.validated?
           validate_foreign_key(fk.from_table, fk.to_table, column: to_column, **options)
         end
+      end
+
+      def __foreign_key_name(table_name, column_name)
+        identifier = "#{table_name}_#{column_name}_fk"
+        hashed_identifier = Digest::SHA256.hexdigest(identifier).first(10)
+
+        "fk_rails_#{hashed_identifier}"
       end
 
       def __foreign_key_for!(from_table, **options)

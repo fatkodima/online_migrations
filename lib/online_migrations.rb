@@ -9,6 +9,7 @@ require "online_migrations/batch_iterator"
 require "online_migrations/migration"
 require "online_migrations/migrator"
 require "online_migrations/database_tasks"
+require "online_migrations/foreign_key_definition"
 require "online_migrations/foreign_keys_collector"
 require "online_migrations/indexes_collector"
 require "online_migrations/command_checker"
@@ -44,6 +45,10 @@ module OnlineMigrations
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
+
+      if OnlineMigrations::Utils.ar_version <= 5.1
+        ActiveRecord::ConnectionAdapters::ForeignKeyDefinition.prepend(OnlineMigrations::ForeignKeyDefinition)
+      end
     end
   end
 end
