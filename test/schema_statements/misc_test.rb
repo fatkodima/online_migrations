@@ -4,10 +4,14 @@ require "test_helper"
 
 module SchemaStatements
   class MiscTest < MiniTest::Test
+    class User < ActiveRecord::Base
+    end
+
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade) do |t|
         t.text :name
+        t.string :status
         t.string :name_for_type_change
         t.boolean :admin
       end
@@ -23,6 +27,20 @@ module SchemaStatements
 
       assert_equal :string, column_for(:users, :name).type
       assert_equal :text, column_for(:users, :name_for_type_change).type
+    end
+
+    def test_backfill_column_in_background
+      m = @connection.backfill_column_in_background(:users, :admin, false, model_name: User)
+
+      assert_equal "BackfillColumn", m.migration_name
+      assert_equal ["users", { "admin" => false }, "SchemaStatements::MiscTest::User"], m.arguments
+    end
+
+    def test_backfill_columns_in_background
+      m = @connection.backfill_columns_in_background(:users, { admin: false, status: "active" }, model_name: User)
+
+      assert_equal "BackfillColumn", m.migration_name
+      assert_equal ["users", { "admin" => false, "status" => "active" }, "SchemaStatements::MiscTest::User"], m.arguments
     end
 
     def test_enqueue_background_migration

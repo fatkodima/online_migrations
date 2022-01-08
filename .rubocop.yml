@@ -69,6 +69,9 @@ Style/WhileUntilModifier:
 Lint/ErbNewArguments:
   Enabled: false
 
+Lint/MissingSuper:
+  Enabled: false
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 

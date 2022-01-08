@@ -48,6 +48,8 @@ module OnlineMigrations
     # @note This method should not be run within a transaction
     # @note Consider `update_columns_in_batches` when updating multiple columns
     #   to avoid rewriting the table multiple times.
+    # @note For extra large tables (100s of millions of records)
+    #   you may consider using `backfill_column_in_background`.
     #
     def update_column_in_batches(table_name, column_name, value, **options, &block)
       update_columns_in_batches(table_name, [[column_name, value]], **options, &block)

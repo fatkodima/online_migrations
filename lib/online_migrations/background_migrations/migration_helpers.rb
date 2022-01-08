@@ -3,6 +3,56 @@
 module OnlineMigrations
   module BackgroundMigrations
     module MigrationHelpers
+      # Backfills column data using background migrations.
+      #
+      # @param table_name [String, Symbol]
+      # @param column_name [String, Symbol]
+      # @param value
+      # @param model_name [String] If Active Record multiple databases feature is used,
+      #     the class name of the model to get connection from.
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [MigrationHelpers::BackgroundMigrations::Migration]
+      #
+      # @example
+      #   backfill_column_in_background(:users, :admin, false)
+      #
+      # @example Additional background migration options
+      #   backfill_column_in_background(:users, :admin, false, batch_size: 10_000)
+      #
+      # @note This method is better suited for extra large tables (100s of millions of records).
+      #     For smaller tables it is probably better and easier to use more flexible `update_column_in_batches`.
+      #
+      # @note Consider `backfill_columns_in_background` when backfilling multiple columns
+      #   to avoid rewriting the table multiple times.
+      #
+      def backfill_column_in_background(table_name, column_name, value, model_name: nil, **options)
+        backfill_columns_in_background(table_name, { column_name => value },
+                                       model_name: model_name, **options)
+      end
+
+      # Same as `backfill_column_in_background` but for multiple columns.
+      #
+      # @param updates [Hash] keys - column names, values - corresponding values
+      #
+      # @example
+      #   backfill_columns_in_background(:users, { admin: false, status: "active" })
+      #
+      # @see #backfill_column_in_background
+      #
+      def backfill_columns_in_background(table_name, updates, model_name: nil, **options)
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "BackfillColumn",
+          table_name,
+          updates,
+          model_name,
+          **options
+        )
+      end
+
       # Creates a background migration for the given job class name.
       #
       # A background migration runs one job at a time, computing the bounds of the next batch
