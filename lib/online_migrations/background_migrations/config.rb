@@ -61,6 +61,19 @@ module OnlineMigrations
       #
       attr_accessor :backtrace_cleaner
 
+      # The callback to perform when an error occurs in the migration job.
+      #
+      # @example
+      #   OnlineMigrations.config.backround_migrations.error_handler = ->(error, errored_job) do
+      #     Bugsnag.notify(error) do |notification|
+      #       notification.add_metadata(:background_migration, { name: errored_job.migration_name })
+      #     end
+      #   end
+      #
+      # @return [Proc] the callback to perform when an error occurs in the migration job
+      #
+      attr_accessor :error_handler
+
       def initialize
         @migrations_module = "OnlineMigrations::BackgroundMigrations"
         @batch_size = 20_000
@@ -70,6 +83,7 @@ module OnlineMigrations
         @batch_max_attempts = 5
         @throttler = -> { false }
         @stuck_jobs_timeout = 1.hour
+        @error_handler = ->(error, errored_job) {}
       end
 
       def throttler=(value)

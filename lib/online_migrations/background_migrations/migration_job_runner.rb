@@ -44,6 +44,8 @@ module OnlineMigrations
           error_message: e.message,
           backtrace: backtrace_cleaner ? backtrace_cleaner.clean(e.backtrace) : e.backtrace
         )
+
+        ::OnlineMigrations.config.background_migrations.error_handler.call(e, migration_job)
       end
 
       private

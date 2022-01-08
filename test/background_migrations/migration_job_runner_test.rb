@@ -49,6 +49,27 @@ module BackgroundMigrations
       assert_not job.backtrace.empty?
     end
 
+    def test_run_calls_error_handler_when_failed
+      _user = User.create!
+      job = create_migration_job(migration_name: "EachBatchFails")
+
+      previous_error_handler = OnlineMigrations.config.background_migrations.error_handler
+
+      handled_error = nil
+      handled_job = nil
+      OnlineMigrations.config.background_migrations.error_handler = ->(error, errored_job) do
+        handled_error = error
+        handled_job = errored_job
+      end
+
+      run_migration_job(job)
+
+      assert_equal RuntimeError, handled_error.class
+      assert_equal job, handled_job
+    ensure
+      OnlineMigrations.config.background_migrations.error_handler = previous_error_handler
+    end
+
     def test_active_support_instrumentation
       2.times { User.create! }
       job = create_migration_job(migration_name: "FailingBatch", batch_size: 1, sub_batch_size: 1)
