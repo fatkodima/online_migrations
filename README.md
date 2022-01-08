@@ -837,6 +837,16 @@ config.target_version = 10 # or "12.9" etc
 
 For safety, this option only affects development and test environments. In other environments, the actual server version is always used.
 
+### Small Tables
+
+Most projects have tables that are known to be small in size. These are usually "settings", "prices", "plans" etc. It is considered safe to perform most of the dangerous operations on them, like adding indexes, columns etc.
+
+To mark tables as small:
+
+```ruby
+config.small_tables = [:settings, :prices]
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

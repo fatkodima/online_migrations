@@ -44,6 +44,16 @@ module OnlineMigrations
     #
     attr_accessor :lock_timeout_limit
 
+    # List of tables with permanently small number of records
+    #
+    # These are usually tables like "settings", "prices", "plans" etc.
+    # It is considered safe to perform most of the dangerous operations on them,
+    #   like adding indexes, columns etc.
+    #
+    # @return [Array<String, Symbol>]
+    #
+    attr_reader :small_tables
+
     # Tables that are in the process of being renamed
     #
     # @return [Hash] Keys are old table names, values - new table names
@@ -67,7 +77,12 @@ module OnlineMigrations
       @error_messages = ERROR_MESSAGES
       @lock_timeout_limit = 10.seconds
       @start_after = 0
+      @small_tables = []
       @check_down = false
+    end
+
+    def small_tables=(table_names)
+      @small_tables = table_names.map(&:to_s)
     end
   end
 end

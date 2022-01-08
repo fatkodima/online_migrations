@@ -47,6 +47,20 @@ class ConfigTest < MiniTest::Test
     end
   end
 
+  class AddIndexToUsers < TestMigration
+    def change
+      add_index :users, :name
+    end
+  end
+
+  def test_small_tables
+    config.small_tables = [:users]
+
+    assert_safe AddIndexToUsers
+  ensure
+    config.small_tables.clear
+  end
+
   class CheckDownMigration < TestMigration
     disable_ddl_transaction!
 

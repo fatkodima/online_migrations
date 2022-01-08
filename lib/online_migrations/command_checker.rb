@@ -142,7 +142,7 @@ module OnlineMigrations
 
       def add_column(table_name, column_name, type, **options)
         volatile_default = false
-        if !new_table?(table_name) && !options[:default].nil? &&
+        if !new_or_small_table?(table_name) && !options[:default].nil? &&
            (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, options[:default])))
 
           raise_error :add_column_with_default,
@@ -234,7 +234,7 @@ module OnlineMigrations
       end
 
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
-        if !allow_null && !new_table?(table_name)
+        if !allow_null && !new_or_small_table?(table_name)
           safe = false
           # In PostgreSQL 12+ you can add a check constraint to the table
           # and then "promote" it to NOT NULL for the column.
@@ -300,7 +300,7 @@ module OnlineMigrations
 
       def add_timestamps(table_name, **options)
         volatile_default = false
-        if !new_table?(table_name) && !options[:default].nil? &&
+        if !new_or_small_table?(table_name) && !options[:default].nil? &&
            (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, :datetime, options[:default])))
 
           raise_error :add_timestamps_with_default,
@@ -333,7 +333,7 @@ module OnlineMigrations
                                (!foreign_key.key?(:validate) || foreign_key[:validate] == true)
         bad_foreign_key = foreign_key && validate_foreign_key
 
-        if !new_table?(table_name) && (bad_index || bad_foreign_key)
+        if !new_or_small_table?(table_name) && (bad_index || bad_foreign_key)
           raise_error :add_reference,
             code: command_str(:add_reference_concurrently, table_name, ref_name, **options),
             bad_index: bad_index,
@@ -345,7 +345,7 @@ module OnlineMigrations
       def add_index(table_name, column_name, **options)
         if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
           raise_error :add_hash_index
-        elsif options[:algorithm] != :concurrently && !new_table?(table_name)
+        elsif options[:algorithm] != :concurrently && !new_or_small_table?(table_name)
           raise_error :add_index,
             command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
         end
@@ -354,14 +354,14 @@ module OnlineMigrations
       def remove_index(table_name, column_name = nil, **options)
         options[:column] ||= column_name
 
-        if options[:algorithm] != :concurrently && !new_table?(table_name)
+        if options[:algorithm] != :concurrently && !new_or_small_table?(table_name)
           raise_error :remove_index,
             command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
         end
       end
 
       def add_foreign_key(from_table, to_table, **options)
-        if !new_table?(from_table)
+        if !new_or_small_table?(from_table)
           validate = options.fetch(:validate, true)
 
           if validate
@@ -381,7 +381,7 @@ module OnlineMigrations
       end
 
       def add_check_constraint(table_name, expression, **options)
-        if !new_table?(table_name) && options[:validate] != false
+        if !new_or_small_table?(table_name) && options[:validate] != false
           name = options[:name] || check_constraint_name(table_name, expression)
 
           raise_error :add_check_constraint,
@@ -434,6 +434,13 @@ module OnlineMigrations
         collector = IndexesCollector.new
         collector.collect(&block)
         collector.indexes
+      end
+
+      def new_or_small_table?(table_name)
+        small_tables = OnlineMigrations.config.small_tables
+
+        new_table?(table_name) ||
+          small_tables.include?(table_name.to_s)
       end
 
       def new_table?(table_name)
