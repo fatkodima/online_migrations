@@ -37,6 +37,8 @@ module OnlineMigrations
       validate :validate_batch_column_values
       validate :validate_batch_sizes
 
+      validates_with MigrationStatusValidator, on: :update
+
       before_validation :set_defaults
 
       # @private

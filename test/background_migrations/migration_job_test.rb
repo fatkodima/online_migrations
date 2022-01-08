@@ -33,6 +33,18 @@ module BackgroundMigrations
       assert_includes j.errors.full_messages, "min_value and max_value should be in background migration values range"
     end
 
+    def test_status_transitions
+      m = create_migration(min_value: 1, max_value: 10)
+      j = m.migration_jobs.create!(min_value: 1, max_value: 10, status: :enqueued)
+
+      j.status = :succeeded
+      assert_not j.valid?
+      assert_includes j.errors.full_messages, "Status cannot transition background migration job from status enqueued to succeeded"
+
+      j.status = :running
+      assert j.valid?
+    end
+
     def test_copies_settings_from_background_migration
       m = create_migration(min_value: 1, max_value: 100, batch_size: 10, sub_batch_size: 5, sub_batch_pause_ms: 20, batch_max_attempts: 2)
       j = m.migration_jobs.create!(min_value: 1, max_value: 10)

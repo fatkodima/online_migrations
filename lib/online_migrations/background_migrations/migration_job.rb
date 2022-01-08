@@ -49,6 +49,8 @@ module OnlineMigrations
       validate :values_in_migration_range, if: :min_value?
       validate :validate_values_order, if: :min_value?
 
+      validates_with MigrationJobStatusValidator, on: :update
+
       before_create :copy_settings_from_migration
 
       # Mark this job as ready to be processed again.

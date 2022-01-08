@@ -39,6 +39,17 @@ module BackgroundMigrations
       assert_includes m.errors.full_messages, "sub_batch_size should be smaller than or equal to batch_size"
     end
 
+    def test_status_transitions
+      m = create_migration(status: :enqueued)
+
+      m.status = :succeeded
+      assert_not m.valid?
+      assert_includes m.errors.full_messages, "Status cannot transition background migration from status enqueued to succeeded"
+
+      m.status = :running
+      assert m.valid?
+    end
+
     def test_sets_defaults
       user1 = User.create!
       user2 = User.create!
