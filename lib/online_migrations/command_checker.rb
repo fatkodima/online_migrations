@@ -495,6 +495,8 @@ module OnlineMigrations
       end
 
       def raise_error(message_key, header: nil, **vars)
+        return if !OnlineMigrations.config.check_enabled?(message_key, version: version)
+
         template = OnlineMigrations.config.error_messages.fetch(message_key)
 
         vars[:migration_name] = @migration.name

@@ -79,6 +79,15 @@ module OnlineMigrations
     #
     attr_reader :checks
 
+    # Returns a list of enabled checks
+    #
+    # All checks are enabled by default. To disable/enable a check use `disable_check`/`enable_check`.
+    # For the list of available checks look at `lib/error_messages` folder.
+    #
+    # @return [Array]
+    #
+    attr_reader :enabled_checks
+
     def initialize
       @table_renames = {}
       @column_renames = {}
@@ -88,10 +97,51 @@ module OnlineMigrations
       @start_after = 0
       @small_tables = []
       @check_down = false
+      @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
     end
 
     def small_tables=(table_names)
       @small_tables = table_names.map(&:to_s)
+    end
+
+    # Enables specific check
+    #
+    # For the list of available checks look at `lib/error_messages` module.
+    #
+    # @param name [Symbol] check name
+    # @param start_after [Integer] migration version from which this check will be performed
+    # @return [void]
+    #
+    def enable_check(name, start_after: nil)
+      enabled_checks[name] = { start_after: start_after }
+    end
+
+    # Disables specific check
+    #
+    # For the list of available checks look at `lib/error_messages` module.
+    #
+    # @param name [Symbol] check name
+    # @return [void]
+    #
+    def disable_check(name)
+      enabled_checks.delete(name)
+    end
+
+    # Test whether specific check is enabled
+    #
+    # For the list of available checks look at `lib/error_messages` module.
+    #
+    # @param name [Symbol] check name
+    # @param version [Integer] migration version
+    # @return [void]
+    #
+    def check_enabled?(name, version: nil)
+      if enabled_checks[name]
+        start_after = enabled_checks[name][:start_after] || OnlineMigrations.config.start_after
+        !version || version > start_after
+      else
+        false
+      end
     end
 
     # Adds custom check

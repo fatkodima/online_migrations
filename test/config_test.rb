@@ -47,6 +47,28 @@ class ConfigTest < MiniTest::Test
     end
   end
 
+  def test_disable_check
+    config.disable_check(:remove_column)
+    assert_safe RemoveNameFromUsers
+  ensure
+    config.enable_check(:remove_column)
+  end
+
+  def test_enable_check
+    config.disable_check(:remove_column)
+    config.enable_check(:remove_column)
+    assert_unsafe RemoveNameFromUsers
+  ensure
+    config.enable_check(:remove_column)
+  end
+
+  def test_enable_check_start_after
+    config.enable_check(:remove_column, start_after: 20200101000002)
+    assert_safe RemoveNameFromUsers
+  ensure
+    config.enable_check(:remove_column)
+  end
+
   class AddIndexToUsers < TestMigration
     def change
       add_index :users, :name
