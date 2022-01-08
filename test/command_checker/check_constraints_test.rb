@@ -75,6 +75,19 @@ module CommandChecker
       assert_safe AddCheckConstraintNoValidate
     end
 
+    class AddCheckConstraintNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :name
+        end
+        add_check_constraint :users_new, "char_length(name) >= 1", name: "name_length_check", validate: true
+      end
+    end
+
+    def test_add_check_constraint_new_table
+      assert_safe AddCheckConstraintNewTable
+    end
+
     class AddCheckConstraintValidateSameTransaction < TestMigration
       def change
         add_check_constraint :users, "char_length(name) >= 1", name: "name_length_check", validate: false

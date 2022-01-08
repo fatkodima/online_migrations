@@ -101,6 +101,17 @@ module CommandChecker
       MSG
     end
 
+    class RenameTableNewTable < TestMigration
+      def change
+        create_table :clients_new
+        rename_table :clients_new, :users_new
+      end
+    end
+
+    def test_rename_table_new_table
+      assert_safe RenameTableNewTable
+    end
+
     class RenameColumn < TestMigration
       def change
         rename_column :users, :name, :first_name
@@ -163,6 +174,10 @@ module CommandChecker
         end
         rename_column :users_new, :name, :first_name
       end
+    end
+
+    def test_rename_column_new_table
+      assert_safe RenameColumnNewTable
     end
 
     class ExecuteQuery < TestMigration

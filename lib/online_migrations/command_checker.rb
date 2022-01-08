@@ -12,6 +12,7 @@ module OnlineMigrations
     def initialize(migration)
       @migration = migration
       @safe = false
+      @new_tables = []
       @lock_timeout_checked = false
       @foreign_key_tables = Set.new
     end
@@ -30,7 +31,7 @@ module OnlineMigrations
       unless safe?
         do_check(command, *args, &block)
 
-        if @foreign_key_tables.count > 1
+        if @foreign_key_tables.count { |t| !new_table?(t) } > 1
           raise_error :multiple_foreign_keys
         end
       end
@@ -102,7 +103,7 @@ module OnlineMigrations
         end
       end
 
-      def create_table(_table_name, **options, &block)
+      def create_table(table_name, **options, &block)
         raise_error :create_table if options[:force]
 
         # Probably, it would be good idea to also check for foreign keys
@@ -114,9 +115,11 @@ module OnlineMigrations
           collect_foreign_keys(&block)
           check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
         end
+
+        @new_tables << table_name.to_s
       end
 
-      def create_join_table(_table1, _table2, **options, &block)
+      def create_join_table(table1, table2, **options, &block)
         raise_error :create_table if options[:force]
         raise_error :short_primary_key_type if short_primary_key_type?(options)
 
@@ -124,17 +127,22 @@ module OnlineMigrations
           collect_foreign_keys(&block)
           check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
         end
+
+        table_name = options[:table_name] || derive_join_table_name(table1, table2)
+        @new_tables << table_name.to_s
       end
 
       def rename_table(table_name, new_name, **)
-        raise_error :rename_table,
-          table_name: table_name,
-          new_name: new_name
+        if !new_table?(table_name)
+          raise_error :rename_table,
+            table_name: table_name,
+            new_name: new_name
+        end
       end
 
       def add_column(table_name, column_name, type, **options)
         volatile_default = false
-        if !options[:default].nil? &&
+        if !new_table?(table_name) && !options[:default].nil? &&
            (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, options[:default])))
 
           raise_error :add_column_with_default,
@@ -150,16 +158,20 @@ module OnlineMigrations
       end
 
       def rename_column(table_name, column_name, new_column, **)
-        raise_error :rename_column,
-          table_name: table_name,
-          column_name: column_name,
-          new_column: new_column,
-          model: table_name.to_s.classify,
-          partial_writes: Utils.ar_partial_writes?,
-          partial_writes_setting: Utils.ar_partial_writes_setting
+        if !new_table?(table_name)
+          raise_error :rename_column,
+            table_name: table_name,
+            column_name: column_name,
+            new_column: new_column,
+            model: table_name.to_s.classify,
+            partial_writes: Utils.ar_partial_writes?,
+            partial_writes_setting: Utils.ar_partial_writes_setting
+        end
       end
 
       def change_column(table_name, column_name, type, **options)
+        return if new_table?(table_name)
+
         type = type.to_sym
 
         existing_column = connection.columns(table_name).find { |c| c.name == column_name.to_s }
@@ -222,7 +234,7 @@ module OnlineMigrations
       end
 
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
-        if !allow_null
+        if !allow_null && !new_table?(table_name)
           safe = false
           # In PostgreSQL 12+ you can add a check constraint to the table
           # and then "promote" it to NOT NULL for the column.
@@ -272,21 +284,23 @@ module OnlineMigrations
           columns << :"#{reference}_type" if options[:polymorphic]
         end
 
-        indexes = connection.indexes(table_name).select do |index|
-          (index.columns & columns.map(&:to_s)).any?
-        end
+        if !new_table?(table_name)
+          indexes = connection.indexes(table_name).select do |index|
+            (index.columns & columns.map(&:to_s)).any?
+          end
 
-        raise_error :remove_column,
-          model: table_name.to_s.classify,
-          columns: columns.inspect,
-          command: command_str(command, *args),
-          table_name: table_name.inspect,
-          indexes: indexes.map { |i| i.name.to_sym.inspect }
+          raise_error :remove_column,
+            model: table_name.to_s.classify,
+            columns: columns.inspect,
+            command: command_str(command, *args),
+            table_name: table_name.inspect,
+            indexes: indexes.map { |i| i.name.to_sym.inspect }
+        end
       end
 
       def add_timestamps(table_name, **options)
         volatile_default = false
-        if !options[:default].nil? &&
+        if !new_table?(table_name) && !options[:default].nil? &&
            (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, :datetime, options[:default])))
 
           raise_error :add_timestamps_with_default,
@@ -319,7 +333,7 @@ module OnlineMigrations
                                (!foreign_key.key?(:validate) || foreign_key[:validate] == true)
         bad_foreign_key = foreign_key && validate_foreign_key
 
-        if bad_index || bad_foreign_key
+        if !new_table?(table_name) && (bad_index || bad_foreign_key)
           raise_error :add_reference,
             code: command_str(:add_reference_concurrently, table_name, ref_name, **options),
             bad_index: bad_index,
@@ -331,7 +345,7 @@ module OnlineMigrations
       def add_index(table_name, column_name, **options)
         if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
           raise_error :add_hash_index
-        elsif options[:algorithm] != :concurrently
+        elsif options[:algorithm] != :concurrently && !new_table?(table_name)
           raise_error :add_index,
             command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
         end
@@ -340,19 +354,21 @@ module OnlineMigrations
       def remove_index(table_name, column_name = nil, **options)
         options[:column] ||= column_name
 
-        if options[:algorithm] != :concurrently
+        if options[:algorithm] != :concurrently && !new_table?(table_name)
           raise_error :remove_index,
             command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
         end
       end
 
       def add_foreign_key(from_table, to_table, **options)
-        validate = options.fetch(:validate, true)
+        if !new_table?(from_table)
+          validate = options.fetch(:validate, true)
 
-        if validate
-          raise_error :add_foreign_key,
-            add_code: command_str(:add_foreign_key, from_table, to_table, **options.merge(validate: false)),
-            validate_code: command_str(:validate_foreign_key, from_table, to_table)
+          if validate
+            raise_error :add_foreign_key,
+              add_code: command_str(:add_foreign_key, from_table, to_table, **options.merge(validate: false)),
+              validate_code: command_str(:validate_foreign_key, from_table, to_table)
+          end
         end
 
         @foreign_key_tables << to_table.to_s
@@ -365,7 +381,7 @@ module OnlineMigrations
       end
 
       def add_check_constraint(table_name, expression, **options)
-        if options[:validate] != false
+        if !new_table?(table_name) && options[:validate] != false
           name = options[:name] || check_constraint_name(table_name, expression)
 
           raise_error :add_check_constraint,
@@ -418,6 +434,10 @@ module OnlineMigrations
         collector = IndexesCollector.new
         collector.collect(&block)
         collector.indexes
+      end
+
+      def new_table?(table_name)
+        @new_tables.include?(table_name.to_s)
       end
 
       def postgresql_version
@@ -506,6 +526,11 @@ module OnlineMigrations
         SQL
 
         connection.select_all(constraints_query).to_a
+      end
+
+      # From ActiveRecord
+      def derive_join_table_name(table1, table2)
+        [table1.to_s, table2.to_s].sort.join("\0").gsub(/^(.*_)(.+)\0\1(.+)/, '\1\2_\3').tr("\0", "_")
       end
   end
 end

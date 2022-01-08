@@ -50,6 +50,31 @@ module CommandChecker
       assert_safe AddIndexConcurrently
     end
 
+    class AddIndexNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :email
+        end
+
+        add_index :users_new, :email
+      end
+    end
+
+    def test_add_index_new_table
+      assert_safe AddIndexNewTable
+    end
+
+    class AddIndexNewJoinTable < TestMigration
+      def change
+        create_join_table :users, :projects
+        add_index :projects_users, :user_id
+      end
+    end
+
+    def test_add_index_new_join_table
+      assert_safe AddIndexNewJoinTable
+    end
+
     class AddHashIndex < TestMigration
       disable_ddl_transaction!
 
@@ -162,6 +187,20 @@ module CommandChecker
 
     def test_remove_index_concurrently
       assert_safe RemoveIndexConcurrently
+    end
+
+    class RemoveIndexNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :email, index: true
+        end
+
+        remove_index :users_new, column: :email
+      end
+    end
+
+    def test_remove_index_new_table
+      assert_safe RemoveIndexNewTable
     end
   end
 end

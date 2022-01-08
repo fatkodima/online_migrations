@@ -246,6 +246,24 @@ module CommandChecker
       MSG
     end
 
+    class ChangeColumnNewTable < TestMigration
+      def up
+        create_table :files_new do |t|
+          t.integer :cost_per_gb
+        end
+
+        change_column :files_new, :cost_per_gb, :decimal
+      end
+
+      def down
+        drop_table :files_new
+      end
+    end
+
+    def test_change_column_new_table
+      assert_safe ChangeColumnNewTable
+    end
+
     private
       def with_utc_time_zone
         previous = connection.select_value("SHOW TIME ZONE")

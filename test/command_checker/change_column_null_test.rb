@@ -66,6 +66,20 @@ module CommandChecker
       assert_unsafe ChangeColumnNullToFalseDefault, 'update_column_in_batches :users, :name, "Guest"'
     end
 
+    class ChangeColumnNullNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :name
+        end
+
+        change_column_null :users_new, :name, false
+      end
+    end
+
+    def test_change_column_null_new_table
+      assert_safe ChangeColumnNullNewTable
+    end
+
     class ChangeColumnNullConstraint < TestMigration
       def up
         safety_assured do

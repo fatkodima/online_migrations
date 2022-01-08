@@ -59,5 +59,18 @@ module CommandChecker
     def test_add_timestamps_no_default
       assert_safe AddTimestampsNoDefault
     end
+
+    class AddTimestampsDefaultNewTable < TestMigration
+      def change
+        create_table :users_new
+        add_timestamps :users_new, default: 3.days.ago
+      end
+    end
+
+    def test_add_timestamps_default_new_table
+      with_target_version(10) do
+        assert_safe AddTimestampsDefaultNewTable
+      end
+    end
   end
 end

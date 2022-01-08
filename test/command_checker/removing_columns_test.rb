@@ -55,6 +55,19 @@ module CommandChecker
       MSG
     end
 
+    class RemoveColumnNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :email
+        end
+        remove_column :users_new, :email, :string
+      end
+    end
+
+    def test_remove_column_new_table
+      assert_safe RemoveColumnNewTable
+    end
+
     class RemoveColumnWithIndex < TestMigration
       def change
         safety_assured { add_index :users, :email }
@@ -102,6 +115,24 @@ module CommandChecker
       assert_unsafe RemoveColumns, "self.ignored_columns = [:name, :email]"
     end
 
+    class RemoveColumnsNewTable < TestMigration
+      def up
+        create_table :users_new do |t|
+          t.string :name
+          t.string :email
+        end
+        remove_columns :users_new, :name, :email
+      end
+
+      def down
+        drop_table :users_new
+      end
+    end
+
+    def test_remove_columns_new_table
+      assert_safe RemoveColumnsNewTable
+    end
+
     class RemoveColummnsWithIndex < TestMigration
       def change
         safety_assured { add_index :users, :email }
@@ -121,6 +152,20 @@ module CommandChecker
 
     def test_remove_timestamps
       assert_unsafe RemoveTimestamps, "self.ignored_columns = [:created_at, :updated_at]"
+    end
+
+    class RemoveTimestampsNewTable < TestMigration
+      def change
+        create_table :users_new do |t|
+          t.string :name
+          t.timestamps(null: false)
+        end
+        remove_timestamps :users_new
+      end
+    end
+
+    def test_remove_timestamps_new_table
+      assert_safe RemoveTimestampsNewTable
     end
 
     class RemoveTimestampsWithIndex < TestMigration
@@ -152,6 +197,19 @@ module CommandChecker
 
     def test_remove_polymorphic_reference
       assert_unsafe RemovePolymorphicReference, "self.ignored_columns = [:attachable_id, :attachable_type]"
+    end
+
+    class RemoveReferenceNewTable < TestMigration
+      def change
+        create_table :projects_new do |t|
+          t.references :user
+        end
+        remove_reference :projects_new, :user
+      end
+    end
+
+    def test_remove_reference_new_table
+      assert_safe RemoveReferenceNewTable
     end
 
     class RemoveReferenceWithIndex < TestMigration

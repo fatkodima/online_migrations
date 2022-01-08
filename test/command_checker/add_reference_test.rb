@@ -127,6 +127,17 @@ module CommandChecker
       MSG
     end
 
+    class AddReferenceForeignKeyFromNewTable < TestMigration
+      def change
+        create_table :new_projects
+        add_reference :new_projects, :user, index: false, foreign_key: true
+      end
+    end
+
+    def test_add_reference_foreign_key_from_new_table
+      assert_safe AddReferenceForeignKeyFromNewTable
+    end
+
     # add_belongs_to is an alias for add_reference, so it is covered by the latter
     class AddBelongsTo < TestMigration
       def change

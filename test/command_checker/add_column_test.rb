@@ -137,6 +137,17 @@ module CommandChecker
       assert_safe AddColumnDefaultSafe
     end
 
+    class AddColumnDefaultNewTable < TestMigration
+      def change
+        create_table :users_new
+        add_column :users_new, :admin, :boolean, default: false
+      end
+    end
+
+    def test_add_column_default_new_table
+      assert_safe AddColumnDefaultNewTable
+    end
+
     class AddColumnJson < TestMigration
       def change
         add_column :projects, :settings, :json

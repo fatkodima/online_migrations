@@ -64,6 +64,19 @@ module CommandChecker
       assert_safe AddForeignKeyNoValidate
     end
 
+    class AddForeignKeyFromNewTable < TestMigration
+      def change
+        create_table :posts_new do |t|
+          t.integer :user_id
+        end
+        add_foreign_key :posts_new, :users
+      end
+    end
+
+    def test_add_foreign_key_one_new_table
+      assert_safe AddForeignKeyFromNewTable
+    end
+
     class AddForeignKeyValidateSameTransaction < TestMigration
       def change
         add_foreign_key :projects, :users, validate: false
@@ -147,12 +160,27 @@ module CommandChecker
           t.bigint :projects
         end
 
-        add_foreign_key :user_posts, :projects, validate: false # references old table
+        add_foreign_key :user_posts, :projects # references old table
       end
     end
 
     def test_create_multiple_fks
       assert_unsafe MultipleFks, "Adding multiple foreign keys"
+    end
+
+    class MultipleFksAndNewTables < TestMigration
+      def change
+        create_table :parents
+        create_table :childs do |t|
+          t.belongs_to :parent, foreign_key: true # references new table
+        end
+
+        add_foreign_key :projects, :users, validate: false # references old table
+      end
+    end
+
+    def test_multiple_fks_and_new_tables
+      assert_safe MultipleFksAndNewTables
     end
   end
 end
