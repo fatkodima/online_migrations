@@ -1,8 +1,18 @@
 # OnlineMigrations
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/online_migrations`. To experiment with that code, run `bin/console` for an interactive prompt.
+Catch unsafe PostgreSQL migrations in development and run them easier in production.
 
-TODO: Delete this and the text above, and describe your gem
+:white_check_mark: Detects potentially dangerous operations\
+:white_check_mark: Prevents them from running by default\
+:white_check_mark: Provides instructions and helpers on safer ways to do what you want
+
+**Note**: You probably don't need this gem for smaller projects, as operations that are unsafe at scale can be perfectly safe on smaller, low-traffic tables.
+
+## Requirements
+
+- Ruby 2.1+
+- Rails 4.2+
+- PostgreSQL 9.6+
 
 ## Installation
 
@@ -12,17 +22,94 @@ Add this line to your application's Gemfile:
 gem 'online_migrations'
 ```
 
-And then execute:
+And then run:
 
-    $ bundle install
+```sh
+$ bundle install
+$ bin/rails generate online_migrations:install
+```
 
-Or install it yourself as:
+**Note**: If you do not have plans on using [background migrations](BACKGROUND_MIGRATIONS.md) feature, then you can delete the generated migration and regenerate it later, if needed.
 
-    $ gem install online_migrations
+## Motivation
 
-## Usage
+Writing a safe migration can be daunting. Numerous articles have been written on the topic and a few gems are trying to address the problem. Even for someone who has a pretty good command of PostgreSQL, remembering all the subtleties of explicit locking can be problematic.
 
-TODO: Write usage instructions here
+**Online Migrations** was created to catch dangerous operations and provide a guidance and code helpers to run them safely.
+
+An operation is classified as dangerous if it either:
+
+- Blocks reads or writes for more than a few seconds (after a lock is acquired)
+- Has a good chance of causing application errors
+
+## Example
+
+Consider the following migration:
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :admin, :boolean, default: false, null: false
+  end
+end
+```
+
+If the `users` table is large, running this migration on a live PostgreSQL < 11 database will likely cause downtime.
+
+A safer approach would be to run something like the following:
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  # Do not wrap the migration in a transaction so that locks are held for a shorter time.
+  disable_ddl_transaction!
+
+  def change
+    # Lower PostgreSQL's lock timeout to avoid statement queueing.
+    execute "SET lock_timeout TO '5s'" # The lock_timeout duration is customizable.
+
+    # Add the column without the default value and the not-null constraint.
+    add_column :users, :admin, :boolean
+
+    # Set the column's default value.
+    change_column_default :users, :admin, false
+
+    # Backfill the column in batches.
+    User.in_batches.update_all(admin: false)
+
+    # Add the not-null constraint. Beforehand, set a short statement timeout so that
+    # Postgres does not spend too much time performing the full table scan to verify
+    # the column contains no nulls.
+    execute "SET statement_timeout TO '5s'"
+    change_column_null :users, :admin, false
+  end
+end
+```
+
+When you actually run the original migration, you will get an error message:
+
+```txt
+⚠️  [online_migrations] Dangerous operation detected ⚠️
+
+Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
+
+A safer approach is to:
+1. add the column without a default value
+2. change the column default
+3. backfill existing rows with the new value
+4. add the NOT NULL constraint
+
+add_column_with_default takes care of all this steps:
+
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_column_with_default :users, :admin, :boolean, default: false, null: false
+  end
+end
+```
+
+It suggests how to safely implement a migration, which essentially runs the steps similar to described in the previous example.
 
 ## Checks
 
@@ -47,7 +134,7 @@ Potentially dangerous operations:
 - [hash indexes](#hash-indexes)
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
 
-You can also add [custom checks](#custom-checks).
+You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
 
 ### Removing a column
 
@@ -163,6 +250,7 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+**Note**: You may consider [background migrations](#background-migrations) to run data changes on large tables.
 
 ### Changing the type of a column
 
@@ -248,7 +336,7 @@ A safer approach can be accomplished in several steps:
 
 6. Deploy
 
-## Renaming a column
+### Renaming a column
 
 #### Bad
 
@@ -811,6 +899,18 @@ Use the `stop!` method to stop migrations.
 
 **Note**: Since `remove_column`, `execute` and `change_table` always require a `safety_assured` block, it's not possible to add a custom check for these operations.
 
+### Disable Checks
+
+Disable specific checks with:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.disable_check(:remove_index)
+```
+
+Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
+
 ### Down Migrations / Rollbacks
 
 By default, checks are disabled when migrating down. Enable them with:
@@ -832,6 +932,27 @@ config.error_messages[:add_column_default] = "Your custom instructions"
 ```
 
 Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
+
+### Migration Timeouts
+
+It’s extremely important to set a short lock timeout for migrations. This way, if a migration can't acquire a lock in a timely manner, other statements won't be stuck behind it.
+
+Add timeouts to `config/database.yml`:
+
+```yml
+production:
+  connect_timeout: 5
+  variables:
+    lock_timeout: 10s
+    statement_timeout: 15s
+```
+
+Or set the timeouts directly on the database user that runs migrations:
+
+```sql
+ALTER ROLE myuser SET lock_timeout = '10s';
+ALTER ROLE myuser SET statement_timeout = '15s';
+```
 
 ### Lock Timeout Retries
 
@@ -889,16 +1010,55 @@ To mark tables as small:
 config.small_tables = [:settings, :prices]
 ```
 
-## Development
+## Background Migrations
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+Read [BACKGROUND_MIGRATIONS.md](BACKGROUND_MIGRATIONS.md) on how to perform data migrations on large tables.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+## Credits
+
+Thanks to [strong_migrations gem](https://github.com/ankane/strong_migrations), [GitLab](https://gitlab.com/gitlab-org/gitlab) and [maintenance_tasks gem](https://github.com/Shopify/maintenance_tasks) for the original ideas.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/online_migrations.
+Bug reports and pull requests are welcome on GitHub at https://github.com/fatkodima/online_migrations.
 
+## Development
+
+After checking out the repo, run `bundle install` to install dependencies. Run `createdb online_migrations_test` to create a test database. Then, run `bundle exec rake test` to run the tests. This project uses multiple Gemfiles to test against multiple versions of ActiveRecord; you can run the tests against the specific version with `BUNDLE_GEMFILE=gemfiles/activerecord_61.gemfile bundle exec rake test`.
+
+To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+
+## Additional resources
+
+Alternatives:
+
+- https://github.com/ankane/strong_migrations
+- https://github.com/LendingHome/zero_downtime_migrations
+- https://github.com/braintree/pg_ha_migrations
+- https://github.com/doctolib/safe-pg-migrations
+
+Interesting reads:
+
+- [Explicit Locking](https://www.postgresql.org/docs/current/explicit-locking.html)
+- [When Postgres blocks: 7 tips for dealing with locks](https://www.citusdata.com/blog/2018/02/22/seven-tips-for-dealing-with-postgres-locks/)
+- [PostgreSQL rocks, except when it blocks: Understanding locks](https://www.citusdata.com/blog/2018/02/15/when-postgresql-blocks/)
+- [PostgreSQL at Scale: Database Schema Changes Without Downtime](https://medium.com/paypal-tech/postgresql-at-scale-database-schema-changes-without-downtime-20d3749ed680)
+- [Adding a NOT NULL CONSTRAINT on PG Faster with Minimal Locking](https://medium.com/doctolib-engineering/adding-a-not-null-constraint-on-pg-faster-with-minimal-locking-38b2c00c4d1c)
+- [Adding columns with default values to really large tables in Postgres + Rails](https://wework.github.io/data/2015/11/05/add-columns-with-default-values-to-large-tables-in-rails-postgres/)
+- [Safe Operations For High Volume PostgreSQL](https://www.braintreepayments.com/blog/safe-operations-for-high-volume-postgresql/)
+- [Stop worrying about PostgreSQL locks in your Rails migrations](https://medium.com/doctolib/stop-worrying-about-postgresql-locks-in-your-rails-migrations-3426027e9cc9)
+- [Avoiding integer overflows with zero downtime](https://buildkite.com/blog/avoiding-integer-overflows-with-zero-downtime)
+
+## Maybe TODO
+
+- support MySQL
+- support other ORMs
+
+Background migrations:
+
+- extract as a separate gem
+- add UI
+- support batching over non-integer and multiple columns
 
 ## License
 
