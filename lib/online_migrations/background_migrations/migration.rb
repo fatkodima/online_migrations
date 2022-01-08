@@ -36,7 +36,7 @@ module OnlineMigrations
 
       validate :validate_batch_column_values
       validate :validate_batch_sizes
-      validate :validate_jobs_status, if: -> { status_changed? && succeeded? }
+      validate :validate_jobs_status, if: :status_changed?
 
       validates_with MigrationStatusValidator, on: :update
 
@@ -166,8 +166,10 @@ module OnlineMigrations
         end
 
         def validate_jobs_status
-          if migration_jobs.except_succeeded.exists?
+          if succeeded? && migration_jobs.except_succeeded.exists?
             errors.add(:base, "all migration jobs must be succeeded")
+          elsif failed? && !migration_jobs.failed.exists?
+            errors.add(:base, "at least one migration job must be failed")
           end
         end
 

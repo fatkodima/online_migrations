@@ -188,6 +188,28 @@ module BackgroundMigrations
       assert m.succeeded?
     end
 
+    def test_mark_as_failed_when_none_of_the_jobs_failed
+      2.times { User.create! }
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+      2.times { run_migration_job(m) }
+      assert m.migration_jobs.all?(&:succeeded?)
+
+      assert_raises(ActiveRecord::RecordInvalid, /at least one migration job must be failed/) do
+        m.failed!
+      end
+    end
+
+    def test_mark_as_failed_when_failed_job_exists
+      2.times { User.create! }
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+      job = run_migration_job(m)
+      assert job.succeeded?
+      job.update_column(:status, :failed) # bypass status validation
+
+      m.failed!
+      assert m.failed?
+    end
+
     private
       def create_migration(attributes = {})
         migration = build_migration(attributes)
