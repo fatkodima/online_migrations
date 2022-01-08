@@ -53,6 +53,14 @@ module OnlineMigrations
       #
       attr_accessor :stuck_jobs_timeout
 
+      # The Active Support backtrace cleaner that will be used to clean the
+      # backtrace of a migration job that errors.
+      #
+      # @return [ActiveSupport::BacktraceCleaner, nil] the backtrace cleaner to
+      #   use when cleaning a job's backtrace. Defaults to `Rails.backtrace_cleaner`
+      #
+      attr_accessor :backtrace_cleaner
+
       def initialize
         @migrations_module = "OnlineMigrations::BackgroundMigrations"
         @batch_size = 20_000

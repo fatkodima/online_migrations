@@ -44,6 +44,9 @@ module BackgroundMigrations
 
       assert job.failed?
       assert job.finished_at.present?
+      assert_equal "RuntimeError", job.error_class
+      assert_equal "Boom!", job.error_message
+      assert_not job.backtrace.empty?
     end
 
     def test_active_support_instrumentation

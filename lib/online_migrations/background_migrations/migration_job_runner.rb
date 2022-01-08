@@ -23,7 +23,10 @@ module OnlineMigrations
           attempts: attempts + 1,
           status: :running,
           started_at: Time.current,
-          finished_at: nil
+          finished_at: nil,
+          error_class: nil,
+          error_message: nil,
+          backtrace: nil
         )
 
         ActiveSupport::Notifications.instrument("process_batch.background_migrations", job_payload) do
@@ -31,10 +34,15 @@ module OnlineMigrations
         end
 
         migration_job.update!(status: :succeeded, finished_at: Time.current)
-      rescue Exception # rubocop:disable Lint/RescueException
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        backtrace_cleaner = ::OnlineMigrations.config.background_migrations.backtrace_cleaner
+
         migration_job.update!(
           status: :failed,
-          finished_at: Time.current
+          finished_at: Time.current,
+          error_class: e.class.name,
+          error_message: e.message,
+          backtrace: backtrace_cleaner ? backtrace_cleaner.clean(e.backtrace) : e.backtrace
         )
       end
 

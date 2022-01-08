@@ -32,6 +32,9 @@ ActiveRecord::Schema.define do
     t.string :status, default: "enqueued", null: false
     t.integer :max_attempts, null: false
     t.integer :attempts, default: 0, null: false
+    t.string :error_class
+    t.string :error_message
+    t.string :backtrace, array: true
     t.timestamps null: false
 
     t.foreign_key :background_migrations, column: :migration_id, on_delete: :cascade
