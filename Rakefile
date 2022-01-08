@@ -9,4 +9,15 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
+require "rdoc/task"
+
+RDoc::Task.new(:rdoc) do |rdoc|
+  rdoc.rdoc_dir = "rdoc"
+  rdoc.title    = "OnlineMigrations"
+  rdoc.options << "--line-numbers"
+  rdoc.rdoc_files.include("README.md")
+  rdoc.rdoc_files.include("BACKGROUND_MIGRATIONS.md")
+  rdoc.rdoc_files.include("lib/**/*.rb")
+end
+
 task default: :test

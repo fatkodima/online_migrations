@@ -7,6 +7,7 @@ gemspec
 
 gem "minitest", "~> 5.0"
 gem "rake", "~> 12.0"
+gem "yard"
 
 if defined?(@ar_gem_requirement)
   gem "activerecord", @ar_gem_requirement
