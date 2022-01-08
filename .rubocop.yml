@@ -65,6 +65,9 @@ Style/Lambda:
 Style/WhileUntilModifier:
   Enabled: false
 
+Style/HashAsLastArrayItem:
+  Enabled: false
+
 # we can not use new syntax for older rubies
 Lint/ErbNewArguments:
   Enabled: false
@@ -85,6 +88,9 @@ Layout/LineLength:
   Enabled: false
 
 Layout/MultilineMethodCallIndentation:
+  Enabled: false
+
+Layout/HashAlignment:
   Enabled: false
 
 Naming/VariableNumber:

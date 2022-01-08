@@ -29,6 +29,7 @@ require "online_migrations/background_migrations/migration_helpers"
 require "online_migrations/background_migrations/advisory_lock"
 require "online_migrations/background_migrations/scheduler"
 require "online_migrations/lock_retrier"
+require "online_migrations/command_recorder"
 require "online_migrations/copy_trigger"
 require "online_migrations/change_column_type_helpers"
 require "online_migrations/schema_statements"
@@ -59,6 +60,7 @@ module OnlineMigrations
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
+      ActiveRecord::Migration::CommandRecorder.include(OnlineMigrations::CommandRecorder)
 
       if OnlineMigrations::Utils.ar_version <= 5.1
         ActiveRecord::ConnectionAdapters::ForeignKeyDefinition.prepend(OnlineMigrations::ForeignKeyDefinition)
