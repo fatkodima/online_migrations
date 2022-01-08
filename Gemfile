@@ -10,8 +10,10 @@ gem "rake", "~> 12.0"
 
 if defined?(@ar_gem_requirement)
   gem "activerecord", @ar_gem_requirement
+  gem "railties", @ar_gem_requirement
 else
   gem "activerecord" # latest
+  gem "railties" # to test generator
 
   # Run Rubocop only on latest rubies, because it is incompatible with older versions.
   gem "rubocop", "~> 1.24"

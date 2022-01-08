@@ -95,6 +95,13 @@ module OnlineMigrations
     #
     attr_reader :enabled_checks
 
+    # Configuration object to configure background migrations
+    #
+    # @return [BackgroundMigrationsConfig]
+    # @see BackgroundMigrationsConfig
+    #
+    attr_reader :background_migrations
+
     def initialize
       @table_renames = {}
       @column_renames = {}
@@ -107,6 +114,8 @@ module OnlineMigrations
         max_delay: 1.minute,
         lock_timeout: 0.05.seconds
       )
+
+      @background_migrations = BackgroundMigrations::Config.new
 
       @checks = []
       @start_after = 0

@@ -56,6 +56,12 @@ Style/GlobalVars:
   Exclude:
     - test/**/*
 
+Style/Lambda:
+  EnforcedStyle: literal
+
+Style/WhileUntilModifier:
+  Enabled: false
+
 # we can not use new syntax for older rubies
 Lint/ErbNewArguments:
   Enabled: false
