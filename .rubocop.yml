@@ -90,6 +90,10 @@ Naming/MethodParameterName:
     - of
     - fk
 
+Naming/AccessorMethodName:
+  Exclude:
+    - test/**/*
+
 Gemspec/RequiredRubyVersion:
   Enabled: false
 

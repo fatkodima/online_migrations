@@ -40,9 +40,48 @@ module SchemaStatements
       assert_equal OnlineMigrations.config.background_migrations.batch_size, m.batch_size
     end
 
+    def test_disable_statement_timeout
+      prev_value = get_statement_timeout
+      set_statement_timeout(10)
+
+      @connection.disable_statement_timeout do
+        assert_equal "0", get_statement_timeout
+      end
+      assert_equal "10ms", get_statement_timeout
+    ensure
+      set_statement_timeout(prev_value)
+    end
+
+    def test_nested_disable_statement_timeouts
+      prev_value = get_statement_timeout
+      set_statement_timeout(10)
+
+      @connection.disable_statement_timeout do
+        set_statement_timeout(20)
+
+        @connection.disable_statement_timeout do
+          assert_equal "0", get_statement_timeout
+        end
+
+        assert_equal "20ms", get_statement_timeout
+      end
+
+      assert_equal "10ms", get_statement_timeout
+    ensure
+      set_statement_timeout(prev_value)
+    end
+
     private
       def column_for(table_name, column_name)
         @connection.columns(table_name).find { |c| c.name == column_name.to_s }
+      end
+
+      def get_statement_timeout
+        @connection.select_value("SHOW statement_timeout")
+      end
+
+      def set_statement_timeout(value)
+        @connection.execute("SET statement_timeout TO #{@connection.quote(value)}")
       end
   end
 end
