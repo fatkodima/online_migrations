@@ -467,6 +467,8 @@ module OnlineMigrations
       end
 
       def __check_constraints(table_name)
+        schema = __schema_for_table(table_name)
+
         check_sql = <<~SQL
           SELECT
             ccu.column_name as column_name,
@@ -476,11 +478,14 @@ module OnlineMigrations
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_class rel
               ON rel.oid = con.conrelid
+            INNER JOIN pg_catalog.pg_namespace nsp
+              ON nsp.oid = con.connamespace
             INNER JOIN information_schema.constraint_column_usage ccu
               ON con.conname = ccu.constraint_name
                 AND rel.relname = ccu.table_name
           WHERE rel.relname = #{quote(table_name)}
             AND con.contype = 'c'
+            AND nsp.nspname = #{schema}
         SQL
 
         select_all(check_sql)
@@ -557,11 +562,16 @@ module OnlineMigrations
 
       # Returns tables that have a FK to the given table
       def __referencing_table_names(table_name)
+        schema = __schema_for_table(table_name)
+
         select_values(<<~SQL)
           SELECT DISTINCT con.conrelid::regclass::text AS conrelname
           FROM pg_catalog.pg_constraint con
+            INNER JOIN pg_catalog.pg_namespace nsp
+                ON nsp.oid = con.connamespace
           WHERE con.confrelid = #{quote(table_name)}::regclass
             AND con.contype = 'f'
+            AND nsp.nspname = #{schema}
           ORDER BY 1
         SQL
       end

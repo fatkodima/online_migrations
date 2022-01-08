@@ -641,7 +641,9 @@ module OnlineMigrations
       index_name ||= index_name(table_name, column_names)
 
       if index_exists?(table_name, column_name, **options)
-        if __index_valid?(index_name)
+        schema = __schema_for_table(table_name)
+
+        if __index_valid?(index_name, schema: schema)
           Utils.say("Index was not created because it already exists (this may be due to an aborted migration "\
             "or similar): table_name: #{table_name}, column_name: #{column_name}")
           return
@@ -858,10 +860,13 @@ module OnlineMigrations
       end
 
       def __column_not_nullable?(table_name, column_name)
+        schema = __schema_for_table(table_name)
+
         query = <<~SQL
           SELECT is_nullable
           FROM information_schema.columns
-          WHERE table_name = #{quote(table_name)}
+          WHERE table_schema = #{schema}
+            AND table_name = #{quote(table_name)}
             AND column_name = #{quote(column_name)}
         SQL
 
@@ -894,14 +899,17 @@ module OnlineMigrations
         end
       end
 
-      def __index_valid?(index_name)
+      def __index_valid?(index_name, schema:)
         # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
         valid = select_value <<~SQL
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c
             ON i.indexrelid = c.oid
-          WHERE c.relname = #{quote(index_name)}
+          JOIN pg_namespace n
+            ON c.relnamespace = n.oid
+          WHERE n.nspname = #{schema}
+            AND c.relname = #{quote(index_name)}
         SQL
 
         Utils.to_bool(valid)
@@ -967,14 +975,18 @@ module OnlineMigrations
       end
 
       def __constraint_validated?(table_name, name, type:)
+        schema = __schema_for_table(table_name)
         contype = type == :check ? "c" : "f"
 
         validated = select_value(<<~SQL)
           SELECT convalidated
           FROM pg_catalog.pg_constraint con
+            INNER JOIN pg_catalog.pg_namespace nsp
+              ON nsp.oid = con.connamespace
           WHERE con.conrelid = #{quote(table_name)}::regclass
             AND con.conname = #{quote(name)}
             AND con.contype = '#{contype}'
+            AND nsp.nspname = #{schema}
         SQL
 
         Utils.to_bool(validated)
@@ -1001,17 +1013,27 @@ module OnlineMigrations
       end
 
       def __check_constraint_exists?(table_name, constraint_name)
+        schema = __schema_for_table(table_name)
+
         check_sql = <<~SQL.squish
           SELECT COUNT(*)
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_class cl
               ON cl.oid = con.conrelid
+            INNER JOIN pg_catalog.pg_namespace nsp
+              ON nsp.oid = con.connamespace
           WHERE con.contype = 'c'
             AND con.conname = #{quote(constraint_name)}
             AND cl.relname = #{quote(table_name)}
+            AND nsp.nspname = #{schema}
         SQL
 
         select_value(check_sql).to_i > 0
+      end
+
+      def __schema_for_table(table_name)
+        _, schema = table_name.to_s.split(".").reverse
+        schema ? quote(schema) : "current_schema()"
       end
   end
 end
