@@ -9,7 +9,7 @@ module OnlineMigrations
       # based on the current migration settings and the previous batch bounds. Each job's execution status
       # is tracked in the database as the migration runs.
       #
-      # @param migration_name [String] Background migration job class name
+      # @param migration_name [String, Class] Background migration job class name
       # @param arguments [Array] Extra arguments to pass to the job instance when the migration runs
       # @option options [Symbol, String] :batch_column_name (primary key) Column name the migration will batch over
       # @option options [Integer] :min_value Value in the column the batching will begin at,
@@ -53,6 +53,8 @@ module OnlineMigrations
       def enqueue_background_migration(migration_name, *arguments, **options)
         options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
             :batch_pause, :sub_batch_pause_ms, :batch_max_attempts)
+
+        migration_name = migration_name.name if migration_name.is_a?(Class)
 
         migration = Migration.create!(
           migration_name: migration_name,
