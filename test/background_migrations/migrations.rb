@@ -66,6 +66,20 @@ module BackgroundMigrations
     end
   end
 
+  class MigrationWithCount < OnlineMigrations::BackgroundMigration
+    def relation
+      User.all
+    end
+
+    def process_batch(_users)
+      # no-op
+    end
+
+    def count
+      relation.count
+    end
+  end
+
   class NotAMigration
   end
 end

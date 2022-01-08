@@ -7,6 +7,7 @@ ActiveRecord::Schema.define do
     t.string :batch_column_name, null: false
     t.bigint :min_value, null: false
     t.bigint :max_value, null: false
+    t.bigint :rows_count
     t.integer :batch_size, null: false
     t.integer :sub_batch_size, null: false
     t.integer :batch_pause, null: false

@@ -22,6 +22,7 @@ module OnlineMigrations
                   presence: true, numericality: { greater_than: 0 }
 
       validates :sub_batch_pause_ms, presence: true, numericality: { greater_than_or_equal_to: 0 }
+      validates :rows_count, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
       validates :arguments, uniqueness: { scope: :migration_name }
 
       validate :validate_batch_column_values
@@ -49,6 +50,23 @@ module OnlineMigrations
 
       def last_completed_job
         migration_jobs.completed.order(finished_at: :desc).first
+      end
+
+      # Returns the progress of the background migration.
+      #
+      # @return [Float, nil]
+      #   - when background migration is configured to not to track progress, returns `nil`
+      #   - otherwise returns value in range of 0.0 and 1.0
+      #
+      def progress
+        if succeeded?
+          1.0
+        elsif rows_count
+          jobs_rows_count = migration_jobs.succeeded.sum(:batch_size)
+          # The last migration job may need to process the amount of rows
+          # less than the batch size, so we can get a value > 1.0.
+          [jobs_rows_count.to_f / rows_count, 1.0].min
+        end
       end
 
       def migration_class
@@ -140,6 +158,9 @@ module OnlineMigrations
             self.batch_column_name  ||= migration_relation.primary_key
             self.min_value          ||= migration_relation.minimum(batch_column_name)
             self.max_value          ||= migration_relation.maximum(batch_column_name)
+
+            count = migration_object.count
+            self.rows_count = count if count != :no_count
           end
 
           config = ::OnlineMigrations.config.background_migrations

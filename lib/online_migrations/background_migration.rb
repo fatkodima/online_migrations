@@ -52,5 +52,13 @@ module OnlineMigrations
     def process_batch(_relation)
       raise NotImplementedError, "#{self.class.name} must implement a 'process_batch' method"
     end
+
+    # Returns the count of rows that will be iterated over (optional, to be able to show progress).
+    #
+    # @return [Integer, nil, :no_count]
+    #
+    def count
+      :no_count
+    end
   end
 end
