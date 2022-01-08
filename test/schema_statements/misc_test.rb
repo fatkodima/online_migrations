@@ -12,8 +12,9 @@ module SchemaStatements
       @connection.create_table(:users, force: :cascade) do |t|
         t.text :name
         t.string :status
-        t.string :name_for_type_change
         t.boolean :admin
+        t.bigint :id_for_type_change
+        t.string :name_for_type_change
       end
     end
 
@@ -41,6 +42,20 @@ module SchemaStatements
 
       assert_equal "BackfillColumn", m.migration_name
       assert_equal ["users", { "admin" => false, "status" => "active" }, "SchemaStatements::MiscTest::User"], m.arguments
+    end
+
+    def test_copy_column_in_background
+      m = @connection.copy_column_in_background(:users, :name, :name_for_type_change, model_name: User)
+
+      assert_equal "CopyColumn", m.migration_name
+      assert_equal ["users", ["name"], ["name_for_type_change"], "SchemaStatements::MiscTest::User", { "name" => nil }], m.arguments
+    end
+
+    def test_copy_columns_in_background
+      m = @connection.copy_columns_in_background(:users, [:id, :name], [:id_for_type_change, :name_for_type_change], model_name: User)
+
+      assert_equal "CopyColumn", m.migration_name
+      assert_equal ["users", ["id", "name"], ["id_for_type_change", "name_for_type_change"], "SchemaStatements::MiscTest::User", {}], m.arguments
     end
 
     def test_enqueue_background_migration
