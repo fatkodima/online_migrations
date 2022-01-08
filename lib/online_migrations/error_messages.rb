@@ -358,6 +358,23 @@ class <%= migration_name %>Validate < <%= migration_parent %>
   end
 end",
 
+      add_text_limit_constraint:
+"Adding a limit on the text column blocks reads and writes while every row is checked.
+A safer approach is to add the limit check constraint without validating existing rows,
+and then validating them in a separate migration.
+
+class <%= migration_name %> < <%= migration_parent %>
+  def change
+    <%= add_code %>
+  end
+end
+
+class <%= migration_name %>Validate < <%= migration_parent %>
+  def change
+    <%= validate_code %>
+  end
+end",
+
       execute:
 "Online Migrations does not support inspecting what happens inside an
 execute call, so cannot help you here. Make really sure that what

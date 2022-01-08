@@ -401,12 +401,21 @@ module OnlineMigrations
       end
       alias validate_check_constraint validate_constraint
       alias validate_not_null_constraint validate_constraint
+      alias validate_text_limit_constraint validate_constraint
 
       def add_not_null_constraint(table_name, column_name, **options)
         if !new_or_small_table?(table_name) && options[:validate] != false
           raise_error :add_not_null_constraint,
             add_code: command_str(:add_not_null_constraint, table_name, column_name, **options.merge(validate: false)),
             validate_code: command_str(:validate_not_null_constraint, table_name, column_name, **options.except(:validate))
+        end
+      end
+
+      def add_text_limit_constraint(table_name, column_name, limit, **options)
+        if !new_or_small_table?(table_name) && options[:validate] != false
+          raise_error :add_text_limit_constraint,
+            add_code: command_str(:add_text_limit_constraint, table_name, column_name, limit, **options.merge(validate: false)),
+            validate_code: command_str(:validate_text_limit_constraint, table_name, column_name, **options.except(:validate))
         end
       end
 

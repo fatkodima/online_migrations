@@ -185,5 +185,72 @@ module SchemaStatements
       connection.remove_not_null_constraint :milestones, :name
       Milestone.create! # not raises
     end
+
+    def test_add_text_limit_constraint
+      milestone = Milestone.create!(description: "a" * 101)
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        connection.add_text_limit_constraint :milestones, :description, 100
+      end
+
+      milestone.destroy
+      connection.add_text_limit_constraint :milestones, :description, 100
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(description: "a" * 101)
+      end
+    end
+
+    def test_add_text_limit_constraint_to_not_text_column_raises
+      assert_raises(RuntimeError, /add_text_limit_constraint must be used only with :text columns/) do
+        connection.add_text_limit_constraint :milestones, :name, 100
+      end
+    end
+
+    def test_add_unvalidated_text_limit_constraint
+      Milestone.create!(description: "a" * 101)
+
+      connection.add_text_limit_constraint :milestones, :description, 100, validate: false
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(description: "a" * 101)
+      end
+    end
+
+    def test_add_text_limit_constraint_custom_name
+      connection.add_text_limit_constraint :milestones, :description, 100, validate: false, name: "custom_check_name"
+      connection.validate_text_limit_constraint :milestones, :description, name: "custom_check_name"
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(description: "a" * 101)
+      end
+    end
+
+    def test_add_text_limit_constraint_is_reentrant
+      connection.add_text_limit_constraint :milestones, :description, 100
+      connection.add_text_limit_constraint :milestones, :description, 100
+    end
+
+    def test_validate_text_limit_constraint
+      connection.add_text_limit_constraint :milestones, :description, 100, validate: false
+      connection.validate_text_limit_constraint :milestones, :description
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(description: "a" * 101)
+      end
+    end
+
+    def test_validate_non_existing_text_limit_constraint_raises
+      error = assert_raises(ArgumentError) do
+        connection.validate_text_limit_constraint :milestones, :description, name: "non_existing"
+      end
+      assert_match "has no check constraint", error.message
+    end
+
+    def test_remove_text_limit_constraint
+      connection.add_text_limit_constraint :milestones, :description, 100
+      connection.remove_text_limit_constraint :milestones, :description
+      Milestone.create!(description: "a" * 101) # not raises
+    end
   end
 end

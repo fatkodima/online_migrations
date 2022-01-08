@@ -471,6 +471,85 @@ module OnlineMigrations
       remove_check_constraint(table_name, name: name)
     end
 
+    # Adds a limit constraint to the text column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    # @param validate [Boolean] whether or not the constraint should be validated
+    #
+    # @return [void]
+    #
+    # @example
+    #   add_text_limit_constraint(:users, :bio, 255)
+    #
+    # @note This helper must be used only with text columns
+    #
+    def add_text_limit_constraint(table_name, column_name, limit, name: nil, validate: true)
+      column = __column_for(table_name, column_name)
+      if column.type != :text
+        raise "add_text_limit_constraint must be used only with :text columns"
+      end
+
+      name ||= __text_limit_constraint_name(table_name, column_name)
+
+      if __text_limit_constraint_exists?(table_name, column_name, name: name)
+        Utils.say("Text limit constraint was not created: #{table_name}.#{column_name} is already has a limit")
+      else
+        add_check_constraint(
+          table_name,
+          "char_length(#{column_name}) <= #{limit}",
+          name: name,
+          validate: false
+        )
+
+        if validate
+          validate_text_limit_constraint(table_name, column_name, name: name)
+        end
+      end
+    end
+
+    # Validates a limit constraint on the text column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    #
+    # @return [void]
+    #
+    # @example
+    #   validate_text_limit_constraint(:users, :bio)
+    #
+    # @example Explicit name
+    #   validate_text_limit_constraint(:users, :bio, name: "check_users_bio_max_length")
+    #
+    def validate_text_limit_constraint(table_name, column_name, name: nil)
+      name ||= __text_limit_constraint_name(table_name, column_name)
+      validate_check_constraint(table_name, name: name)
+    end
+
+    # Removes a limit constraint from the text column
+    #
+    # @param table_name [String, Symbol]
+    # @param column_name [String, Symbol]
+    # @param name [String, Symbol] the constraint name.
+    #     Defaults to `chk_rails_<identifier>`
+    #
+    # @return [void]
+    #
+    # @example
+    #   remove_text_limit_constraint(:users, :bio)
+    #
+    # @example Explicit name
+    #   remove_not_null_constraint(:users, :bio, name: "check_users_bio_max_length")
+    #
+    def remove_text_limit_constraint(table_name, column_name, _limit = nil, name: nil)
+      name ||= __text_limit_constraint_name(table_name, column_name)
+      remove_check_constraint(table_name, name: name)
+    end
+
     # Adds a reference to the table with minimal locking
     #
     # ActiveRecord adds an index non-`CONCURRENTLY` to references by default, which blocks writes.
@@ -713,6 +792,15 @@ module OnlineMigrations
 
       def __not_null_constraint_name(table_name, column_name)
         __check_constraint_name(table_name, expression: "#{column_name}_not_null")
+      end
+
+      def __text_limit_constraint_name(table_name, column_name)
+        __check_constraint_name(table_name, expression: "#{column_name}_max_length")
+      end
+
+      def __text_limit_constraint_exists?(table_name, column_name, name: nil)
+        name ||= __text_limit_constraint_name(table_name, column_name)
+        __check_constraint_exists?(table_name, name)
       end
 
       def __index_column_names(column_names)

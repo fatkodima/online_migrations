@@ -10,6 +10,7 @@ module CommandChecker
 
       @connection.create_table(:projects, force: :cascade) do |t|
         t.bigint :user_id
+        t.text :description
       end
     end
 
@@ -317,6 +318,69 @@ module CommandChecker
 
     def test_validate_not_null_constraint_no_transaction
       assert_safe ValidateNotNullConstraintNoTransaction
+    end
+
+    class AddTextLimitConstraint < TestMigration
+      def change
+        add_text_limit_constraint :projects, :description, 255
+      end
+    end
+
+    def test_add_text_limit_constraint
+      assert_unsafe AddTextLimitConstraint, <<~MSG
+        Adding a limit on the text column blocks reads and writes while every row is checked.
+        A safer approach is to add the limit check constraint without validating existing rows,
+        and then validating them in a separate migration.
+
+        class CommandChecker::MiscTest::AddTextLimitConstraint < #{migration_parent_string}
+          def change
+            add_text_limit_constraint :projects, :description, 255, validate: false
+          end
+        end
+
+        class CommandChecker::MiscTest::AddTextLimitConstraintValidate < #{migration_parent_string}
+          def change
+            validate_text_limit_constraint :projects, :description
+          end
+        end
+      MSG
+    end
+
+    class AddTextLimitConstraintNoValidate < TestMigration
+      def change
+        add_text_limit_constraint :projects, :description, 255, validate: false
+      end
+    end
+
+    def test_add_text_limit_constraint_no_validate
+      assert_safe AddTextLimitConstraintNoValidate
+    end
+
+    class ValidateTextLimitConstraint < TestMigration
+      def change
+        add_text_limit_constraint :projects, :description, 255, validate: false
+        validate_text_limit_constraint :projects, :description
+      end
+    end
+
+    def test_validate_text_limit_constraint
+      assert_unsafe ValidateTextLimitConstraint, <<~MSG
+        Validating a constraint while holding heavy locks on tables is dangerous.
+        Use disable_ddl_transaction! or a separate migration.
+      MSG
+    end
+
+    class ValidateTextLimitConstraintNoTransaction < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_text_limit_constraint :projects, :description, 255, validate: false
+        validate_text_limit_constraint :projects, :description
+      end
+    end
+
+    def test_validate_text_limit_constraint_no_transaction
+      assert_safe ValidateTextLimitConstraintNoTransaction
     end
 
     private
