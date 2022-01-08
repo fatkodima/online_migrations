@@ -38,6 +38,7 @@ module OnlineMigrations
       validate :validate_batch_sizes
       validate :validate_jobs_status, if: :status_changed?
 
+      validates_with BackgroundMigrationClassValidator
       validates_with MigrationStatusValidator, on: :update
 
       before_validation :set_defaults

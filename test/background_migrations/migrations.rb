@@ -60,6 +60,24 @@ module BackgroundMigrations
     end
   end
 
+  class RelationNotARRelation < OnlineMigrations::BackgroundMigration
+    def relation
+      [1, 2, 3]
+    end
+  end
+
+  class JoinsRelation < OnlineMigrations::BackgroundMigration
+    def relation
+      User.joins(:projects)
+    end
+  end
+
+  class OrderClauseRelation < OnlineMigrations::BackgroundMigration
+    def relation
+      User.order(:name)
+    end
+  end
+
   class EmptyRelation < OnlineMigrations::BackgroundMigration
     def relation
       User.none

@@ -39,6 +39,31 @@ module BackgroundMigrations
       assert_includes m.errors.full_messages, "sub_batch_size should be smaller than or equal to batch_size"
     end
 
+    def test_migration_relation_not_active_record_relation
+      m = build_migration(migration_name: "RelationNotARRelation")
+      m.valid?
+
+      assert_includes m.errors.full_messages, "Migration name RelationNotARRelation#relation must return an ActiveRecord::Relation object"
+    end
+
+    def test_migration_relation_joins_and_batch_column_name
+      m = build_migration(migration_name: "JoinsRelation", batch_column_name: "id")
+      m.valid?
+
+      assert_includes m.errors.full_messages, "Batch column name must be a fully-qualified column if you join a table"
+
+      m.batch_column_name = "users.id"
+      assert m.valid?
+    end
+
+    def test_migration_relation_with_order_clause
+      m = build_migration(migration_name: "OrderClauseRelation")
+      m.valid?
+
+      errors = m.errors.full_messages
+      assert(errors.any? { |error| error =~ /relation cannot use ORDER BY or LIMIT/ })
+    end
+
     def test_status_transitions
       m = create_migration(status: :enqueued)
 
