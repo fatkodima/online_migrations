@@ -49,7 +49,7 @@ module SchemaStatements
     end
 
     def test_add_column_with_default_raises_for_expression_default_in_older_railses
-      skip if ar_version > 5.0
+      skip if ar_version >= 5.0
 
       error = assert_raises(ArgumentError) do
         connection.add_column_with_default(:milestones, :status, :integer, default: -> { "random()" })

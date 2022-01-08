@@ -49,3 +49,10 @@ require_relative "support/minitest_helpers"
 
 TestMigration = OnlineMigrations::Utils.migration_parent
 TestMigration.version = 20200101000001
+
+OnlineMigrations.configure do |config|
+  # ActiveRecord 5.1 changed the default primary and foreign key type to bigint.
+  # In order to avoid specifying explicitly primary key types in migrations in tests,
+  # disable this check and enable only where necessary.
+  config.disable_check(:short_primary_key_type)
+end

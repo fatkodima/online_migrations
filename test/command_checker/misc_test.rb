@@ -56,10 +56,14 @@ module CommandChecker
     end
 
     def test_integer_primary_key
+      OnlineMigrations.config.enable_check(:short_primary_key_type)
+
       assert_unsafe IntegerPrimaryKey, <<~MSG
         Using short integer types for primary keys is dangerous due to the risk of running
         out of IDs on inserts. Better to use one of 'bigint', 'bigserial' or 'uuid'.
       MSG
+    ensure
+      OnlineMigrations.config.disable_check(:short_primary_key_type)
     end
 
     class RenameTable < TestMigration
