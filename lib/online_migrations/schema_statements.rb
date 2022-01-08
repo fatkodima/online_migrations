@@ -760,6 +760,18 @@ module OnlineMigrations
       execute("SET statement_timeout TO #{quote(prev_value)}")
     end
 
+    # @private
+    # Executes the block with a retry mechanism that alters the `lock_timeout`
+    # and sleep time between attempts.
+    #
+    def with_lock_retries(&block)
+      __ensure_not_in_transaction!
+
+      retrier = OnlineMigrations.config.lock_retrier
+      retrier.connection = self
+      retrier.with_lock_retries(&block)
+    end
+
     private
       # Private methods are prefixed with `__` to avoid clashes with existing or future
       # ActiveRecord methods

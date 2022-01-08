@@ -833,6 +833,28 @@ config.error_messages[:add_column_default] = "Your custom instructions"
 
 Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
 
+### Lock Timeout Retries
+
+You can configure this gem to automatically retry statements that exceed the lock timeout:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
+  attempts: 30,                # attempt 30 retries
+  base_delay: 0.01.seconds,    # starting with delay of 10ms between each unsuccessful try, increasing exponentially
+  max_delay: 1.minute,         # maximum delay is 1 minute
+  lock_timeout: 0.05.seconds   # and 50ms set as lock timeout for each try
+)
+```
+
+When statement within transaction fails - the whole transaction is retried.
+
+To permanently disable lock retries, you can set `lock_retrier` to `nil`.
+To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable.
+
+**Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
+
 ### Existing Migrations
 
 To mark migrations as safe that were created before installing this gem, configure the migration version starting after which checks are performed:

@@ -71,6 +71,13 @@ module OnlineMigrations
     #
     attr_accessor :column_renames
 
+    # Lock retrier in use (see LockRetrier)
+    #
+    # No retries are performed by default.
+    # @return [OnlineMigrations::LockRetrier]
+    #
+    attr_reader :lock_retrier
+
     # Returns a list of custom checks
     #
     # Use `add_check` to add custom checks
@@ -93,11 +100,23 @@ module OnlineMigrations
       @column_renames = {}
       @error_messages = ERROR_MESSAGES
       @lock_timeout_limit = 10.seconds
+
+      @lock_retrier = ExponentialLockRetrier.new(
+        attempts: 30,
+        base_delay: 0.01.seconds,
+        max_delay: 1.minute,
+        lock_timeout: 0.05.seconds
+      )
+
       @checks = []
       @start_after = 0
       @small_tables = []
       @check_down = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
+    end
+
+    def lock_retrier=(value)
+      @lock_retrier = value || NullLockRetrier.new
     end
 
     def small_tables=(table_names)

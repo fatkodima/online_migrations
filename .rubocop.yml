@@ -52,6 +52,10 @@ Style/NumericLiterals:
 Style/Next:
   Enabled: false
 
+Style/GlobalVars:
+  Exclude:
+    - test/**/*
+
 Layout/EmptyLinesAroundAccessModifier:
   EnforcedStyle: only_before
 

@@ -14,7 +14,15 @@ module OnlineMigrations
       if is_a?(ActiveRecord::Schema)
         super
       elsif command_checker.check(method, *args, &block)
-        super
+        if !in_transaction?
+          if method == :with_lock_retries
+            connection.with_lock_retries(*args, &block)
+          else
+            connection.with_lock_retries { super }
+          end
+        else
+          super
+        end
       end
     end
     ruby2_keywords(:method_missing) if respond_to?(:ruby2_keywords, true)
@@ -46,6 +54,10 @@ module OnlineMigrations
     private
       def command_checker
         @command_checker ||= CommandChecker.new(self)
+      end
+
+      def in_transaction?
+        connection.open_transactions > 0
       end
   end
 end

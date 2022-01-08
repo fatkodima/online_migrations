@@ -62,6 +62,10 @@ module OnlineMigrations
         end
       end
 
+      def to_bool(value)
+        value.to_s.match?(/^(true|t|yes|y|1|on)$/i)
+      end
+
       def foreign_table_name(ref_name, options)
         options.fetch(:to_table) do
           ActiveRecord::Base.pluralize_table_names ? ref_name.to_s.pluralize : ref_name

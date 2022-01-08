@@ -7,11 +7,13 @@ require "online_migrations/error_messages"
 require "online_migrations/config"
 require "online_migrations/batch_iterator"
 require "online_migrations/migration"
+require "online_migrations/migrator"
 require "online_migrations/database_tasks"
 require "online_migrations/foreign_keys_collector"
 require "online_migrations/indexes_collector"
 require "online_migrations/command_checker"
 require "online_migrations/schema_cache"
+require "online_migrations/lock_retrier"
 require "online_migrations/copy_trigger"
 require "online_migrations/change_column_type_helpers"
 require "online_migrations/schema_statements"
@@ -38,6 +40,7 @@ module OnlineMigrations
       ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(OnlineMigrations::SchemaStatements)
 
       ActiveRecord::Migration.prepend(OnlineMigrations::Migration)
+      ActiveRecord::Migrator.prepend(OnlineMigrations::Migrator)
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
