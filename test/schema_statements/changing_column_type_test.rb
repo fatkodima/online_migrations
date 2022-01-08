@@ -175,6 +175,27 @@ module SchemaStatements
       assert_equal "value", p.reload.settings["key"]
     end
 
+    def test_backfill_column_for_type_change_in_background
+      @connection.initialize_column_type_change(:projects, :name, :string)
+      m = @connection.backfill_column_for_type_change_in_background(
+        :projects, :name, model_name: Project, type_cast_function: "jsonb"
+      )
+
+      assert_equal "CopyColumn", m.migration_name
+      assert_equal ["projects", ["name"], ["name_for_type_change"], "SchemaStatements::ChangingColumnTypeTest::Project", { "name" => "jsonb" }], m.arguments
+    end
+
+    def test_backfill_columns_for_type_change_in_background
+      @connection.initialize_columns_type_change(:projects, [[:name, :string], [:description, :text]])
+      m = @connection.backfill_columns_for_type_change_in_background(
+        :projects, :name, :description, model_name: Project, type_cast_functions: { "name" => "jsonb" }
+      )
+
+      assert_equal "CopyColumn", m.migration_name
+      assert_equal(["projects", ["name", "description"], ["name_for_type_change", "description_for_type_change"],
+                    "SchemaStatements::ChangingColumnTypeTest::Project", { "name" => "jsonb" }], m.arguments)
+    end
+
     def test_finalize_column_type_change_raises_in_transaction
       assert_raises_in_transaction do
         @connection.finalize_column_type_change(:projects, :name)

@@ -13,7 +13,7 @@ module OnlineMigrations
       # @param options [Hash] used to control the behavior of background migration.
       #     See `#enqueue_background_migration`
       #
-      # @return [MigrationHelpers::BackgroundMigrations::Migration]
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
       # @example
       #   backfill_column_in_background(:users, :admin, false)
@@ -53,6 +53,66 @@ module OnlineMigrations
         )
       end
 
+      # Backfills data from the old column to the new column using background migrations.
+      #
+      # @param table_name [String, Symbol]
+      # @param column_name [String, Symbol]
+      # @param model_name [String] If Active Record multiple databases feature is used,
+      #     the class name of the model to get connection from.
+      # @param type_cast_function [String, Symbol] Some type changes require casting data to a new type.
+      #     For example when changing from `text` to `jsonb`. In this case, use the `type_cast_function` option.
+      #     You need to make sure there is no bad data and the cast will always succeed
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
+      #
+      # @example
+      #   backfill_column_for_type_change_in_background(:files, :size)
+      #
+      # @example With type casting
+      #   backfill_column_for_type_change_in_background(:users, :settings, type_cast_function: "jsonb")
+      #
+      # @example Additional background migration options
+      #   backfill_column_for_type_change_in_background(:files, :size, batch_size: 10_000)
+      #
+      # @note This method is better suited for extra large tables (100s of millions of records).
+      #     For smaller tables it is probably better and easier to use more flexible `backfill_column_for_type_change`.
+      #
+      def backfill_column_for_type_change_in_background(table_name, column_name, model_name: nil,
+                                                        type_cast_function: nil, **options)
+        backfill_columns_for_type_change_in_background(
+          table_name,
+          column_name,
+          model_name: model_name,
+          type_cast_functions: { column_name => type_cast_function },
+          **options
+        )
+      end
+
+      # Same as `backfill_column_for_type_change_in_background` but for multiple columns.
+      #
+      # @param type_cast_functions [Hash] if not empty, keys - column names,
+      #   values - corresponding type cast functions
+      #
+      # @see #backfill_column_for_type_change_in_background
+      #
+      def backfill_columns_for_type_change_in_background(table_name, *column_names, model_name: nil,
+                                                         type_cast_functions: {}, **options)
+        tmp_columns = column_names.map { |column_name| "#{column_name}_for_type_change" }
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "CopyColumn",
+          table_name,
+          column_names,
+          tmp_columns,
+          model_name,
+          type_cast_functions,
+          **options
+        )
+      end
+
       # Copies data from the old column to the new column using background migrations.
       #
       # @param table_name [String, Symbol]
@@ -66,7 +126,7 @@ module OnlineMigrations
       # @param options [Hash] used to control the behavior of background migration.
       #     See `#enqueue_background_migration`
       #
-      # @return [MigrationHelpers::BackgroundMigrations::Migration]
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
       # @example
       #   copy_column_in_background(:users, :id, :id_for_type_change)
