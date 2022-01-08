@@ -17,4 +17,12 @@ class InstallGeneratorTest < Rails::Generators::TestCase
       assert_includes content, "create_table :background_migration_jobs"
     end
   end
+
+  def test_creates_initializer_file
+    run_generator
+
+    assert_file("config/initializers/online_migrations.rb") do |content|
+      assert_includes content, "OnlineMigrations.configure do |config|"
+    end
+  end
 end

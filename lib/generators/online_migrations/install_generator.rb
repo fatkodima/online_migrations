@@ -14,9 +14,17 @@ module OnlineMigrations
       migration_template("migration.rb", File.join(migrations_dir, "install_online_migrations.rb"))
     end
 
+    def copy_initializer_file
+      template("initializer.rb", "config/initializers/online_migrations.rb")
+    end
+
     private
       def migration_parent
         Utils.migration_parent_string
+      end
+
+      def start_after
+        self.class.next_migration_number(migrations_dir)
       end
 
       def migrations_dir
