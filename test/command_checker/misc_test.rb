@@ -202,6 +202,16 @@ module CommandChecker
       def down; end
     end
 
+    class ExecQuery < TestMigration
+      def change
+        exec_query "SELECT 1"
+      end
+    end
+
+    def test_exec_query
+      assert_unsafe ExecQuery
+    end
+
     def test_execute_query_safety_assured
       assert_safe ExecuteQuerySafetyAssured
     end

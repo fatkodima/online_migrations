@@ -399,6 +399,7 @@ module OnlineMigrations
       def execute(*)
         raise_error :execute, header: "Possibly dangerous operation"
       end
+      alias exec_query execute
 
       def short_primary_key_type?(options)
         pk_type =
