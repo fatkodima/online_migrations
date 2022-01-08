@@ -90,7 +90,24 @@ module OnlineMigrations
 
       iterator = BatchIterator.new(batch_relation)
       iterator.each_batch(of: batch_size, column: batch_column_name) do |relation|
-        updates = columns_and_values.to_h
+        updates =
+          if Utils.ar_version <= 5.2
+            columns_and_values.map do |(column_name, value)|
+              # ActiveRecord <= 5.2 can't quote these - we need to handle these cases manually
+              case value
+              when Arel::Attributes::Attribute
+                "#{quote_column_name(column_name)} = #{quote_column_name(value.name)}"
+              when Arel::Nodes::SqlLiteral
+                "#{quote_column_name(column_name)} = #{value}"
+              when Arel::Nodes::NamedFunction
+                "#{quote_column_name(column_name)} = #{value.name}(#{quote_column_name(value.expressions.first.name)})"
+              else
+                "#{quote_column_name(column_name)} = #{quote(value)}"
+              end
+            end.join(", ")
+          else
+            columns_and_values.to_h
+          end
 
         relation.update_all(updates)
 
@@ -699,6 +716,10 @@ module OnlineMigrations
         # and some other "ALTER TABLE"s.
         execute("ALTER TABLE #{from_table} VALIDATE CONSTRAINT #{fk_name_to_validate}")
       end
+    end
+
+    def foreign_key_exists?(from_table, to_table = nil, **options)
+      foreign_keys(from_table).any? { |fk| fk.defined_for?(to_table: to_table, **options) }
     end
 
     # Extends default method to be idempotent

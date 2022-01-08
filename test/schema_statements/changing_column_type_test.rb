@@ -30,6 +30,11 @@ module SchemaStatements
       @connection.add_check_constraint(:projects, "star_count >= 0")
     end
 
+    def teardown
+      @connection.drop_table(:projects) rescue nil
+      @connection.drop_table(:users) rescue nil
+    end
+
     def test_initialize_column_type_change_creates_new_column
       @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
 

@@ -478,7 +478,9 @@ module OnlineMigrations
           if Utils.developer_env? && (target_version = OnlineMigrations.config.target_version)
             target_version.to_s
           else
-            database_version = connection.database_version
+            # For rails 6.0+ we can use connection.database_version
+            pg_connection = connection.instance_variable_get(:@connection)
+            database_version = pg_connection.server_version
             patch = database_version % 100
             database_version /= 100
             minor = database_version % 100

@@ -35,6 +35,9 @@ module OnlineMigrations
     end
 
     def indexes(table_name)
+      # Available only in Active Record 6.0+
+      return if !defined?(super)
+
       if renamed_tables.key?(table_name)
         super(renamed_tables[table_name])
       elsif renamed_columns.key?(table_name)
