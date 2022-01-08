@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+module <%= migrations_module %>
+<% module_namespacing do -%>
+  class <%= class_name %> < OnlineMigrations::BackgroundMigration
+    def relation
+      # ActiveRecord::Relation to be iterated over
+    end
+
+    def process_batch(relation)
+      # The work to be done in a single iteration of the background migration.
+      # This should be idempotent, as the same batch may be processed more
+      # than once if the background migration is interrupted and resumed.
+    end
+
+    def count
+      # Optionally, define the number of rows that will be iterated over.
+      # This is used to track the background migration's progress.
+    end
+  end
+<% end -%>
+end
