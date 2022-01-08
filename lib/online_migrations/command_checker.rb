@@ -132,6 +132,10 @@ module OnlineMigrations
         @new_tables << table_name.to_s
       end
 
+      def change_table(*)
+        raise_error :change_table, header: "Possibly dangerous operation"
+      end
+
       def rename_table(table_name, new_name, **)
         if !new_table?(table_name)
           raise_error :rename_table,

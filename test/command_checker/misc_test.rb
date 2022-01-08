@@ -112,6 +112,18 @@ module CommandChecker
       assert_safe RenameTableNewTable
     end
 
+    class ChangeTable < TestMigration
+      def change
+        change_table :users do |t|
+          t.integer :new_column
+        end
+      end
+    end
+
+    def test_change_table
+      assert_unsafe ChangeTable
+    end
+
     class RenameColumn < TestMigration
       def change
         rename_column :users, :name, :first_name

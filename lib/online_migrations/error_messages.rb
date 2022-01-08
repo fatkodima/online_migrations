@@ -12,6 +12,11 @@ out of IDs on inserts. Better to use one of 'bigint', 'bigserial' or 'uuid'.",
 "The `:force` option will destroy existing table. If this is intended, drop the existing table first.
 Otherwise, remove the `:force` option.",
 
+      change_table:
+"Online Migrations does not support inspecting what happens inside a
+change_table block, so cannot help you here. Make really sure that what
+you're doing is safe before proceeding, then wrap it in a safety_assured { ... } block.",
+
       rename_table:
 "Renaming a table that's in use will cause errors in your application.
 migration_helpers provides a safer approach to do this:
