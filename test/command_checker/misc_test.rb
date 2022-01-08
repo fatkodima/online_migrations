@@ -7,7 +7,10 @@ module CommandChecker
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade)
-      @connection.create_table(:projects, force: :cascade)
+
+      @connection.create_table(:projects, force: :cascade) do |t|
+        t.bigint :user_id
+      end
     end
 
     def teardown
@@ -192,6 +195,31 @@ module CommandChecker
       assert_safe RenameColumnNewTable
     end
 
+    class ValidateConstraint < TestMigration
+      def change
+        add_foreign_key :projects, :users, name: "projects_fk", validate: false
+        validate_constraint :projects, "projects_fk"
+      end
+    end
+
+    def test_validate_constraint
+      assert_unsafe ValidateConstraint
+    end
+
+    class ValidateConstraintNoTransaction < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_foreign_key :projects, :users, name: "projects_fk", validate: false
+        validate_constraint :projects, "projects_fk"
+      end
+    end
+
+    def test_validate_constraint_no_transaction
+      skip if ar_version < 5.2
+      assert_safe ValidateConstraintNoTransaction
+    end
+
     class ExecuteQuery < TestMigration
       def change
         execute("SELECT 1")
@@ -226,6 +254,69 @@ module CommandChecker
 
     def test_execute_query_safety_assured
       assert_safe ExecuteQuerySafetyAssured
+    end
+
+    class AddNotNullConstraint < TestMigration
+      def change
+        add_not_null_constraint :projects, :user_id
+      end
+    end
+
+    def test_add_not_null_constraint
+      assert_unsafe AddNotNullConstraint, <<~MSG
+        Adding a NOT NULL constraint blocks reads and writes while every row is checked.
+        A safer approach is to add the NOT NULL check constraint without validating existing rows,
+        and then validating them in a separate migration.
+
+        class CommandChecker::MiscTest::AddNotNullConstraint < #{migration_parent_string}
+          def change
+            add_not_null_constraint :projects, :user_id, validate: false
+          end
+        end
+
+        class CommandChecker::MiscTest::AddNotNullConstraintValidate < #{migration_parent_string}
+          def change
+            validate_not_null_constraint :projects, :user_id
+          end
+        end
+      MSG
+    end
+
+    class AddNotNullConstraintNoValidate < TestMigration
+      def change
+        add_not_null_constraint :projects, :user_id, validate: false
+      end
+    end
+
+    def test_add_not_null_constraint_no_validate
+      assert_safe AddNotNullConstraintNoValidate
+    end
+
+    class ValidateNotNullConstraint < TestMigration
+      def change
+        add_not_null_constraint :projects, :user_id, validate: false
+        validate_not_null_constraint :projects, :user_id
+      end
+    end
+
+    def test_validate_not_null_constraint
+      assert_unsafe ValidateNotNullConstraint, <<~MSG
+        Validating a constraint while holding heavy locks on tables is dangerous.
+        Use disable_ddl_transaction! or a separate migration.
+      MSG
+    end
+
+    class ValidateNotNullConstraintNoTransaction < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_not_null_constraint :projects, :user_id, validate: false
+        validate_not_null_constraint :projects, :user_id
+      end
+    end
+
+    def test_validate_not_null_constraint_no_transaction
+      assert_safe ValidateNotNullConstraintNoTransaction
     end
 
     private
