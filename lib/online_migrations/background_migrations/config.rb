@@ -35,6 +35,18 @@ module OnlineMigrations
       #
       attr_accessor :batch_max_attempts
 
+      # Allows to throttle background migrations based on external signal (e.g. database health)
+      #
+      # It will be called before each batch run.
+      # If throttled, the current run will be retried next time.
+      #
+      # @return [Proc]
+      #
+      # @example
+      #   OnlineMigrations.config.backround_migrations.throttler = -> { DatabaseStatus.unhealthy? }
+      #
+      attr_reader :throttler
+
       # The number of seconds that must pass before the running job is considered stuck
       #
       # @return [Integer] defaults to 1 hour
@@ -48,7 +60,16 @@ module OnlineMigrations
         @batch_pause = 0.seconds
         @sub_batch_pause_ms = 100
         @batch_max_attempts = 5
+        @throttler = -> { false }
         @stuck_jobs_timeout = 1.hour
+      end
+
+      def throttler=(value)
+        unless value.respond_to?(:call)
+          raise ArgumentError, "background_migrations throttler must be a callable."
+        end
+
+        @throttler = value
       end
     end
   end

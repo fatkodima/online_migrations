@@ -19,6 +19,11 @@ module OnlineMigrations
           ActiveSupport::Notifications.instrument("started.background_migrations", migration_payload)
         end
 
+        if should_throttle?
+          ActiveSupport::Notifications.instrument("throttled.background_migrations", migration_payload)
+          return
+        end
+
         next_migration_job = find_or_create_next_migration_job
 
         if next_migration_job
@@ -69,6 +74,10 @@ module OnlineMigrations
       end
 
       private
+        def should_throttle?
+          ::OnlineMigrations.config.background_migrations.throttler.call
+        end
+
         def find_or_create_next_migration_job
           if (min_value, max_value = migration.next_batch_range)
             create_migration_job!(min_value, max_value)

@@ -131,6 +131,36 @@ module BackgroundMigrations
       ActiveSupport::Notifications.unsubscribe("completed.background_migrations")
     end
 
+    def test_throttling
+      previous = OnlineMigrations.config.background_migrations.throttler
+
+      throttler_called = 0
+      OnlineMigrations.config.background_migrations.throttler = -> do
+        throttler_called += 1
+        throttler_called == 1
+      end
+
+      _user = User.create!
+      m = create_migration
+
+      throttled_called = 0
+      ActiveSupport::Notifications.subscribe("throttled.background_migrations") do |*, payload|
+        throttled_called += 1
+        assert_equal m, payload[:background_migration]
+      end
+
+      # Throttled
+      run_migration_job(m)
+      assert_equal 1, throttled_called
+      assert_equal 0, m.migration_jobs.count
+
+      run_migration_job(m)
+      assert_equal 1, throttled_called
+      assert_equal 1, m.migration_jobs.count
+    ensure
+      OnlineMigrations.config.background_migrations.throttler = previous
+    end
+
     def test_run_all_migration_jobs
       4.times { User.create! }
       m = create_migration(batch_size: 2, sub_batch_size: 2)

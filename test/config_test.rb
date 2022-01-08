@@ -47,6 +47,19 @@ class ConfigTest < MiniTest::Test
     end
   end
 
+  def test_background_migrations_throttler
+    previous = config.background_migrations.throttler
+
+    error = assert_raises(ArgumentError) do
+      config.background_migrations.throttler = :not_callable
+    end
+    assert_equal "background_migrations throttler must be a callable.", error.message
+
+    config.background_migrations.throttler = -> { :callable }
+  ensure
+    config.background_migrations.throttler = previous
+  end
+
   def test_disable_check
     config.disable_check(:remove_column)
     assert_safe RemoveNameFromUsers
