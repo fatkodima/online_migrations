@@ -633,7 +633,7 @@ module OnlineMigrations
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index
     #
-    def add_index(table_name, column_name, **options)
+    def add_index(table_name, column_name, options = {})
       algorithm = options[:algorithm]
 
       __ensure_not_in_transaction! if algorithm == :concurrently

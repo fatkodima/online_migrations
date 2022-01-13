@@ -28,9 +28,12 @@ module SchemaStatements
       end
 
       @connection.add_check_constraint(:projects, "star_count >= 0")
+
+      Project.reset_column_information
     end
 
     def teardown
+      OnlineMigrations::BackgroundMigrations::Migration.delete_all
       @connection.drop_table(:projects) rescue nil
       @connection.drop_table(:users) rescue nil
     end

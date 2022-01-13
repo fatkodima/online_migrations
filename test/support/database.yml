@@ -1,5 +1,8 @@
 postgresql:
   adapter: postgresql
+  host: localhost
   database: online_migrations_test
+  username: postgres
+  password: postgres
   variables:
     lock_timeout: 5

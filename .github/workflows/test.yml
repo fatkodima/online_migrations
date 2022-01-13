@@ -1,0 +1,112 @@
+name: Test
+on: [push, pull_request]
+
+jobs:
+  # Run the linter first for rapid feedback if some trivial stylistic issues
+  # slipped through the cracks.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1.0
+          bundler-cache: true
+      - run: bundle exec rubocop
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: online_migrations_test
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    strategy:
+      matrix:
+        include:
+          - ruby-version: 2.4.10
+            gemfile: gemfiles/activerecord_42.gemfile
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_42.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_42.gemfile
+
+          - ruby-version: 2.4.10
+            gemfile: gemfiles/activerecord_50.gemfile
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_50.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_50.gemfile
+          - ruby-version: 2.7.5
+            gemfile: gemfiles/activerecord_50.gemfile
+
+          - ruby-version: 2.4.10
+            gemfile: gemfiles/activerecord_51.gemfile
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_51.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_51.gemfile
+          - ruby-version: 2.7.5
+            gemfile: gemfiles/activerecord_51.gemfile
+
+          - ruby-version: 2.4.10
+            gemfile: gemfiles/activerecord_52.gemfile
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_52.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_52.gemfile
+          - ruby-version: 2.7.5
+            gemfile: gemfiles/activerecord_52.gemfile
+
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_60.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_60.gemfile
+          - ruby-version: 2.7.5
+            gemfile: gemfiles/activerecord_60.gemfile
+          - ruby-version: 3.0.3
+            gemfile: gemfiles/activerecord_60.gemfile
+
+          - ruby-version: 2.5.9
+            gemfile: gemfiles/activerecord_61.gemfile
+          - ruby-version: 2.6.9
+            gemfile: gemfiles/activerecord_61.gemfile
+          - ruby-version: 2.7.4
+            gemfile: gemfiles/activerecord_61.gemfile
+          - ruby-version: 3.0.3
+            gemfile: gemfiles/activerecord_61.gemfile
+          - ruby-version: 3.1.0
+            gemfile: gemfiles/activerecord_61.gemfile
+
+          - ruby-version: 2.7.4
+            gemfile: gemfiles/activerecord_70.gemfile
+          - ruby-version: 3.0.3
+            gemfile: gemfiles/activerecord_70.gemfile
+          - ruby-version: 3.1.0
+            gemfile: gemfiles/activerecord_70.gemfile
+
+          - ruby-version: 2.7.4
+            gemfile: gemfiles/activerecord_head.gemfile
+          - ruby-version: 3.0.3
+            gemfile: gemfiles/activerecord_head.gemfile
+          - ruby-version: 3.1.0
+            gemfile: gemfiles/activerecord_head.gemfile
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+      - name: Run the test suite
+        run: bundle exec rake test
