@@ -13,7 +13,7 @@ class BackgroundMigrationTest < MiniTest::Test
     error = assert_raises(OnlineMigrations::BackgroundMigration::NotFoundError) do
       OnlineMigrations::BackgroundMigration.named("DoesNotExist")
     end
-    assert_equal "Background Migration DoesNotExist not found", error.message
+    assert_includes error.message, "Background Migration DoesNotExist not found"
     assert_equal "DoesNotExist", error.name
   end
 
@@ -21,7 +21,7 @@ class BackgroundMigrationTest < MiniTest::Test
     error = assert_raises(OnlineMigrations::BackgroundMigration::NotFoundError) do
       OnlineMigrations::BackgroundMigration.named("NotAMigration")
     end
-    assert_equal "NotAMigration is not a Background Migration", error.message
+    assert_includes error.message, "NotAMigration is not a Background Migration"
     assert_equal "NotAMigration", error.name
   end
 end

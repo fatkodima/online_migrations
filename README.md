@@ -8,6 +8,8 @@ Catch unsafe PostgreSQL migrations in development and run them easier in product
 
 **Note**: You probably don't need this gem for smaller projects, as operations that are unsafe at scale can be perfectly safe on smaller, low-traffic tables.
 
+[![Build Status](https://github.com/fatkodima/online_migrations/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/fatkodima/online_migrations/actions/workflows/test.yml)
+
 ## Requirements
 
 - Ruby 2.1+
