@@ -545,7 +545,7 @@ module OnlineMigrations
       end
 
       def crud_blocked?
-        locks_query = <<~SQL
+        locks_query = <<-SQL.strip_heredoc
           SELECT relation::regclass::text
           FROM pg_locks
           WHERE mode IN ('ShareLock', 'ShareRowExclusiveLock', 'ExclusiveLock', 'AccessExclusiveLock')
@@ -563,7 +563,7 @@ module OnlineMigrations
       end
 
       def check_constraints(table_name)
-        constraints_query = <<~SQL
+        constraints_query = <<-SQL.strip_heredoc
           SELECT pg_get_constraintdef(oid) AS def
           FROM pg_constraint
           WHERE contype = 'c'

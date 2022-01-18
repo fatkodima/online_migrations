@@ -27,7 +27,7 @@ module CommandChecker
 
     def test_add_timestamps_default_before_11
       with_target_version(10) do
-        assert_unsafe AddTimestampsDefault, <<~MSG
+        assert_unsafe AddTimestampsDefault, <<-MSG.strip_heredoc
           Adding timestamps columns with non-null defaults blocks reads and writes while the entire table is rewritten.
 
           A safer approach is to, for both timestamps columns:

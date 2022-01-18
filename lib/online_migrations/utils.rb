@@ -63,7 +63,7 @@ module OnlineMigrations
       end
 
       def to_bool(value)
-        value.to_s.match?(/^(true|t|yes|y|1|on)$/i)
+        !value.to_s.match(/^(true|t|yes|y|1|on)$/i).nil?
       end
 
       def foreign_table_name(ref_name, options)
@@ -89,7 +89,7 @@ module OnlineMigrations
       def estimated_count(connection, table_name)
         quoted_table = connection.quote(table_name)
 
-        count = connection.select_value(<<~SQL)
+        count = connection.select_value(<<-SQL.strip_heredoc)
           SELECT
             (reltuples / COALESCE(NULLIF(relpages, 0), 1)) *
             (pg_relation_size(#{quoted_table}) / (current_setting('block_size')::integer))
@@ -127,7 +127,7 @@ module OnlineMigrations
       end
 
       def volatile_function?(connection, function_name)
-        query = <<~SQL
+        query = <<-SQL.strip_heredoc
           SELECT provolatile
           FROM pg_catalog.pg_proc
           WHERE proname = #{connection.quote(function_name)}

@@ -27,7 +27,7 @@ module CommandChecker
 
     def test_add_column_default_before_11
       with_target_version(10) do
-        assert_unsafe AddColumnDefault, <<~MSG
+        assert_unsafe AddColumnDefault, <<-MSG.strip_heredoc
           Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
 
           A safer approach is to:
@@ -161,7 +161,7 @@ module CommandChecker
     end
 
     def test_add_column_json
-      assert_unsafe AddColumnJson, <<~MSG
+      assert_unsafe AddColumnJson, <<-MSG.strip_heredoc
         There's no equality operator for the json column type, which can cause errors for
         existing SELECT DISTINCT queries in your application. Use jsonb instead.
 

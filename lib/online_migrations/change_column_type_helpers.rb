@@ -249,7 +249,7 @@ module OnlineMigrations
             # through PG internal tables.
             # In-depth analysis of implications of this was made, so this approach
             # is considered safe - https://habr.com/ru/company/haulmont/blog/493954/  (in russian).
-            execute(<<~SQL)
+            execute(<<-SQL.strip_heredoc)
               UPDATE pg_catalog.pg_attribute
               SET attnotnull = true
               WHERE attrelid = #{quote(table_name)}::regclass
@@ -471,7 +471,7 @@ module OnlineMigrations
       def __check_constraints(table_name)
         schema = __schema_for_table(table_name)
 
-        check_sql = <<~SQL
+        check_sql = <<-SQL.strip_heredoc
           SELECT
             ccu.column_name as column_name,
             con.conname as constraint_name,
@@ -494,7 +494,7 @@ module OnlineMigrations
       end
 
       def __rename_constraint(table_name, old_name, new_name)
-        execute(<<~SQL)
+        execute(<<-SQL.strip_heredoc)
           ALTER TABLE #{quote_table_name(table_name)}
           RENAME CONSTRAINT #{quote_column_name(old_name)} TO #{quote_column_name(new_name)}
         SQL
@@ -566,7 +566,7 @@ module OnlineMigrations
       def __referencing_table_names(table_name)
         schema = __schema_for_table(table_name)
 
-        select_values(<<~SQL)
+        select_values(<<-SQL.strip_heredoc)
           SELECT DISTINCT con.conrelid::regclass::text AS conrelname
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_namespace nsp

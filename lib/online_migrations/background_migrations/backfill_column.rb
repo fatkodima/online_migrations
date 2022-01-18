@@ -13,7 +13,9 @@ module OnlineMigrations
       end
 
       def relation
-        if updates.size == 1 && (column, value = updates.first) && !value.nil?
+        column, value = updates.first
+
+        if updates.size == 1 && !value.nil?
           # If value is nil, the generated SQL is correct (`WHERE column IS NOT NULL`).
           # Otherwise, the SQL is `WHERE column != value`. This condition ignores column
           # with NULLs in it, so we need to also manually check for NULLs.

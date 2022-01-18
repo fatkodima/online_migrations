@@ -26,7 +26,7 @@ module OnlineMigrations
         stuck_sql             = connection.unprepared_statement { stuck.to_sql }
         failed_retriable_sql  = connection.unprepared_statement { failed_retriable.to_sql }
 
-        from(Arel.sql(<<~SQL))
+        from(Arel.sql(<<-SQL.strip_heredoc))
           (
             (#{failed_retriable_sql})
             UNION

@@ -224,7 +224,7 @@ module SchemaStatements
       user = User.create!
 
       assert_raises(ActiveRecord::StatementInvalid) do
-        @connection.execute <<~SQL
+        @connection.execute <<-SQL.strip_heredoc
           INSERT INTO projects (description, user_id, star_count)
           VALUES ('Description', #{user.id}, -1)
         SQL

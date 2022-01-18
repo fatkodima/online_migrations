@@ -29,7 +29,7 @@ module CommandChecker
     end
 
     def test_add_check_constraint
-      assert_unsafe AddCheckConstraint, <<~MSG
+      assert_unsafe AddCheckConstraint, <<-MSG.strip_heredoc
         Adding a check constraint blocks reads and writes while every row is checked.
         A safer approach is to add the check constraint without validating existing rows,
         and then validating them in a separate transaction.
@@ -96,7 +96,7 @@ module CommandChecker
     end
 
     def test_add_check_constraint_validate_same_transaction
-      assert_unsafe AddCheckConstraintValidateSameTransaction, <<~MSG
+      assert_unsafe AddCheckConstraintValidateSameTransaction, <<-MSG.strip_heredoc
         Validating a constraint while holding heavy locks on tables is dangerous.
         Use disable_ddl_transaction! or a separate migration.
       MSG

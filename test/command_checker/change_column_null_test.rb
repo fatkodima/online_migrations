@@ -33,7 +33,7 @@ module CommandChecker
 
     def test_change_column_null_to_disallow_before_12
       with_target_version(11) do
-        assert_unsafe ChangeColumnNullToFalse, <<~MSG
+        assert_unsafe ChangeColumnNullToFalse, <<-MSG.strip_heredoc
           Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
           A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
           add_not_null_constraint and validate_not_null_constraint take care of that.

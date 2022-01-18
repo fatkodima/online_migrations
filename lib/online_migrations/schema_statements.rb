@@ -702,8 +702,8 @@ module OnlineMigrations
     #
     def add_foreign_key(from_table, to_table, validate: true, **options)
       if foreign_key_exists?(from_table, **options.merge(to_table: to_table))
-        message = +"Foreign key was not created because it already exists " \
-          "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}"
+        message = "Foreign key was not created because it already exists " \
+          "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}".dup
         message << ", #{options.inspect}" if options.any?
 
         Utils.say(message)
@@ -714,7 +714,7 @@ module OnlineMigrations
         options[:primary_key] ||= "id"
         options[:name] ||= __foreign_key_name(to_table, options[:column])
 
-        query = +<<~SQL
+        query = <<-SQL.strip_heredoc.dup
           ALTER TABLE #{from_table}
           ADD CONSTRAINT #{options[:name]}
           FOREIGN KEY (#{options[:column]})
@@ -853,7 +853,7 @@ module OnlineMigrations
       # ActiveRecord methods
       def __ensure_not_in_transaction!(method_name = caller[0])
         if transaction_open?
-          raise <<~MSG
+          raise <<-MSG.strip_heredoc
             `#{method_name}` cannot run inside a transaction block.
 
             You can remove transaction block by calling `disable_ddl_transaction!` in the body of
@@ -865,7 +865,7 @@ module OnlineMigrations
       def __column_not_nullable?(table_name, column_name)
         schema = __schema_for_table(table_name)
 
-        query = <<~SQL
+        query = <<-SQL.strip_heredoc
           SELECT is_nullable
           FROM information_schema.columns
           WHERE table_schema = #{schema}
@@ -895,7 +895,7 @@ module OnlineMigrations
       end
 
       def __index_column_names(column_names)
-        if column_names.is_a?(String) && /\W/.match?(column_names)
+        if column_names.is_a?(String) && /\W/.match(column_names)
           column_names
         else
           Array(column_names)
@@ -904,7 +904,7 @@ module OnlineMigrations
 
       def __index_valid?(index_name, schema:)
         # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
-        valid = select_value <<~SQL
+        valid = select_value <<-SQL.strip_heredoc
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c
@@ -931,7 +931,7 @@ module OnlineMigrations
         when :cascade  then "ON #{action} CASCADE"
         when :restrict then "ON #{action} RESTRICT"
         else
-          raise ArgumentError, <<~MSG
+          raise ArgumentError, <<-MSG.strip_heredoc
             '#{dependency}' is not supported for :on_update or :on_delete.
             Supported values are: :nullify, :cascade, :restrict
           MSG
@@ -981,7 +981,7 @@ module OnlineMigrations
         schema = __schema_for_table(table_name)
         contype = type == :check ? "c" : "f"
 
-        validated = select_value(<<~SQL)
+        validated = select_value(<<-SQL.strip_heredoc)
           SELECT convalidated
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_namespace nsp
@@ -1018,7 +1018,7 @@ module OnlineMigrations
       def __check_constraint_exists?(table_name, constraint_name)
         schema = __schema_for_table(table_name)
 
-        check_sql = <<~SQL.squish
+        check_sql = <<-SQL.strip_heredoc
           SELECT COUNT(*)
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_class cl

@@ -29,7 +29,7 @@ module CommandChecker
     end
 
     def test_add_foreign_key
-      assert_unsafe AddForeignKey, <<~MSG
+      assert_unsafe AddForeignKey, <<-MSG.strip_heredoc
         Adding a foreign key blocks writes on both tables. Add the foreign key without validating existing rows,
         and then validate them in a separate transaction.
 
@@ -85,7 +85,7 @@ module CommandChecker
     end
 
     def test_add_foreign_key_validate_same_transaction
-      assert_unsafe AddForeignKeyValidateSameTransaction, <<~MSG
+      assert_unsafe AddForeignKeyValidateSameTransaction, <<-MSG.strip_heredoc
         Validating a foreign key while holding heavy locks on tables is dangerous.
         Use disable_ddl_transaction! or a separate migration.
       MSG

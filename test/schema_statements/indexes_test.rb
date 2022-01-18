@@ -82,7 +82,7 @@ module SchemaStatements
     private
       def index_valid?(index_name)
         # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
-        valid = @connection.select_value <<~SQL
+        valid = @connection.select_value <<-SQL.strip_heredoc
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c

@@ -58,7 +58,7 @@ module CommandChecker
     def test_integer_primary_key
       OnlineMigrations.config.enable_check(:short_primary_key_type)
 
-      assert_unsafe IntegerPrimaryKey, <<~MSG
+      assert_unsafe IntegerPrimaryKey, <<-MSG.strip_heredoc
         Using short integer types for primary keys is dangerous due to the risk of running
         out of IDs on inserts. Better to use one of 'bigint', 'bigserial' or 'uuid'.
       MSG
@@ -73,7 +73,7 @@ module CommandChecker
     end
 
     def test_rename_table
-      assert_unsafe RenameTable, <<~MSG
+      assert_unsafe RenameTable, <<-MSG.strip_heredoc
         Renaming a table that's in use will cause errors in your application.
         migration_helpers provides a safer approach to do this:
 
@@ -139,7 +139,7 @@ module CommandChecker
     end
 
     def test_rename_column
-      assert_unsafe RenameColumn, <<~MSG
+      assert_unsafe RenameColumn, <<-MSG.strip_heredoc
         Renaming a column that's in use will cause errors in your application.
         migration_helpers provides a safer approach to do this:
 
@@ -179,7 +179,7 @@ module CommandChecker
 
     def test_rename_column_without_partial_writes
       without_partial_writes do
-        assert_unsafe RenameColumn, <<~MSG
+        assert_unsafe RenameColumn, <<-MSG.strip_heredoc
           NOTE: You also need to temporarily enable partial writes until the process of column rename is fully done.
           # config/application.rb
           config.active_record.#{OnlineMigrations::Utils.ar_partial_writes_setting} = true
@@ -232,7 +232,7 @@ module CommandChecker
     end
 
     def test_execute_query
-      assert_unsafe ExecuteQuery, <<~MSG
+      assert_unsafe ExecuteQuery, <<-MSG.strip_heredoc
         Online Migrations does not support inspecting what happens inside an
         execute call, so cannot help you here. Make really sure that what
         you're doing is safe before proceeding, then wrap it in a safety_assured { ... } block.
@@ -268,7 +268,7 @@ module CommandChecker
     end
 
     def test_add_not_null_constraint
-      assert_unsafe AddNotNullConstraint, <<~MSG
+      assert_unsafe AddNotNullConstraint, <<-MSG.strip_heredoc
         Adding a NOT NULL constraint blocks reads and writes while every row is checked.
         A safer approach is to add the NOT NULL check constraint without validating existing rows,
         and then validating them in a separate migration.
@@ -305,7 +305,7 @@ module CommandChecker
     end
 
     def test_validate_not_null_constraint
-      assert_unsafe ValidateNotNullConstraint, <<~MSG
+      assert_unsafe ValidateNotNullConstraint, <<-MSG.strip_heredoc
         Validating a constraint while holding heavy locks on tables is dangerous.
         Use disable_ddl_transaction! or a separate migration.
       MSG
@@ -331,7 +331,7 @@ module CommandChecker
     end
 
     def test_add_text_limit_constraint
-      assert_unsafe AddTextLimitConstraint, <<~MSG
+      assert_unsafe AddTextLimitConstraint, <<-MSG.strip_heredoc
         Adding a limit on the text column blocks reads and writes while every row is checked.
         A safer approach is to add the limit check constraint without validating existing rows,
         and then validating them in a separate migration.
@@ -368,7 +368,7 @@ module CommandChecker
     end
 
     def test_validate_text_limit_constraint
-      assert_unsafe ValidateTextLimitConstraint, <<~MSG
+      assert_unsafe ValidateTextLimitConstraint, <<-MSG.strip_heredoc
         Validating a constraint while holding heavy locks on tables is dangerous.
         Use disable_ddl_transaction! or a separate migration.
       MSG

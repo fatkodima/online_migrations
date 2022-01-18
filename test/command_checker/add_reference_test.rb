@@ -23,7 +23,7 @@ module CommandChecker
 
     def test_add_reference_default
       if ar_version >= 5.0
-        assert_unsafe AddReferenceDefault, <<~MSG
+        assert_unsafe AddReferenceDefault, <<-MSG.strip_heredoc
           Adding an index non-concurrently blocks writes.
           Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding index.
 
@@ -79,7 +79,7 @@ module CommandChecker
     end
 
     def test_add_reference_foreign_key
-      assert_unsafe AddReferenceForeignKey, <<~MSG
+      assert_unsafe AddReferenceForeignKey, <<-MSG.strip_heredoc
         Adding a foreign key blocks writes on both tables.
         Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding a foreign key.
 
@@ -120,7 +120,7 @@ module CommandChecker
     end
 
     def test_add_reference_index_and_foreign_key
-      assert_unsafe AddReferenceIndexAndForeignKey, <<~MSG
+      assert_unsafe AddReferenceIndexAndForeignKey, <<-MSG.strip_heredoc
         Adding a foreign key blocks writes on both tables.
         Adding an index non-concurrently blocks writes.
         Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding a foreign key and index.

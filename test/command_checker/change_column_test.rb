@@ -31,7 +31,7 @@ module CommandChecker
     end
 
     def test_change_column_type
-      assert_unsafe ChangeColumnType, <<~MSG
+      assert_unsafe ChangeColumnType, <<-MSG.strip_heredoc
         Changing the type of an existing column blocks reads and writes while the entire table is rewritten.
         A safer approach can be accomplished in several steps:
 
@@ -241,7 +241,7 @@ module CommandChecker
     end
 
     def test_add_not_null
-      assert_unsafe AddNotNull, <<~MSG
+      assert_unsafe AddNotNull, <<-MSG.strip_heredoc
         Changing the type is safe, but setting NOT NULL is not.
       MSG
     end

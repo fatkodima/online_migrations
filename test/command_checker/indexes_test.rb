@@ -25,7 +25,7 @@ module CommandChecker
     end
 
     def test_add_index_non_concurrently
-      assert_unsafe AddIndexNonConcurrently, <<~MSG
+      assert_unsafe AddIndexNonConcurrently, <<-MSG.strip_heredoc
         Adding an index non-concurrently blocks writes. Instead, use:
 
         class CommandChecker::IndexesTest::AddIndexNonConcurrently < #{migration_parent_string}
@@ -163,7 +163,7 @@ module CommandChecker
     end
 
     def test_remove_index_non_concurrently
-      assert_unsafe RemoveIndexNonConcurrently, <<~MSG
+      assert_unsafe RemoveIndexNonConcurrently, <<-MSG.strip_heredoc
         Removing an index non-concurrently blocks writes. Instead, use:
 
         class CommandChecker::IndexesTest::RemoveIndexNonConcurrently < #{migration_parent_string}

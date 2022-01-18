@@ -31,7 +31,7 @@ module CommandChecker
     end
 
     def test_remove_column
-      assert_unsafe RemoveColumn, <<~MSG
+      assert_unsafe RemoveColumn, <<-MSG.strip_heredoc
         ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
         A safer approach is to:
 
@@ -76,7 +76,7 @@ module CommandChecker
     end
 
     def test_remove_column_with_index
-      assert_unsafe RemoveColumnWithIndex, <<~MSG
+      assert_unsafe RemoveColumnWithIndex, <<-MSG.strip_heredoc
         Removing a column will automatically remove all of the indexes that involved the removed column.
         But the indexes would be removed non-concurrently, so you need to safely remove the indexes first:
 

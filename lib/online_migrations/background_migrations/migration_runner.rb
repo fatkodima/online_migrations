@@ -79,7 +79,9 @@ module OnlineMigrations
         end
 
         def find_or_create_next_migration_job
-          if (min_value, max_value = migration.next_batch_range)
+          min_value, max_value = migration.next_batch_range
+
+          if min_value && max_value
             create_migration_job!(min_value, max_value)
           else
             migration.migration_jobs.retriable.first
