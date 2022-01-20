@@ -433,7 +433,7 @@ module OnlineMigrations
             nil
           when Hash
             options[:id][:type]
-          when nil
+          when :primary_key, nil
             # default type is used
             connection.native_database_types[:primary_key].split.first
           else
