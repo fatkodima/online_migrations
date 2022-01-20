@@ -129,6 +129,7 @@ Potentially dangerous operations:
 - [executing SQL directly](#executing-SQL-directly)
 - [adding an index non-concurrently](#adding-an-index-non-concurrently)
 - [removing an index non-concurrently](#removing-an-index-non-concurrently)
+- [replacing an index](#replacing-an-index)
 - [adding a reference](#adding-a-reference)
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding a json column](#adding-a-json-column)
@@ -663,6 +664,40 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Replacing an index
+
+#### Bad
+
+Removing an old index before replacing it with the new one might result in slow queries while building the new index.
+
+```ruby
+class AddIndexOnEmailAnd < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    remove_index :projects, :creator_id, algorithm: :concurrently
+    add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+  end
+end
+```
+
+**Note**: If removed index is covered by any existing index, then it is safe to remove the index before replacing it with the new one.
+
+#### Good
+
+A safer approach is to create the new index and then delete the old one.
+
+```ruby
+class AddIndexOnEmailAnd < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+    remove_index :projects, :creator_id, algorithm: :concurrently
+  end
+end
+```
 
 ### Adding a reference
 

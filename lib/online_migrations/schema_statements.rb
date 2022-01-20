@@ -677,7 +677,7 @@ module OnlineMigrations
       index_name = options[:name]
       index_name ||= index_name(table_name, column_names)
 
-      if index_exists?(table_name, column_name, **options)
+      if index_exists?(table_name, column_names, **options)
         disable_statement_timeout do
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
@@ -692,7 +692,7 @@ module OnlineMigrations
         end
       else
         Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration "\
-          "or similar): table_name: #{table_name}, column_name: #{column_name}")
+          "or similar): table_name: #{table_name}, column_name: #{column_names}")
       end
     end
 

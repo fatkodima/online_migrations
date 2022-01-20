@@ -306,6 +306,10 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
+      replace_index:
+"Removing an old index before replacing it with the new one might result in slow queries while building the new index.
+A safer approach is to create the new index and then delete the old one.",
+
       add_foreign_key:
 "Adding a foreign key blocks writes on both tables. Add the foreign key without validating existing rows,
 and then validate them in a separate transaction.

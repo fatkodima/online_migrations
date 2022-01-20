@@ -3,8 +3,6 @@
 module OnlineMigrations
   # @private
   class IndexesCollector
-    IndexDefinition = Struct.new(:using)
-
     COLUMN_TYPES = [:bigint, :binary, :boolean, :date, :datetime, :decimal,
                     :float, :integer, :json, :string, :text, :time, :timestamp, :virtual]
 
@@ -19,7 +17,7 @@ module OnlineMigrations
     end
 
     def index(_column_name, **options)
-      @indexes << IndexDefinition.new(options[:using].to_s)
+      @indexes << IndexDefinition.new(using: options[:using].to_s)
     end
 
     def references(*_ref_names, **options)
@@ -27,7 +25,7 @@ module OnlineMigrations
 
       if index
         using = index.is_a?(Hash) ? index[:using].to_s : nil
-        @indexes << IndexDefinition.new(using)
+        @indexes << IndexDefinition.new(using: using)
       end
     end
     alias belongs_to references
@@ -40,7 +38,7 @@ module OnlineMigrations
 
         if index
           using = index.is_a?(Hash) ? index[:using].to_s : nil
-          @indexes << IndexDefinition.new(using)
+          @indexes << IndexDefinition.new(using: using)
         end
       end
     end

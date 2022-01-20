@@ -15,6 +15,7 @@ module OnlineMigrations
       @new_tables = []
       @lock_timeout_checked = false
       @foreign_key_tables = Set.new
+      @removed_indexes = []
     end
 
     def safety_assured
@@ -351,9 +352,26 @@ module OnlineMigrations
       def add_index(table_name, column_name, **options)
         if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
           raise_error :add_hash_index
-        elsif options[:algorithm] != :concurrently && !new_or_small_table?(table_name)
-          raise_error :add_index,
-            command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
+        end
+
+        if !new_or_small_table?(table_name)
+          if options[:algorithm] != :concurrently
+            raise_error :add_index,
+              command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
+          end
+
+          if @removed_indexes.any?
+            index = IndexDefinition.new(table: table_name, columns: column_name, **options)
+            existing_indexes = connection.indexes(table_name)
+
+            @removed_indexes.each do |removed_index|
+              next unless removed_index.intersect?(index)
+
+              unless existing_indexes.any? { |existing_index| removed_index.covered_by?(existing_index) }
+                raise_error :replace_index
+              end
+            end
+          end
         end
       end
 
@@ -363,6 +381,11 @@ module OnlineMigrations
         if options[:algorithm] != :concurrently && !new_or_small_table?(table_name)
           raise_error :remove_index,
             command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
+        end
+
+        if options[:column] || options[:name]
+          options[:column] ||= connection.indexes(table_name).find { |index| index.name == options[:name].to_s }
+          @removed_indexes << IndexDefinition.new(table: table_name, columns: options.delete(:column), **options)
         end
       end
 

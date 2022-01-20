@@ -10,7 +10,12 @@ module CommandChecker
         t.string :email
       end
 
-      @connection.create_table(:projects, force: :cascade)
+      @connection.create_table(:projects, force: :cascade) do |t|
+        t.string :name
+        t.bigint :creator_id
+        t.integer :status
+        t.datetime :created_at
+      end
     end
 
     def teardown
@@ -202,6 +207,104 @@ module CommandChecker
 
     def test_remove_index_new_table
       assert_safe RemoveIndexNewTable
+    end
+
+    class ReplaceIndex < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, :creator_id, algorithm: :concurrently
+        add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+      end
+    end
+
+    def test_replace_index
+      @connection.add_index(:projects, :creator_id)
+
+      assert_unsafe ReplaceIndex, <<-MSG.strip_heredoc
+        Removing an old index before replacing it with the new one might result in slow queries while building the new index.
+        A safer approach is to create the new index and then delete the old one.
+      MSG
+    end
+
+    class ReplaceIndexCorrectOrder < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+        remove_index :projects, column: :creator_id, algorithm: :concurrently
+      end
+    end
+
+    def test_replace_index_correct_order
+      @connection.add_index(:projects, :creator_id)
+
+      assert_safe ReplaceIndexCorrectOrder
+    end
+
+    class NonIntersectableIndexes < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, column: :creator_id, algorithm: :concurrently
+        add_index :projects, :created_at, algorithm: :concurrently
+      end
+    end
+
+    def test_non_intersectable_indexes
+      assert_safe NonIntersectableIndexes
+    end
+
+    class ReplaceIndexCoveringIndexExists < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, column: :creator_id, algorithm: :concurrently
+        add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+      end
+    end
+
+    def test_replace_index_covering_index_exists
+      @connection.add_index(:projects, :creator_id)
+      @connection.add_index(:projects, [:creator_id, :id])
+
+      assert_safe ReplaceIndexCoveringIndexExists
+    end
+
+    class ReplaceIndexAlmostCoveringIndexExists < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, column: :creator_id, algorithm: :concurrently
+        add_index :projects, [:creator_id, :created_at], algorithm: :concurrently
+      end
+    end
+
+    def test_replace_index_almost_covering_index_exists
+      @connection.add_index(:projects, :creator_id)
+      @connection.add_index(:projects, [:creator_id, :id], where: "status = 1") # "where" makes it non-covering
+
+      assert_unsafe ReplaceIndexAlmostCoveringIndexExists, /removing an old index/i
+    end
+
+    class ReplaceExpressionIndex < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, column: "lower(name)", algorithm: :concurrently
+        add_index :projects, ["lower(name)", :created_at], algorithm: :concurrently
+      end
+    end
+
+    def test_replace_expression_index
+      # Active Record 4.2 incorrectly quotes expression indexes:
+      # ActiveRecord::StatementInvalid: PG::UndefinedColumn: ERROR:  column "lower(name)" does not exist
+      # : CREATE  INDEX  "index_projects_on_lower(name)" ON "projects"  ("lower(name)")
+      skip if ar_version <= 4.2
+
+      @connection.add_index(:projects, "lower(name)")
+
+      assert_unsafe ReplaceExpressionIndex, /removing an old index/i
     end
   end
 end
