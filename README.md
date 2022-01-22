@@ -141,7 +141,7 @@ You can also add [custom checks](#custom-checks) or [disable specific checks](#d
 
 ### Removing a column
 
-#### Bad
+:x: **Bad**
 
 ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
 
@@ -153,7 +153,7 @@ class RemoveNameFromUsers < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 1. Ignore the column:
 
@@ -179,7 +179,7 @@ end
 
 ### Adding a column with a default value
 
-#### Bad
+:x: **Bad**
 
 In earlier versions of PostgreSQL adding a column with a non-null default value to an existing table blocks reads and writes while the entire table is rewritten.
 
@@ -193,7 +193,7 @@ end
 
 In PostgreSQL 11+ this no longer requires a table rewrite and is safe. Volatile expressions, however, such as `random()`, will still result in table rewrites.
 
-#### Good
+:white_check_mark: **Good**
 
 A safer approach is to:
 
@@ -217,7 +217,7 @@ end
 
 ### Backfilling data
 
-#### Bad
+:x: **Bad**
 
 ActiveRecord wraps each migration in a transaction, and backfilling in the same transaction that alters a table keeps the table locked for the [duration of the backfill](https://wework.github.io/data/2015/11/05/add-columns-with-default-values-to-large-tables-in-rails-postgres/).
 
@@ -232,7 +232,7 @@ end
 
 Also, running a single query to update data can cause issues for large tables.
 
-#### Good
+:white_check_mark: **Good**
 
 There are three keys to backfilling safely: batching, throttling, and running it outside a transaction. Use a `update_column_in_batches` helper in a separate migration with `disable_ddl_transaction!`.
 
@@ -257,7 +257,7 @@ end
 
 ### Changing the type of a column
 
-#### Bad
+:x: **Bad**
 
 Changing the type of an existing column blocks reads and writes while the entire table is rewritten.
 
@@ -278,7 +278,7 @@ A few changes don't require a table rewrite (and are safe) in PostgreSQL:
 - Making a `decimal` or `numeric` column unconstrained
 - Changing between `timestamp` and `timestamptz` columns when session time zone is UTC in PostgreSQL 12+
 
-#### Good
+:white_check_mark: **Good**
 
 **Note**: The following steps can also be used to change the primary key's type (e.g., from `integer` to `bigint`).
 
@@ -341,7 +341,7 @@ A safer approach can be accomplished in several steps:
 
 ### Renaming a column
 
-#### Bad
+:x: **Bad**
 
 Renaming a column that's in use will cause errors in your application.
 
@@ -353,7 +353,7 @@ class RenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 The "classic" approach suggests creating a new column and copy data/indexes/etc to it from the old column. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
 
@@ -416,7 +416,7 @@ end
 
 ### Renaming a table
 
-#### Bad
+:x: **Bad**
 
 Renaming a table that's in use will cause errors in your application.
 
@@ -428,7 +428,7 @@ class RenameClientsToUsers < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 The "classic" approach suggests creating a new table and copy data/indexes/etc to it from the old table. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
 
@@ -489,7 +489,7 @@ end
 
 ### Creating a table with the force option
 
-#### Bad
+:x: **Bad**
 
 The `force` option can drop an existing table.
 
@@ -503,7 +503,7 @@ class CreateUsers < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Create tables without the `force` option.
 
@@ -521,7 +521,7 @@ If you intend to drop an existing table, run `drop_table` first.
 
 ### Adding a check constraint
 
-#### Bad
+:x: **Bad**
 
 Adding a check constraint blocks reads and writes while every row is checked.
 
@@ -533,7 +533,7 @@ class AddCheckConstraint < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Add the check constraint without validating existing rows, and then validate them in a separate transaction:
 
@@ -552,7 +552,7 @@ end
 
 ### Setting NOT NULL on an existing column
 
-#### Bad
+:x: **Bad**
 
 Setting `NOT NULL` on an existing column blocks reads and writes while every row is checked.
 
@@ -564,7 +564,7 @@ class ChangeUsersNameNull < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Instead, add a check constraint and validate it in a separate transaction:
 
@@ -607,7 +607,7 @@ end
 
 ### Adding an index non-concurrently
 
-#### Bad
+:x: **Bad**
 
 Adding an index non-concurrently blocks writes.
 
@@ -619,7 +619,7 @@ class AddIndexOnUsersEmail < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Add indexes concurrently.
 
@@ -637,7 +637,7 @@ end
 
 ### Removing an index non-concurrently
 
-#### Bad
+:x: **Bad**
 
 While actual removing of an index is usually fast, removing it non-concurrently tries to obtain an `ACCESS EXCLUSIVE` lock on the table, waiting for all existing queries to complete and blocking all the subsequent queries (even `SELECT`s) on that table until the lock is obtained and index is removed.
 
@@ -649,7 +649,7 @@ class RemoveIndexOnUsersEmail < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Remove indexes concurrently.
 
@@ -667,7 +667,7 @@ end
 
 ### Replacing an index
 
-#### Bad
+:x: **Bad**
 
 Removing an old index before replacing it with the new one might result in slow queries while building the new index.
 
@@ -684,7 +684,7 @@ end
 
 **Note**: If removed index is covered by any existing index, then it is safe to remove the index before replacing it with the new one.
 
-#### Good
+:white_check_mark: **Good**
 
 A safer approach is to create the new index and then delete the old one.
 
@@ -701,7 +701,7 @@ end
 
 ### Adding a reference
 
-#### Bad
+:x: **Bad**
 
 Rails adds an index non-concurrently to references by default, which blocks writes. Additionally, if `foreign_key` option (without `validate: false`) is provided, both tables are blocked while it is validated.
 
@@ -713,7 +713,7 @@ class AddUserToProjects < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Make sure the index is added concurrently and the foreign key is added in a separate migration.
 Or you can use `add_reference_concurrently` helper. It will create a reference and take care of safely adding index and/or foreign key.
@@ -732,7 +732,7 @@ end
 
 ### Adding a foreign key
 
-#### Bad
+:x: **Bad**
 
 Adding a foreign key blocks writes on both tables.
 
@@ -754,7 +754,7 @@ class AddReferenceToProjectsUser < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Add the foreign key without validating existing rows, and then validate them in a separate transaction.
 
@@ -773,7 +773,7 @@ end
 
 ### Adding a json column
 
-#### Bad
+:x: **Bad**
 
 There's no equality operator for the `json` column type, which can cause errors for existing `SELECT DISTINCT` queries in your application.
 
@@ -785,7 +785,7 @@ class AddSettingsToProjects < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Use `jsonb` instead.
 
@@ -799,7 +799,7 @@ end
 
 ### Using primary key with short integer type
 
-#### Bad
+:x: **Bad**
 
 When using short integer types as primary key types, [there is a risk](https://m.signalvnoise.com/update-on-basecamp-3-being-stuck-in-read-only-as-of-nov-8-922am-cst/) of running out of IDs on inserts. The default type in ActiveRecord < 5.1 for primary and foreign keys is `INTEGER`, which allows a little over of 2 billion records. Active Record 5.1 changed the default type to `BIGINT`.
 
@@ -813,7 +813,7 @@ class CreateUsers < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Use one of `bigint`, `bigserial`, `uuid` instead.
 
@@ -829,7 +829,7 @@ end
 
 ### Hash indexes
 
-#### Bad - PostgreSQL < 10
+:x: **Bad - PostgreSQL < 10**
 
 Hash index operations are not WAL-logged, so hash indexes might need to be rebuilt with `REINDEX` after a database crash if there were unwritten changes. Also, changes to hash indexes are not replicated over streaming or file-based replication after the initial base backup, so they give wrong answers to queries that subsequently use them. For these reasons, hash index use is discouraged.
 
@@ -841,7 +841,7 @@ class AddIndexToUsersOnEmail < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good - PostgreSQL < 10
+:white_check_mark: **Good - PostgreSQL < 10**
 
 Use B-tree indexes instead.
 
@@ -855,7 +855,7 @@ end
 
 ### Adding multiple foreign keys
 
-#### Bad
+:x: **Bad**
 
 Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
 Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.
@@ -871,7 +871,7 @@ class CreateUserProjects < ActiveRecord::Migration[7.0]
 end
 ```
 
-#### Good
+:white_check_mark: **Good**
 
 Add additional foreign keys in separate migration files. See [adding a foreign key](#adding-a-foreign-key) for how to properly add foreign keys.
 
