@@ -158,8 +158,16 @@ end
 1. Ignore the column:
 
   ```ruby
+  # For Active Record 5+
   class User < ApplicationRecord
     self.ignored_columns = ["name"]
+  end
+
+  # For Active Record < 5
+  class User < ActiveRecord::Base
+    def self.columns
+      super.reject { |c| c.name == "name" }
+    end
   end
   ```
 

@@ -221,7 +221,13 @@ A safer approach is to:
 1. Ignore the column(s):
 
   class <%= model %> < <%= model_parent %>
+<% if ar_version >= 5 %>
     self.ignored_columns = <%= columns %>
+<% else %>
+    def self.columns
+      super.reject { |c| <%= columns %>.include?(c.name) }
+    end
+<% end %>
   end
 
 2. Deploy

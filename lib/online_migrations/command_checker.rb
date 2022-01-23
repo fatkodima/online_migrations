@@ -284,16 +284,18 @@ module OnlineMigrations
           table_name, *columns = args
         when :remove_timestamps
           table_name = args[0]
-          columns = [:created_at, :updated_at]
+          columns = ["created_at", "updated_at"]
         else
           table_name, reference = args
-          columns = [:"#{reference}_id"]
-          columns << :"#{reference}_type" if options[:polymorphic]
+          columns = ["#{reference}_id"]
+          columns << "#{reference}_type" if options[:polymorphic]
         end
+
+        columns = columns.map(&:to_s)
 
         if !new_table?(table_name)
           indexes = connection.indexes(table_name).select do |index|
-            (index.columns & columns.map(&:to_s)).any?
+            (index.columns & columns).any?
           end
 
           raise_error :remove_column,
@@ -527,6 +529,7 @@ module OnlineMigrations
         vars[:migration_name] = @migration.name
         vars[:migration_parent] = Utils.migration_parent_string
         vars[:model_parent] = Utils.model_parent_string
+        vars[:ar_version] = Utils.ar_version
 
         if RUBY_VERSION >= "2.6"
           message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
