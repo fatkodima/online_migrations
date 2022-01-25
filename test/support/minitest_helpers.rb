@@ -91,6 +91,10 @@ module MinitestHelpers
   def model_parent_string
     OnlineMigrations::Utils.model_parent_string
   end
+
+  def supports_multiple_dbs?
+    OnlineMigrations::Utils.supports_multiple_dbs?
+  end
 end
 
 Minitest::Test.class_eval do

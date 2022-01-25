@@ -1029,6 +1029,9 @@ To mark migrations as safe that were created before installing this gem, configu
 # config/initializers/online_migrations.rb
 
 config.start_after = 20220101000000
+
+# or if you use multiple databases (ActiveRecord 6+)
+config.start_after = { primary: 20211112000000, animals: 20220101000000 }
 ```
 
 Use the version from your latest migration.
@@ -1041,6 +1044,9 @@ If your development database version is different from production, you can speci
 # config/initializers/online_migrations.rb
 
 config.target_version = 10 # or "12.9" etc
+
+# or if you use multiple databases (ActiveRecord 6+)
+config.target_version = { primary: 10, animals: 14.1 }
 ```
 
 For safety, this option only affects development and test environments. In other environments, the actual server version is always used.

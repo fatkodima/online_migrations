@@ -25,6 +25,10 @@ module OnlineMigrations
         Kernel.warn("[online_migrations] #{message}")
       end
 
+      def supports_multiple_dbs?
+        ar_version >= 6.0
+      end
+
       def migration_parent
         if ar_version <= 4.2
           ActiveRecord::Migration

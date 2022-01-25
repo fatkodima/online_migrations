@@ -4,15 +4,16 @@ require "test_helper"
 
 class ConfigTest < MiniTest::Test
   def setup
-    @connection = ActiveRecord::Base.connection
+    connection = ActiveRecord::Base.connection
 
-    @connection.create_table(:users, force: :cascade) do |t|
+    connection.create_table(:users, force: :cascade) do |t|
       t.string :name
     end
   end
 
   def teardown
-    @connection.drop_table(:users) rescue nil
+    connection = ActiveRecord::Base.connection
+    connection.drop_table(:users) rescue nil
   end
 
   class RemoveNameFromUsers < TestMigration
@@ -44,6 +45,92 @@ class ConfigTest < MiniTest::Test
   def test_start_after_unsafe
     with_start_after(20200101000000) do
       assert_unsafe RemoveNameFromUsers
+    end
+  end
+
+  def test_start_after_multiple_dbs_below_6
+    skip if supports_multiple_dbs?
+
+    assert_raises(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+      config.start_after = { primary: 20200101000001 }
+    end
+  end
+
+  def test_start_after_multiple_dbs
+    skip unless supports_multiple_dbs?
+
+    with_multiple_dbs do
+      with_start_after({ primary: 20200101000001 }) do
+        assert_safe RemoveNameFromUsers
+      end
+
+      with_start_after({ primary: 20200101000000 }) do
+        assert_unsafe RemoveNameFromUsers
+      end
+    end
+  end
+
+  def test_start_after_multiple_dbs_unconfigured
+    skip unless supports_multiple_dbs?
+
+    with_multiple_dbs(connects_to: :primary) do
+      assert_raises(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
+        with_start_after({ animals: 20200101000001 }) do
+          assert_safe RemoveNameFromUsers
+        end
+      end
+    end
+  end
+
+  class AddColumnDefault < TestMigration
+    def change
+      add_column :users, :admin, :boolean, default: false
+    end
+  end
+
+  def test_target_version_safe
+    with_target_version(11) do
+      assert_safe AddColumnDefault
+    end
+  end
+
+  def test_target_version_unsafe
+    with_target_version(10) do
+      assert_unsafe AddColumnDefault
+    end
+  end
+
+  def test_target_version_multiple_dbs_below_6
+    skip if supports_multiple_dbs?
+
+    assert_raises(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+      config.target_version = { primary: 10 }
+    end
+  end
+
+  def test_target_version_multiple_dbs
+    skip unless supports_multiple_dbs?
+
+    with_multiple_dbs do
+      with_target_version({ primary: 11 }) do
+        assert_safe AddColumnDefault
+      end
+
+      with_target_version({ primary: 10 }) do
+        assert_unsafe AddColumnDefault
+      end
+    end
+  end
+
+  def test_target_version_multiple_dbs_unconfigured
+    skip unless supports_multiple_dbs?
+
+    with_multiple_dbs(connects_to: :primary) do
+      assert_raises(StandardError, /OnlineMigrations.config.with_target_version is not configured for :primary/i) do
+        with_target_version({ animals: 10 }) do
+          assert_safe AddColumnDefault
+        end
+      end
     end
   end
 
@@ -120,6 +207,22 @@ class ConfigTest < MiniTest::Test
   end
 
   private
+    def with_multiple_dbs(connects_to: :primary, &block)
+      database_yml = File.expand_path("support/multiple_database.yml", __dir__)
+      yaml = File.read(database_yml)
+
+      prev_configs = ActiveRecord::Base.configurations
+      ActiveRecord::Base.configurations =
+        YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(yaml) : YAML.load(yaml) # rubocop:disable Security/YAMLLoad
+
+      ActiveRecord::Base.connects_to(database: { writing: connects_to })
+
+      ActiveRecord::Base.connected_to(role: :writing, &block)
+    ensure
+      ActiveRecord::Base.configurations = prev_configs
+      ActiveRecord::Base.establish_connection(:postgresql)
+    end
+
     def with_start_after(value)
       previous = config.start_after
       config.start_after = value

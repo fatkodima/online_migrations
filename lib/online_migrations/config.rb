@@ -5,20 +5,69 @@ module OnlineMigrations
   class Config
     include ErrorMessages
 
-    # The migration version starting from which checks are performed
+    # Set the migration version starting after which checks are performed
+    # @example
+    #   OnlineMigrations.config.start_after = 20220101000000
+    #
+    # @example Multiple databases
+    #   OnlineMigrations.config.start_after = { primary: 20211112000000, animals: 20220101000000 }
+    #
+    # @note Use the version from your latest migration.
+    #
+    def start_after=(value)
+      if value.is_a?(Hash)
+        ensure_supports_multiple_dbs
+        @start_after = value.stringify_keys
+      else
+        @start_after = value
+      end
+    end
+
+    # The migration version starting after which checks are performed
     # @return [Integer]
     #
-    attr_accessor :start_after
+    def start_after
+      if @start_after.is_a?(Hash)
+        @start_after.fetch(db_config_name) do
+          raise "OnlineMigrations.config.start_after is not configured for :#{db_config_name}"
+        end
+      else
+        @start_after
+      end
+    end
 
-    # The database version against which the checks will be performed
+    # Set the database version against which the checks will be performed
     #
     # If your development database version is different from production, you can specify
     # the production version so the right checks run in development.
     #
-    # @example Set specific target version
+    # @example
     #   OnlineMigrations.config.target_version = 10
     #
-    attr_accessor :target_version
+    # @example Multiple databases
+    #   OnlineMigrations.config.target_version = { primary: 10, animals: 14.1 }
+    #
+    def target_version=(value)
+      if value.is_a?(Hash)
+        ensure_supports_multiple_dbs
+        @target_version = value.stringify_keys
+      else
+        @target_version = value
+      end
+    end
+
+    # The database version against which the checks will be performed
+    # @return [Numeric, String, nil]
+    #
+    def target_version
+      if @target_version.is_a?(Hash)
+        @target_version.fetch(db_config_name) do
+          raise "OnlineMigrations.config.target_version is not configured for :#{db_config_name}"
+        end
+      else
+        @target_version
+      end
+    end
 
     # Whether to perform checks when migrating down
     #
@@ -119,6 +168,7 @@ module OnlineMigrations
 
       @checks = []
       @start_after = 0
+      @target_version = nil
       @small_tables = []
       @check_down = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
@@ -194,5 +244,21 @@ module OnlineMigrations
     def add_check(start_after: nil, &block)
       @checks << [{ start_after: start_after }, block]
     end
+
+    private
+      def ensure_supports_multiple_dbs
+        unless Utils.supports_multiple_dbs?
+          raise "Multiple databases are not supported by this ActiveRecord version"
+        end
+      end
+
+      def db_config_name
+        connection = OnlineMigrations.current_migration.connection
+        if Utils.ar_version < 6.1
+          connection.pool.spec.name
+        else
+          connection.pool.db_config.name
+        end
+      end
   end
 end
