@@ -267,7 +267,7 @@ module OnlineMigrations
 
             if postgresql_version >= Gem::Version.new("12")
               vars[:remove_constraint_code] = command_str(:remove_check_constraint, table_name, name: constraint_name)
-              vars[:change_column_null_code] = command_str(:change_column_null, table_name, column_name, true)
+              vars[:change_column_null_code] = command_str(:change_column_null, table_name, column_name, false)
             end
 
             raise_error :change_column_null, **vars

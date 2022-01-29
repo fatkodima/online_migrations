@@ -190,12 +190,17 @@ class <%= migration_name %> < <%= migration_parent %>
   def change
     <%= add_constraint_code %>
 <% if backfill_code %>
+
+    # Passing a default value to change_column_null runs a single UPDATE query,
+    # which can cause downtime. Instead, backfill the existing rows in batches.
     <%= backfill_code %>
+
 <% end %>
     <%= validate_constraint_code %>
 <% if remove_constraint_code %>
-    <%= remove_constraint_code %>
+
     <%= change_column_null_code %>
+    <%= remove_constraint_code %>
 <% end %>
   end
 end",

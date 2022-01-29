@@ -52,7 +52,10 @@ module CommandChecker
 
     def test_change_column_null_to_disallow
       with_target_version(12) do
-        assert_unsafe ChangeColumnNullToFalse, 'remove_check_constraint :users, name: "users_name_null"'
+        assert_unsafe ChangeColumnNullToFalse, <<-MSG
+    change_column_null :users, :name, false
+    remove_check_constraint :users, name: "users_name_null"
+        MSG
       end
     end
 
@@ -63,7 +66,11 @@ module CommandChecker
     end
 
     def test_change_column_null_to_disallow_default
-      assert_unsafe ChangeColumnNullToFalseDefault, 'update_column_in_batches :users, :name, "Guest"'
+      assert_unsafe ChangeColumnNullToFalseDefault, <<-MSG
+    # Passing a default value to change_column_null runs a single UPDATE query,
+    # which can cause downtime. Instead, backfill the existing rows in batches.
+    update_column_in_batches :users, :name, "Guest"
+      MSG
     end
 
     class ChangeColumnNullNewTable < TestMigration
