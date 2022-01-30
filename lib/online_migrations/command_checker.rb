@@ -123,16 +123,8 @@ module OnlineMigrations
       end
 
       def create_join_table(table1, table2, **options, &block)
-        raise_error :create_table if options[:force]
-        raise_error :short_primary_key_type if short_primary_key_type?(options)
-
-        if block
-          collect_foreign_keys(&block)
-          check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
-        end
-
         table_name = options[:table_name] || derive_join_table_name(table1, table2)
-        @new_tables << table_name.to_s
+        create_table(table_name, **options, &block)
       end
 
       def change_table(*)
