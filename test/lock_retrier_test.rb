@@ -21,8 +21,6 @@ class LockRetrierTest < MiniTest::Test
 
   def setup
     @connection = ActiveRecord::Base.connection
-    @connection.execute("SET lock_timeout TO '1ms'")
-
     @connection.create_table(:users)
     $migrate_attempts = 0
   end

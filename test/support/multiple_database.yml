@@ -4,7 +4,7 @@ default: &default
   username: postgres
   password: postgres
   variables:
-    lock_timeout: 5
+    lock_timeout: 5ms
 
 test:
   primary:
