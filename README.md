@@ -682,7 +682,7 @@ end
 Removing an old index before replacing it with the new one might result in slow queries while building the new index.
 
 ```ruby
-class AddIndexOnEmailAnd < ActiveRecord::Migration[7.0]
+class AddIndexOnCreationToProjects < ActiveRecord::Migration[7.0]
   disable_ddl_transaction!
 
   def change
@@ -699,7 +699,7 @@ end
 A safer approach is to create the new index and then delete the old one.
 
 ```ruby
-class AddIndexOnEmailAnd < ActiveRecord::Migration[7.0]
+class AddIndexOnCreationToProjects < ActiveRecord::Migration[7.0]
   disable_ddl_transaction!
 
   def change

@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.2.0 (2022-01-31)
+
 - Check removing a table with multiple foreign keys
 
 - Check for mismatched reference column types
@@ -26,7 +28,24 @@
     ```
 
 - Do not suggest `ignored_columns` when removing columns for Active Record 4.2 (`ignored_columns` was introduced in 5.0)
+
 - Check replacing indexes
+
+    For example, you have an index on `projects.creator_id`. But decide, it is better to have a multicolumn index on `[creator_id, created_at]`:
+
+    ```ruby
+    class AddIndexOnCreationToProjects < ActiveRecord::Migration[7.0]
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, :creator_id, algorithm: :concurrently # (1)
+        add_index :projects, [:creator_id, :created_at], algorithm: :concurrently # (2)
+      end
+    end
+    ```
+
+    If there is no existing indexes covering `creator_id`, removing an old index (1) before replacing it with the new one (2) might result in slow queries while building the new index.
+    A safer approach is to swap removing the old and creation of the new index operations.
 
 ## 0.1.0 (2022-01-17)
 
