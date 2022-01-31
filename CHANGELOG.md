@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Check removing a table with multiple foreign keys
+
 - Check for mismatched reference column types
 
     For example, it detects cases like:

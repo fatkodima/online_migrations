@@ -127,6 +127,21 @@ module OnlineMigrations
         create_table(table_name, **options, &block)
       end
 
+      def drop_table(table_name, **_options)
+        foreign_keys = connection.foreign_keys(table_name)
+        referenced_tables = foreign_keys.map(&:to_table).uniq
+        referenced_tables.delete(table_name.to_s) # ignore self references
+
+        if referenced_tables.size > 1
+          raise_error :drop_table_multiple_foreign_keys
+        end
+      end
+
+      def drop_join_table(table1, table2, **options)
+        table_name = options[:table_name] || derive_join_table_name(table1, table2)
+        drop_table(table_name, **options)
+      end
+
       def change_table(*)
         raise_error :change_table, header: "Possibly dangerous operation"
       end

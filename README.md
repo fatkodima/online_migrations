@@ -136,6 +136,7 @@ Potentially dangerous operations:
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 - [hash indexes](#hash-indexes)
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
+- [removing a table with multiple foreign keys](#removing-a-table-with-multiple-foreign-keys)
 - [mismatched reference column types](#mismatched-reference-column-types)
 
 You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
@@ -866,7 +867,7 @@ end
 
 :x: **Bad**
 
-Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
+Adding multiple foreign keys in a single migration blocks reads and writes on all involved tables until migration is completed.
 Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.
 
 ```ruby
@@ -897,6 +898,51 @@ end
 class AddForeignKeyFromUserProjectsToProject < ActiveRecord::Migration[7.0]
   def change
     add_foreign_key :user_projects, :projects
+  end
+end
+```
+
+### Removing a table with multiple foreign keys
+
+:x: **Bad**
+
+Removing a table with multiple foreign keys blocks reads and writes on all involved tables until migration is completed.
+Remove all the foreign keys first.
+
+Assuming, `projects` has foreign keys on `users.id` and `repositories.id`:
+
+```ruby
+class DropProjects < ActiveRecord::Migration[7.0]
+  def change
+    drop_table :projects
+  end
+end
+```
+
+:white_check_mark: **Good**
+
+Remove all the foreign keys first:
+
+```ruby
+class RemoveProjectsUserFk < ActiveRecord::Migration[7.0]
+  def change
+    remove_foreign_key :projects, :users
+  end
+end
+
+class RemoveProjectsRepositoryFk < ActiveRecord::Migration[7.0]
+  def change
+    remove_foreign_key :projects, :repositories
+  end
+end
+```
+
+Then remove the table:
+
+```ruby
+class DropProjects < ActiveRecord::Migration[7.0]
+  def change
+    drop_table :projects
   end
 end
 ```
