@@ -398,6 +398,10 @@ you're doing is safe before proceeding, then wrap it in a safety_assured { ... }
       multiple_foreign_keys:
 "Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
 Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.",
+
+      mismatched_foreign_key_type:
+"<%= table_name %>.<%= column_name %> references a column of different type - foreign keys should be of the same type as the referenced primary key.
+Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.",
     }
   end
 end

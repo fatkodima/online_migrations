@@ -1,5 +1,19 @@
 ## master (unreleased)
 
+- Check for mismatched reference column types
+
+    For example, it detects cases like:
+
+    ```ruby
+    class AddUserIdToProjects < ActiveRecord::Migration[7.0]
+      def change
+        add_column :projects, :user_id, :integer
+      end
+    end
+    ```
+
+    where `users.id` is of type `bigint`.
+
 - Add support for multiple databases to `start_after` and `target_version` configuration options
 
     ```ruby

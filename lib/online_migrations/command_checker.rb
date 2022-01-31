@@ -150,10 +150,13 @@ module OnlineMigrations
             volatile_default: volatile_default
         end
 
-        if type.to_s == "json"
+        if type == :json
           raise_error :add_column_json,
             code: command_str(:add_column, table_name, column_name, :jsonb, options)
         end
+
+        type = :bigint if type == :integer && options[:limit] == 8
+        check_mismatched_foreign_key_type(table_name, column_name, type)
       end
 
       def rename_column(table_name, column_name, new_column, **)
@@ -339,6 +342,14 @@ module OnlineMigrations
             code: command_str(:add_reference_concurrently, table_name, ref_name, **options),
             bad_index: bad_index,
             bad_foreign_key: bad_foreign_key
+        end
+
+        unless options[:polymorphic]
+          type = options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)
+          column_name = "#{ref_name}_id"
+
+          foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
+          check_mismatched_foreign_key_type(table_name, column_name, type, **foreign_key_options)
         end
       end
       alias add_belongs_to add_reference
@@ -590,6 +601,34 @@ module OnlineMigrations
         SQL
 
         connection.select_all(constraints_query).to_a
+      end
+
+      def check_mismatched_foreign_key_type(table_name, column_name, type, **options)
+        column_name = column_name.to_s
+        ref_name = column_name.sub(/_id\z/, "")
+
+        if like_foreign_key?(column_name, type)
+          foreign_table_name = Utils.foreign_table_name(ref_name, options)
+
+          if connection.table_exists?(foreign_table_name)
+            primary_key = options[:primary_key] || connection.primary_key(foreign_table_name)
+            primary_key_column = column_for(foreign_table_name, primary_key)
+
+            if primary_key_column && type != primary_key_column.sql_type.to_sym
+              raise_error :mismatched_foreign_key_type,
+                table_name: table_name, column_name: column_name
+            end
+          end
+        end
+      end
+
+      def like_foreign_key?(column_name, type)
+        column_name.end_with?("_id") &&
+          [:integer, :bigint, :serial, :bigserial, :uuid].include?(type)
+      end
+
+      def column_for(table_name, column_name)
+        connection.columns(table_name).find { |column| column.name == column_name.to_s }
       end
 
       # From ActiveRecord

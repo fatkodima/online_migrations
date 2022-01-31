@@ -136,6 +136,7 @@ Potentially dangerous operations:
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 - [hash indexes](#hash-indexes)
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
+- [mismatched reference column types](#mismatched-reference-column-types)
 
 You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
 
@@ -896,6 +897,37 @@ end
 class AddForeignKeyFromUserProjectsToProject < ActiveRecord::Migration[7.0]
   def change
     add_foreign_key :user_projects, :projects
+  end
+end
+```
+
+### Mismatched reference column types
+
+:x: **Bad**
+
+Reference columns should be of the same type as the referenced primary key.
+Otherwise, there's a risk of bugs caused by IDs representable by one type but not the other.
+
+Assuming, there is a `users` table with `bigint` primary key type:
+
+```ruby
+class AddUserIdToProjects < ActiveRecord::Migration[7.0]
+  def change
+    add_column :projects, :user_id, :integer
+  end
+end
+```
+
+:white_check_mark: **Good**
+
+Add a reference column of the same type as a referenced primary key.
+
+Assuming, there is a `users` table with `bigint` primary key type:
+
+```ruby
+class AddUserIdToProjects < ActiveRecord::Migration[7.0]
+  def change
+    add_column :projects, :user_id, :bigint
   end
 end
 ```

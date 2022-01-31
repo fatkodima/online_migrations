@@ -11,6 +11,8 @@ module CommandChecker
         t.string :name
       end
 
+      @connection.create_table(:repositories, force: :cascade)
+
       @connection.create_table(:projects, force: :cascade) do |t|
         t.string :name
         t.bigint :user_id
@@ -181,6 +183,71 @@ module CommandChecker
 
     def test_multiple_fks_and_new_tables
       assert_safe MultipleFksAndNewTables
+    end
+
+    class AddReferenceColumn < TestMigration
+      def change
+        add_column :projects, :repository_id, :integer
+      end
+    end
+
+    def test_add_reference_column
+      if ar_version >= 5.1
+        assert_unsafe AddReferenceColumn, <<-MSG.strip_heredoc
+          projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
+          Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
+        MSG
+      else
+        assert_safe AddReferenceColumn
+      end
+    end
+
+    class AddReferenceColumnNonExistentTable < TestMigration
+      def change
+        add_column :projects, :some_service_id, :integer
+      end
+    end
+
+    def test_add_reference_column_non_existent_table
+      assert_safe AddReferenceColumnNonExistentTable
+    end
+
+    class AddReferenceColumnIntegerWithLimit < TestMigration
+      def change
+        add_column :projects, :repository_id, :integer, limit: 8 # bigint
+      end
+    end
+
+    def test_add_reference_column_integer_with_limit
+      if ar_version >= 5.1
+        assert_safe AddReferenceColumnIntegerWithLimit
+      else
+        assert_unsafe AddReferenceColumnIntegerWithLimit
+      end
+    end
+
+    class AddReference < TestMigration
+      def change
+        add_reference :projects, :repository, type: :integer, index: false
+      end
+    end
+
+    def test_add_reference
+      if ar_version >= 5.1
+        assert_unsafe AddReference, "projects.repository_id references a column of different type"
+      else
+        assert_safe AddReference
+      end
+    end
+
+    class AddReferencePolymorphic < TestMigration
+      def change
+        add_reference :projects, :repository, type: :integer, polymorphic: true, index: false
+      end
+    end
+
+    def test_add_reference_polymorphic
+      assert_safe AddReferencePolymorphic
     end
   end
 end
