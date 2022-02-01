@@ -84,6 +84,7 @@ module OnlineMigrations
       model = Utils.define_model(self, table_name)
 
       conditions = columns_and_values.map do |(column_name, value)|
+        value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
         arel_column = model.arel_table[column_name]
         arel_column.not_eq(value).or(arel_column.eq(nil))
       end
@@ -96,20 +97,28 @@ module OnlineMigrations
         updates =
           if Utils.ar_version <= 5.2
             columns_and_values.map do |(column_name, value)|
-              # ActiveRecord <= 5.2 can't quote these - we need to handle these cases manually
-              case value
-              when Arel::Attributes::Attribute
-                "#{quote_column_name(column_name)} = #{quote_column_name(value.name)}"
-              when Arel::Nodes::SqlLiteral
-                "#{quote_column_name(column_name)} = #{value}"
-              when Arel::Nodes::NamedFunction
-                "#{quote_column_name(column_name)} = #{value.name}(#{quote_column_name(value.expressions.first.name)})"
-              else
-                "#{quote_column_name(column_name)} = #{quote(value)}"
-              end
+              rhs =
+                # ActiveRecord <= 5.2 can't quote these - we need to handle these cases manually
+                case value
+                when Arel::Attributes::Attribute
+                  quote_column_name(value.name)
+                when Arel::Nodes::SqlLiteral
+                  value
+                when Arel::Nodes::NamedFunction
+                  "#{value.name}(#{quote_column_name(value.expressions.first.name)})"
+                when Proc
+                  value.call
+                else
+                  quote(value)
+                end
+
+              "#{quote_column_name(column_name)} = #{rhs}"
             end.join(", ")
           else
-            columns_and_values.to_h
+            columns_and_values.map do |(column, value)|
+              value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
+              [column, value]
+            end.to_h
           end
 
         relation.update_all(updates)
@@ -383,8 +392,7 @@ module OnlineMigrations
     #
     def add_column_with_default(table_name, column_name, type, **options)
       default = options.fetch(:default)
-      if default.is_a?(Proc) &&
-         ActiveRecord.version < Gem::Version.new("5.0.0.beta2") # https://github.com/rails/rails/pull/20005
+      if default.is_a?(Proc) && Utils.ar_version < 5.0 # https://github.com/rails/rails/pull/20005
         raise ArgumentError, "Expressions as default are not supported"
       end
 

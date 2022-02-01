@@ -69,6 +69,16 @@ module SchemaStatements
       assert_equal "a" * 64, milestone.name
     end
 
+    def test_update_column_in_batches_expression_value
+      m1 = Milestone.create!(started_at: nil)
+      m2 = Milestone.create!(started_at: 3.days.ago)
+
+      connection.update_column_in_batches(:milestones, :started_at, -> { "CURRENT_TIMESTAMP" })
+
+      refute_nil m1.reload.started_at
+      assert_equal m1.started_at, m2.reload.started_at
+    end
+
     def test_update_column_in_batches_configurable_batches
       3.times { Milestone.create! }
 
