@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Add a way to log every SQL query to stdout
+
+    See [Verbose SQL logs](https://github.com/fatkodima/online_migrations#verbose-sql-logs) for details
+
 ## 0.2.0 (2022-01-31)
 
 - Check removing a table with multiple foreign keys

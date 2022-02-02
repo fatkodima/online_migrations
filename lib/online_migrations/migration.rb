@@ -4,9 +4,14 @@ module OnlineMigrations
   module Migration
     # @private
     def migrate(direction)
+      VerboseSqlLogs.enable if verbose_sql_logs?
+
       OnlineMigrations.current_migration = self
       command_checker.direction = direction
+
       super
+    ensure
+      VerboseSqlLogs.disable if verbose_sql_logs?
     end
 
     # @private
@@ -52,6 +57,14 @@ module OnlineMigrations
     end
 
     private
+      def verbose_sql_logs?
+        if (verbose = ENV["ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS"])
+          Utils.to_bool(verbose)
+        else
+          OnlineMigrations.config.verbose_sql_logs
+        end
+      end
+
       def command_checker
         @command_checker ||= CommandChecker.new(self)
       end

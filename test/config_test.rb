@@ -206,6 +206,30 @@ class ConfigTest < MiniTest::Test
     migrate CheckDownMigration, direction: :down
   end
 
+  class AddEmailToUsers < TestMigration
+    def change
+      add_column :users, :email, :string
+    end
+  end
+
+  def test_verbose_sql_logs
+    previous = OnlineMigrations.config.verbose_sql_logs
+
+    OnlineMigrations.config.verbose_sql_logs = true
+    out, = capture_io do
+      assert_safe AddEmailToUsers
+    end
+    assert_match(/SHOW lock_timeout/i, out)
+
+    OnlineMigrations.config.verbose_sql_logs = false
+    out, = capture_io do
+      assert_safe AddEmailToUsers
+    end
+    refute_match(/SHOW lock_timeout/i, out)
+  ensure
+    OnlineMigrations.config.verbose_sql_logs = previous
+  end
+
   private
     def with_multiple_dbs(connects_to: :primary, &block)
       database_yml = File.expand_path("support/multiple_database.yml", __dir__)

@@ -144,6 +144,19 @@ module OnlineMigrations
     #
     attr_reader :enabled_checks
 
+    # Whether to log every SQL query happening in a migration
+    #
+    # This is useful to demystify online_migrations inner workings, and to better investigate
+    # migration failure in production. This is also useful in development to get
+    # a better grasp of what is going on for high-level statements like add_column_with_default.
+    #
+    # This feature is enabled by default in a production Rails environment.
+    # @return [Boolean]
+    #
+    # @note: It can be overriden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+    #
+    attr_accessor :verbose_sql_logs
+
     # Configuration object to configure background migrations
     #
     # @return [BackgroundMigrationsConfig]
@@ -172,6 +185,7 @@ module OnlineMigrations
       @small_tables = []
       @check_down = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
+      @verbose_sql_logs = defined?(Rails) && Rails.env.production?
     end
 
     def lock_retrier=(value)

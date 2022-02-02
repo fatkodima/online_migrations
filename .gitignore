@@ -8,3 +8,4 @@
 /tmp/
 
 gemfiles/**.lock
+/debug.log

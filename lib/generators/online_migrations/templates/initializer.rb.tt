@@ -32,6 +32,15 @@ OnlineMigrations.configure do |config|
   # For the list of available checks look at `lib/error_messages` folder.
   # config.enable_check(:remove_index)
 
+  # Configure whether to log every SQL query happening in a migration.
+  #
+  # This is useful to demystify online_migrations inner workings, and to better investigate
+  # migration failure in production. This is also useful in development to get
+  # a better grasp of what is going on for high-level statements like add_column_with_default.
+  #
+  # Note: It can be overriden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+  config.verbose_sql_logs = defined?(Rails) && Rails.env.production?
+
   # Lock retries.
   # Configure your custom lock retrier (see LockRetrier).
   # To disable lock retries, set `lock_retrier` to `nil`.

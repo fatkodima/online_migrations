@@ -1139,6 +1139,68 @@ To mark tables as small:
 config.small_tables = [:settings, :prices]
 ```
 
+### Verbose SQL logs
+
+For any operation, **Online Migrations** can output the performed SQL queries.
+
+This is useful to demystify `online_migrations` inner workings, and to better investigate migration failure in production. This is also useful in development to get a better grasp of what is going on for high-level statements like `add_column_with_default`.
+
+Consider migration, running on PostgreSQL < 11:
+
+```ruby
+class AddAdminToUsers < ActiveRecord::Migration[7.0]
+  disable_ddl_transaction!
+
+  def change
+    add_column_with_default :users, :admin, :boolean, default: false
+  end
+end
+```
+
+Instead of the traditional output:
+
+```
+== 20220106214827 AddAdminToUsers: migrating ==================================
+-- add_column_with_default(:users, :admin, :boolean, {:default=>false})
+   -> 0.1423s
+== 20220106214827 AddAdminToUsers: migrated (0.1462s) =========================
+```
+
+**Online Migrations** will output the following logs:
+
+```
+== 20220106214827 AddAdminToUsers: migrating ==================================
+   (0.3ms)  SHOW lock_timeout
+   (0.2ms)  SET lock_timeout TO '50ms'
+-- add_column_with_default(:users, :admin, :boolean, {:default=>false})
+  TRANSACTION (0.1ms)  BEGIN
+   (37.7ms)  ALTER TABLE "users" ADD "admin" boolean DEFAULT NULL
+   (0.5ms)  ALTER TABLE "users" ALTER COLUMN "admin" SET DEFAULT FALSE
+  TRANSACTION (0.3ms)  COMMIT
+   Load (0.3ms)  SELECT "users"."id" FROM "users" WHERE ("users"."admin" != FALSE OR "users"."admin" IS NULL) ORDER BY "users"."id" ASC LIMIT $1  [["LIMIT", 1]]
+   Load (0.5ms)  SELECT "users"."id" FROM "users" WHERE ("users"."admin" != FALSE OR "users"."admin" IS NULL) AND "users"."id" >= 1 ORDER BY "users"."id" ASC LIMIT $1 OFFSET $2  [["LIMIT", 1], ["OFFSET", 1000]]
+  #<Class:0x00007f8ae3703f08> Update All (9.6ms)  UPDATE "users" SET "admin" = $1 WHERE ("users"."admin" != FALSE OR "users"."admin" IS NULL) AND "users"."id" >= 1 AND "users"."id" < 1001  [["admin", false]]
+   Load (0.8ms)  SELECT "users"."id" FROM "users" WHERE ("users"."admin" != FALSE OR "users"."admin" IS NULL) AND "users"."id" >= 1001 ORDER BY "users"."id" ASC LIMIT $1 OFFSET $2  [["LIMIT", 1], ["OFFSET", 1000]]
+  #<Class:0x00007f8ae3703f08> Update All (1.5ms)  UPDATE "users" SET "admin" = $1 WHERE ("users"."admin" != FALSE OR "users"."admin" IS NULL) AND "users"."id" >= 1001  [["admin", false]]
+   -> 0.1814s
+   (0.4ms)  SET lock_timeout TO '5s'
+== 20220106214827 AddAdminToUsers: migrated (0.1840s) =========================
+```
+
+So you can actually check which steps are performed.
+
+**Note**: The `SHOW` statements are used by **Online Migrations** to query settings for their original values in order to restore them after the work is done.
+
+To enable verbose sql logs:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.verbose_sql_logs = true
+```
+
+This feature is enabled by default in a production Rails environment. You can override this setting via `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+
 ## Background Migrations
 
 Read [BACKGROUND_MIGRATIONS.md](BACKGROUND_MIGRATIONS.md) on how to perform data migrations on large tables.
