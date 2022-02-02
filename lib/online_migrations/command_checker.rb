@@ -132,7 +132,7 @@ module OnlineMigrations
         referenced_tables = foreign_keys.map(&:to_table).uniq
         referenced_tables.delete(table_name.to_s) # ignore self references
 
-        if referenced_tables.size > 1
+        if referenced_tables.count { |t| !new_table?(t) } > 1
           raise_error :drop_table_multiple_foreign_keys
         end
       end
