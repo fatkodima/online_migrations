@@ -155,9 +155,10 @@ module OnlineMigrations
       end
 
       def add_column(table_name, column_name, type, **options)
+        default = options[:default]
         volatile_default = false
-        if !new_or_small_table?(table_name) && !options[:default].nil? &&
-           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, options[:default])))
+        if !new_or_small_table?(table_name) && !default.nil? &&
+           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, default)))
 
           raise_error :add_column_with_default,
             code: command_str(:add_column_with_default, table_name, column_name, type, options),
@@ -170,6 +171,8 @@ module OnlineMigrations
             code: command_str(:add_column, table_name, column_name, :jsonb, options)
         end
 
+        check_inheritance_column(table_name, column_name, default)
+
         type = :bigint if type == :integer && options[:limit] == 8
         check_mismatched_foreign_key_type(table_name, column_name, type)
       end
@@ -179,6 +182,8 @@ module OnlineMigrations
           raise_error :add_column_json,
             code: command_str(:add_column_with_default, table_name, column_name, :jsonb, options)
         end
+
+        check_inheritance_column(table_name, column_name, options[:default])
 
         type = :bigint if type == :integer && options[:limit] == 8
         check_mismatched_foreign_key_type(table_name, column_name, type)
@@ -630,6 +635,14 @@ module OnlineMigrations
         SQL
 
         connection.select_all(constraints_query).to_a
+      end
+
+      def check_inheritance_column(table_name, column_name, default)
+        if column_name.to_s == ActiveRecord::Base.inheritance_column && !default.nil?
+          raise_error :add_inheritance_column,
+            table_name: table_name, column_name: column_name,
+            model: table_name.to_s.classify, subclass: default
+        end
       end
 
       def check_mismatched_foreign_key_type(table_name, column_name, type, **options)

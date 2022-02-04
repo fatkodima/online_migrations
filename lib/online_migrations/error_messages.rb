@@ -84,6 +84,31 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
+      add_inheritance_column:
+"'<%= column_name %>' column is used for single table inheritance. Adding it might cause errors in old instances of your application.
+
+After the migration was ran and the column was added, but before the code is fully deployed to all instances,
+an old instance may be restarted (due to an error etc). And when it will fetch '<%= model %>' records from the database,
+'<%= model %>' will look for a '<%= subclass %>' subclass (from the '<%= column_name %>' column) and fail to locate it unless it is already defined.
+
+A safer approach is to:
+
+1. ignore the column:
+
+  class <%= model %> < <%= model_parent %>
+<% if ar_version >= 5 %>
+    self.ignored_columns = [\"<%= column_name %>\"]
+<% else %>
+    def self.columns
+      super.reject { |c| c.name == \"<%= column_name %>\" }
+    end
+<% end %>
+  end
+
+2. deploy
+3. remove the column ignoring from step 1 and apply initial code changes
+4. deploy",
+
       rename_column:
 "Renaming a column that's in use will cause errors in your application.
 migration_helpers provides a safer approach to do this:

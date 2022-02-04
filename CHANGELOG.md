@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Check for addition of single table inheritance column
+
+    See [Adding a single table inheritance column](https://github.com/fatkodima/online_migrations#adding-a-single-table-inheritance-column) for details
+
 - Add a way to log every SQL query to stdout
 
     See [Verbose SQL logs](https://github.com/fatkodima/online_migrations#verbose-sql-logs) for details

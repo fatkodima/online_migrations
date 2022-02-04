@@ -138,6 +138,7 @@ Potentially dangerous operations:
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
 - [removing a table with multiple foreign keys](#removing-a-table-with-multiple-foreign-keys)
 - [mismatched reference column types](#mismatched-reference-column-types)
+- [adding a single table inheritance column](#adding-a-single-table-inheritance-column)
 
 You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
 
@@ -160,12 +161,12 @@ end
 1. Ignore the column:
 
   ```ruby
-  # For Active Record 5+
+  # For ActiveRecord 5+
   class User < ApplicationRecord
     self.ignored_columns = ["name"]
   end
 
-  # For Active Record < 5
+  # For ActiveRecord < 5
   class User < ActiveRecord::Base
     def self.columns
       super.reject { |c| c.name == "name" }
@@ -977,6 +978,46 @@ class AddUserIdToProjects < ActiveRecord::Migration[7.0]
   end
 end
 ```
+
+### Adding a single table inheritance column
+
+:x: **Bad**
+
+Adding a single table inheritance column might cause errors in old instances of your application.
+
+```ruby
+class AddTypeToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :string, :type, default: "Member"
+  end
+end
+```
+
+After the migration was ran and the column was added, but before the code is fully deployed to all instances, an old instance may be restarted (due to an error etc). And when it will fetch 'User' records from the database, 'User' will look for a 'Member' subclass (from the 'type' column) and fail to locate it unless it is already defined.
+
+:white_check_mark: **Good**
+
+A safer approach is to:
+
+1. ignore the column:
+
+  ```ruby
+  # For ActiveRecord 5+
+  class User < ApplicationRecord
+    self.ignored_columns = ["type"]
+  end
+
+  # For ActiveRecord < 5
+  class User < ActiveRecord::Base
+    def self.columns
+      super.reject { |c| c.name == "type" }
+    end
+  end
+  ```
+
+2. deploy
+3. remove the column ignoring from step 1 and apply initial code changes
+4. deploy
 
 ## Assuring Safety
 
