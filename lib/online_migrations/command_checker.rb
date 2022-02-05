@@ -174,6 +174,13 @@ module OnlineMigrations
         check_mismatched_foreign_key_type(table_name, column_name, type)
       end
 
+      def add_column_with_default(table_name, column_name, type, **options)
+        if type == :json
+          raise_error :add_column_json,
+            code: command_str(:add_column_with_default, table_name, column_name, :jsonb, options)
+        end
+      end
+
       def rename_column(table_name, column_name, new_column, **)
         if !new_table?(table_name)
           raise_error :rename_column,
@@ -572,8 +579,12 @@ module OnlineMigrations
             arg_list << last_arg.map do |k, v|
               case v
               when Hash
-                # pretty index: { algorithm: :concurrently }
-                "#{k}: { #{v.map { |k2, v2| "#{k2}: #{v2.inspect}" }.join(', ')} }"
+                if v.empty?
+                  "#{k}: {}"
+                else
+                  # pretty index: { algorithm: :concurrently }
+                  "#{k}: { #{v.map { |k2, v2| "#{k2}: #{v2.inspect}" }.join(', ')} }"
+                end
               when Array, Numeric, String, Symbol, TrueClass, FalseClass
                 "#{k}: #{v.inspect}"
               else

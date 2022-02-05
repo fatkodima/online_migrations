@@ -182,5 +182,34 @@ module CommandChecker
     def test_add_column_jsonb
       assert_safe AddColumnJsonb
     end
+
+    class AddColumnWithDefaultJson < TestMigration
+      def change
+        add_column_with_default :projects, :settings, :json, default: {}
+      end
+    end
+
+    def test_add_column_with_default_json
+      assert_unsafe AddColumnWithDefaultJson, <<-MSG.strip_heredoc
+        There's no equality operator for the json column type, which can cause errors for
+        existing SELECT DISTINCT queries in your application. Use jsonb instead.
+
+        class CommandChecker::AddColumnTest::AddColumnWithDefaultJson < #{migration_parent_string}
+          def change
+            add_column_with_default :projects, :settings, :jsonb, default: {}
+          end
+        end
+      MSG
+    end
+
+    class AddColumnWithDefaultJsonb < TestMigration
+      def change
+        add_column_with_default :users, :settings, :jsonb, default: {}
+      end
+    end
+
+    def test_add_column_with_default_jsonb
+      assert_safe AddColumnWithDefaultJsonb
+    end
   end
 end
