@@ -202,6 +202,23 @@ module CommandChecker
       end
     end
 
+    class AddReferenceColumnWithDefault < TestMigration
+      def change
+        add_column_with_default :projects, :repository_id, :integer, default: 1
+      end
+    end
+
+    def test_add_reference_column_with_default
+      if ar_version >= 5.1
+        assert_unsafe AddReferenceColumnWithDefault, <<-MSG.strip_heredoc
+          projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
+          Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
+        MSG
+      else
+        assert_safe AddReferenceColumnWithDefault
+      end
+    end
+
     class AddReferenceColumnNonExistentTable < TestMigration
       def change
         add_column :projects, :some_service_id, :integer

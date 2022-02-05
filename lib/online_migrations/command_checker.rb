@@ -179,6 +179,9 @@ module OnlineMigrations
           raise_error :add_column_json,
             code: command_str(:add_column_with_default, table_name, column_name, :jsonb, options)
         end
+
+        type = :bigint if type == :integer && options[:limit] == 8
+        check_mismatched_foreign_key_type(table_name, column_name, type)
       end
 
       def rename_column(table_name, column_name, new_column, **)
