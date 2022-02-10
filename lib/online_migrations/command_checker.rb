@@ -19,11 +19,11 @@ module OnlineMigrations
     end
 
     def safety_assured
-      @prev_value = @safe
+      prev_value = @safe
       @safe = true
       yield
     ensure
-      @safe = @prev_value
+      @safe = prev_value
     end
 
     def check(command, *args, &block)
