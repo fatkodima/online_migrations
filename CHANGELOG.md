@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Support ActiveRecord 7.0+ versioned schemas
+
 - Check for addition of single table inheritance column
 
     See [Adding a single table inheritance column](https://github.com/fatkodima/online_migrations#adding-a-single-table-inheritance-column) for details

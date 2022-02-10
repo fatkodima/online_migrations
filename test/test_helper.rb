@@ -46,9 +46,6 @@ end
 
 prepare_database
 
-require_relative "support/schema"
-require_relative "support/minitest_helpers"
-
 TestMigration = OnlineMigrations::Utils.migration_parent
 TestMigration.version = 20200101000001
 
@@ -65,4 +62,6 @@ OnlineMigrations.configure do |config|
   config.disable_check(:short_primary_key_type)
 end
 
+require_relative "support/schema"
+require_relative "support/minitest_helpers"
 require_relative "background_migrations/migrations"

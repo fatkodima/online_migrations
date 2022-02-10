@@ -16,7 +16,7 @@ module OnlineMigrations
 
     # @private
     def method_missing(method, *args, &block)
-      if is_a?(ActiveRecord::Schema)
+      if ar_schema?
         super
       elsif command_checker.check(method, *args, &block)
         if in_transaction?
@@ -61,6 +61,11 @@ module OnlineMigrations
         else
           OnlineMigrations.config.verbose_sql_logs
         end
+      end
+
+      def ar_schema?
+        is_a?(ActiveRecord::Schema) ||
+          (defined?(ActiveRecord::Schema::Definition) && is_a?(ActiveRecord::Schema::Definition))
       end
 
       def command_checker

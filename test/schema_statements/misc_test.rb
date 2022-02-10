@@ -23,6 +23,18 @@ module SchemaStatements
       @connection.drop_table(:users) rescue nil
     end
 
+    def test_schema
+      if ActiveRecord.version >= Gem::Version.new("7.0.2")
+        ActiveRecord::Schema[ar_version].define do
+          add_index :users, :name
+        end
+      else
+        ActiveRecord::Schema.define do
+          add_index :users, :name
+        end
+      end
+    end
+
     def test_swap_column_names
       @connection.swap_column_names(:users, :name, :name_for_type_change)
 
