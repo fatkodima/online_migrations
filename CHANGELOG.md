@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.3.0 (2022-02-10)
+
 - Support ActiveRecord 7.0+ versioned schemas
 
 - Check for addition of single table inheritance column
@@ -9,6 +11,9 @@
 - Add a way to log every SQL query to stdout
 
     See [Verbose SQL logs](https://github.com/fatkodima/online_migrations#verbose-sql-logs) for details
+
+- Ignore new tables when checking for removing table with multiple fkeys
+- Fix backfilling column in add_column_with_default when default is an expression
 
 ## 0.2.0 (2022-01-31)
 
