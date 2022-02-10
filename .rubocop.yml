@@ -1,5 +1,5 @@
 AllCops:
-  NewCops: disable
+  NewCops: enable
   SuggestExtensions: false
 
 Style/StringLiterals:
@@ -68,6 +68,10 @@ Style/WhileUntilModifier:
 Style/HashAsLastArrayItem:
   Enabled: false
 
+# only for ruby 2.6+
+Style/MapToHash:
+  Enabled: false
+
 # we can not use new syntax for older rubies
 Lint/ErbNewArguments:
   Enabled: false
@@ -107,6 +111,9 @@ Naming/AccessorMethodName:
     - test/**/*
 
 Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+Gemspec/RequireMFA:
   Enabled: false
 
 Metrics:

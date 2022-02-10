@@ -405,7 +405,7 @@ module OnlineMigrations
 
         if column_exists?(table_name, column_name)
           Utils.say("Column was not created because it already exists (this may be due to an aborted migration "\
-            "or similar) table_name: #{table_name}, column_name: #{column_name}")
+                    "or similar) table_name: #{table_name}, column_name: #{column_name}")
         else
           transaction do
             add_column(table_name, column_name, type, **options.merge(default: nil, null: true))
@@ -656,7 +656,7 @@ module OnlineMigrations
 
         if __index_valid?(index_name, schema: schema)
           Utils.say("Index was not created because it already exists (this may be due to an aborted migration "\
-            "or similar): table_name: #{table_name}, column_name: #{column_name}")
+                    "or similar): table_name: #{table_name}, column_name: #{column_name}")
           return
         else
           Utils.say("Recreating invalid index: table_name: #{table_name}, column_name: #{column_name}")
@@ -700,7 +700,7 @@ module OnlineMigrations
         end
       else
         Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration "\
-          "or similar): table_name: #{table_name}, column_name: #{column_names}")
+                  "or similar): table_name: #{table_name}, column_name: #{column_names}")
       end
     end
 
@@ -711,7 +711,7 @@ module OnlineMigrations
     def add_foreign_key(from_table, to_table, validate: true, **options)
       if foreign_key_exists?(from_table, to_table, **options)
         message = "Foreign key was not created because it already exists " \
-          "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}".dup
+                  "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}".dup
         message << ", #{options.inspect}" if options.any?
 
         Utils.say(message)
@@ -769,7 +769,7 @@ module OnlineMigrations
 
       if __check_constraint_exists?(table_name, constraint_name)
         Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration "\
-          "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
+                  "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
       else
         query = "ALTER TABLE #{table_name} ADD CONSTRAINT #{constraint_name} CHECK (#{expression})"
         query += " NOT VALID" if !validate

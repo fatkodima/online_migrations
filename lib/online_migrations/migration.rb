@@ -19,14 +19,12 @@ module OnlineMigrations
       if is_a?(ActiveRecord::Schema)
         super
       elsif command_checker.check(method, *args, &block)
-        if !in_transaction?
-          if method == :with_lock_retries
-            connection.with_lock_retries(*args, &block)
-          else
-            connection.with_lock_retries { super }
-          end
-        else
+        if in_transaction?
           super
+        elsif method == :with_lock_retries
+          connection.with_lock_retries(*args, &block)
+        else
+          connection.with_lock_retries { super }
         end
       end
     end

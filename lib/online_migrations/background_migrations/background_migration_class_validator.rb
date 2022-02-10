@@ -27,7 +27,7 @@ module OnlineMigrations
           record.errors.add(
             :migration_name,
             "#{migration_name}#relation cannot use ORDER BY or LIMIT due to the way how iteration with a cursor is designed. " \
-              "You can use other ways to limit the number of rows, e.g. a WHERE condition on the primary key column."
+            "You can use other ways to limit the number of rows, e.g. a WHERE condition on the primary key column."
           )
         end
       end

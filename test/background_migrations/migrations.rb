@@ -99,5 +99,7 @@ module BackgroundMigrations
   end
 
   class NotAMigration
+    def relation; end
+    def process_batch(*); end
   end
 end

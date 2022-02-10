@@ -225,7 +225,7 @@ module OnlineMigrations
     # @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
     #
     def delay(attempt)
-      (rand * [@max_delay, @base_delay * 2**(attempt - 1)].min).ceil
+      (rand * [@max_delay, @base_delay * (2**(attempt - 1))].min).ceil
     end
   end
 
