@@ -284,7 +284,7 @@ A few changes don't require a table rewrite (and are safe) in PostgreSQL:
 
 Type | Safe Changes
 --- | ---
-`citext` | Changing to `text` if not indexed
+`citext` | Changing to `text` if not indexed, changing to `string` with no `:limit` if not indexed
 `datetime` | Increasing or removing `:precision`, changing to `timestamptz` when session time zone is UTC in PostgreSQL 12+
 `decimal` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`
 `numeric` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`

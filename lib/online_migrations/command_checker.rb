@@ -229,6 +229,8 @@ module OnlineMigrations
                 !options[:limit] || (existing_column.limit && options[:limit] >= existing_column.limit)
               when :text
                 !options[:limit]
+              when :citext
+                !options[:limit] && !indexed?(table_name, column_name)
               end
             when :text
               [:string, :text].include?(existing_type) ||
