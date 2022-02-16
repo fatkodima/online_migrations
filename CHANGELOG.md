@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+New safe operations
+
+- Changing between `text` and `citext` when not indexed
+
 ## 0.3.0 (2022-02-10)
 
 - Support ActiveRecord 7.0+ versioned schemas

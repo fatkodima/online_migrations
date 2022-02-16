@@ -282,12 +282,15 @@ end
 
 A few changes don't require a table rewrite (and are safe) in PostgreSQL:
 
-- Increasing the length limit of a `varchar` column (or removing the limit)
-- Changing a `varchar` column to a `text` column
-- Changing a `text` column to a `varchar` column with no length limit
-- Increasing the precision of a `decimal` or `numeric` column
-- Making a `decimal` or `numeric` column unconstrained
-- Changing between `timestamp` and `timestamptz` columns when session time zone is UTC in PostgreSQL 12+
+Type | Safe Changes
+--- | ---
+`citext` | Changing to `text` if not indexed
+`datetime` | Increasing or removing `:precision`, changing to `timestamptz` when session time zone is UTC in PostgreSQL 12+
+`decimal` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`
+`numeric` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`
+`string` | Increasing or removing `:limit`, changing to `text`
+`text` | Changing to `string` with no `:limit`, changing to `citext` if not indexed
+`timestamptz` | Increasing or removing `:limit`, changing to `datetime` when session time zone is UTC in PostgreSQL 12+
 
 :white_check_mark: **Good**
 

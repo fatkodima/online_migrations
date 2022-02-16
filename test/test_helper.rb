@@ -35,11 +35,8 @@ ActiveRecord::Base.public_send("#{OnlineMigrations::Utils.ar_partial_writes_sett
 def prepare_database
   connection = ActiveRecord::Base.connection
   connection.tables.each do |table_name|
-    connection.execute("DROP TABLE #{table_name} CASCADE")
+    connection.drop_table(table_name, force: :cascade)
   end
-
-  # For gen_random_uuid
-  connection.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
 
   ActiveRecord::SchemaMigration.create_table
 end

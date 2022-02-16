@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 ActiveRecord::Schema.define do
+  enable_extension "pgcrypto" # for gen_random_uuid
+  enable_extension "citext"
+
   create_table :background_migrations do |t|
     t.string :migration_name, null: false
     t.jsonb :arguments, default: [], null: false

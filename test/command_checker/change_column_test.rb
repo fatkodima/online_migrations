@@ -232,6 +232,88 @@ module CommandChecker
       end
     end
 
+    class TextToCitext < TestMigration
+      def up
+        add_column :files, :key, :text
+        change_column :files, :key, :citext
+      end
+
+      def down
+        remove_column :files, :key
+      end
+    end
+
+    def test_text_to_citext
+      assert_safe TextToCitext
+    end
+
+    class TextToCitextIndexed < TestMigration
+      def up
+        change_table :files do |t|
+          t.text :key, index: true
+        end
+        change_column :files, :key, :citext
+      end
+
+      def down
+        remove_column :files, :key
+      end
+    end
+
+    def test_text_to_citext_indexed
+      assert_unsafe TextToCitextIndexed
+    end
+
+    class TextToCitextExpressionIndexed < TestMigration
+      def up
+        change_table :files do |t|
+          t.text :key
+          t.index "lower(key)"
+        end
+        change_column :files, :key, :citext
+      end
+
+      def down
+        remove_column :files, :key
+      end
+    end
+
+    def test_text_to_citext_expression_indexed
+      assert_unsafe TextToCitextExpressionIndexed
+    end
+
+    class CitextToText < TestMigration
+      def up
+        add_column :files, :key, :citext
+        change_column :files, :key, :text
+      end
+
+      def down
+        remove_column :files, :key
+      end
+    end
+
+    def test_citext_to_text
+      assert_safe CitextToText
+    end
+
+    class CitextToTextIndexed < TestMigration
+      def up
+        change_table :files do |t|
+          t.citext :key, index: true
+        end
+        change_column :files, :key, :text
+      end
+
+      def down
+        remove_column :files, :key
+      end
+    end
+
+    def test_citext_to_text_indexed
+      assert_unsafe CitextToTextIndexed
+    end
+
     class AddNotNull < TestMigration
       def up
         change_column :files, :cost_per_gb, :decimal, null: false

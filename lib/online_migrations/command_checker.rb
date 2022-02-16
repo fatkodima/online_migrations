@@ -206,9 +206,18 @@ module OnlineMigrations
 
         type = type.to_sym
 
-        existing_column = connection.columns(table_name).find { |c| c.name == column_name.to_s }
+        existing_column = column_for(table_name, column_name)
         if existing_column
           existing_type = existing_column.type.to_sym
+
+          # To get a list of binary-coercible types:
+          #
+          # SELECT stype.typname AS source, ttype.typname AS target
+          # FROM pg_cast
+          #   INNER JOIN pg_type stype ON pg_cast.castsource = stype.oid
+          #   INNER JOIN pg_type ttype ON pg_cast.casttarget = ttype.oid
+          # WHERE castmethod = 'b'
+          # ORDER BY 1, 2
 
           safe =
             case type
@@ -222,8 +231,10 @@ module OnlineMigrations
                 !options[:limit]
               end
             when :text
-              # safe to change varchar to text (and text to text)
-              [:string, :text].include?(existing_type)
+              [:string, :text].include?(existing_type) ||
+              (existing_type == :citext && !indexed?(table_name, column_name))
+            when :citext
+              existing_type == :text && !indexed?(table_name, column_name)
             when :numeric, :decimal
               # numeric and decimal are equivalent and can be used interchangably
               [:numeric, :decimal].include?(existing_type) &&
@@ -667,6 +678,10 @@ module OnlineMigrations
       def like_foreign_key?(column_name, type)
         column_name.end_with?("_id") &&
           [:integer, :bigint, :serial, :bigserial, :uuid].include?(type)
+      end
+
+      def indexed?(table_name, column_name)
+        connection.indexes(table_name).any? { |index| index.columns.include?(column_name.to_s) }
       end
 
       def column_for(table_name, column_name)
