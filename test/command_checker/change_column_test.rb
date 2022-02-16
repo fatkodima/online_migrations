@@ -494,6 +494,45 @@ module CommandChecker
       assert_unsafe TimestamptzDecreaseLimit
     end
 
+    class IntervalIncreasePrecision < TestMigration
+      def up
+        if OnlineMigrations::Utils.ar_version >= 6.1
+          add_column :files, :delete_after, :interval, precision: 0
+        else
+          # precision is ignored for add_column and interval in ActiveRecord < 6.1
+          safety_assured { execute('ALTER TABLE "files" ADD COLUMN "delete_after" interval(0)') }
+        end
+
+        change_column :files, :delete_after, :interval, precision: 3
+        change_column :files, :delete_after, :interval, precision: 6
+        change_column :files, :delete_after, :interval
+        change_column :files, :delete_after, :interval, precision: 6
+      end
+
+      def down
+        remove_column :files, :delete_after
+      end
+    end
+
+    def test_interval_increase_precision
+      assert_safe IntervalIncreasePrecision
+    end
+
+    class IntervalDecreasePrecision < TestMigration
+      def up
+        add_column :files, :delete_after, :interval
+        change_column :files, :delete_after, :interval, precision: 3
+      end
+
+      def down
+        remove_column :files, :delete_after
+      end
+    end
+
+    def test_interval_decrease_precision
+      assert_unsafe IntervalDecreasePrecision
+    end
+
     class AddNotNull < TestMigration
       def up
         change_column :files, :cost_per_gb, :decimal, null: false

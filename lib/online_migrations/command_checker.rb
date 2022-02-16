@@ -219,6 +219,8 @@ module OnlineMigrations
           # WHERE castmethod = 'b'
           # ORDER BY 1, 2
 
+          # https://www.postgresql.org/docs/release/9.2.0/#AEN124164
+
           safe =
             case type
             when :string
@@ -262,6 +264,13 @@ module OnlineMigrations
               (type == existing_type ||
                 (postgresql_version >= Gem::Version.new("12") &&
                 connection.select_value("SHOW timezone") == "UTC"))
+            when :interval
+              precision = options[:precision] || options[:limit] || 6
+              existing_precision = existing_column.precision || existing_column.limit || 6
+
+              # PostgreSQL interval data type was added in https://github.com/rails/rails/pull/16919
+              (existing_type == :interval || (Utils.ar_version < 6.1 && existing_column.sql_type.start_with?("interval"))) &&
+              precision >= existing_precision
             else
               type == existing_type &&
               options[:limit] == existing_column.limit &&

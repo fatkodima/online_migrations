@@ -5,6 +5,7 @@ New safe operations
 - Changing between `text` and `citext` when not indexed
 - Changing a `string` column to a `citext` column when not indexed
 - Changing a `citext` column to a `string` column with no length limit
+- Increasing the precision of an `interval` column
 
 New unsafe operations
 
