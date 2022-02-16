@@ -6,6 +6,11 @@ New safe operations
 - Changing a `string` column to a `citext` column when not indexed
 - Changing a `citext` column to a `string` column with no length limit
 
+New unsafe operations
+
+- Decreasing `:precision` of a `datetime` column
+- Decreasing `:limit` of a `timestamptz` column
+
 ## 0.3.0 (2022-02-10)
 
 - Support ActiveRecord 7.0+ versioned schemas

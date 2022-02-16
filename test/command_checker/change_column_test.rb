@@ -213,12 +213,16 @@ module CommandChecker
     end
 
     def test_timestamp_to_timestamptz_no_utc
-      assert_unsafe TimestampToTimestamptz
+      with_postgres(12) do
+        with_time_zone("Europe/Kiev") do
+          assert_unsafe TimestampToTimestamptz
+        end
+      end
     end
 
     def test_timestamp_to_timestamptz_utc
       with_postgres(12) do
-        with_utc_time_zone do
+        with_time_zone("UTC") do
           assert_safe TimestampToTimestamptz
         end
       end
@@ -226,7 +230,7 @@ module CommandChecker
 
     def test_timestamp_to_timestamptz_utc_before_12
       with_postgres(11) do
-        with_utc_time_zone do
+        with_time_zone("UTC") do
           assert_unsafe TimestampToTimestamptz
         end
       end
@@ -391,6 +395,105 @@ module CommandChecker
       assert_unsafe CitextToUnlimitedStringIndexed
     end
 
+    class DatetimeIncreasePrecision < TestMigration
+      def up
+        add_column :files, :deleted_at, :datetime, precision: 0
+        change_column :files, :deleted_at, :datetime, precision: 3
+        change_column :files, :deleted_at, :datetime, precision: 6
+        change_column :files, :deleted_at, :datetime
+        change_column :files, :deleted_at, :datetime, precision: 6
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_datetime_increase_precision
+      assert_safe DatetimeIncreasePrecision
+    end
+
+    class DatetimeDecreasePrecision < TestMigration
+      def up
+        add_column :files, :deleted_at, :datetime
+        change_column :files, :deleted_at, :datetime, precision: 3
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_datetime_decrease_precision
+      assert_unsafe DatetimeDecreasePrecision
+    end
+
+    class TimestampIncreaseLimit < TestMigration
+      def up
+        add_column :files, :deleted_at, :timestamp, precision: 0
+        change_column :files, :deleted_at, :timestamp, precision: 3
+        change_column :files, :deleted_at, :timestamp, precision: 6
+        change_column :files, :deleted_at, :timestamp
+        change_column :files, :deleted_at, :timestamp, precision: 6
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_timestamp_increase_limit
+      assert_safe TimestampIncreaseLimit
+    end
+
+    class TimestampDecreaseLimit < TestMigration
+      def up
+        add_column :files, :deleted_at, :timestamp
+        change_column :files, :deleted_at, :timestamp, limit: 3
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_timestamp_decrease_limit
+      assert_unsafe TimestampDecreaseLimit
+    end
+
+    class TimestamptzIncreaseLimit < TestMigration
+      def up
+        add_column :files, :deleted_at, :timestamptz, precision: 0
+        change_column :files, :deleted_at, :timestamptz, precision: 3
+        change_column :files, :deleted_at, :timestamptz, precision: 6
+        change_column :files, :deleted_at, :timestamptz
+        change_column :files, :deleted_at, :timestamptz, precision: 6
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_timestamptz_increase_limit
+      assert_safe TimestamptzIncreaseLimit
+    end
+
+    class TimestamptzDecreaseLimit < TestMigration
+      def up
+        add_column :files, :deleted_at, :timestamptz
+        change_column :files, :deleted_at, :timestamptz, limit: 3
+      end
+
+      def down
+        remove_column :files, :deleted_at
+      end
+    end
+
+    def test_timestamptz_decrease_limit
+      assert_unsafe TimestamptzDecreaseLimit
+    end
+
     class AddNotNull < TestMigration
       def up
         change_column :files, :cost_per_gb, :decimal, null: false
@@ -424,9 +527,9 @@ module CommandChecker
     end
 
     private
-      def with_utc_time_zone
+      def with_time_zone(name)
         previous = connection.select_value("SHOW TIME ZONE")
-        connection.select_value("SET TIME ZONE 'UTC'")
+        connection.select_value("SET TIME ZONE '#{name}'")
       ensure
         connection.select_value("SET TIME ZONE #{connection.quote(previous)}")
       end

@@ -252,9 +252,16 @@ module OnlineMigrations
                 )
               )
             when :datetime, :timestamp, :timestamptz
-              [:timestamp, :timestamptz].include?(existing_type) &&
-              postgresql_version >= Gem::Version.new("12") &&
-              connection.select_value("SHOW timezone") == "UTC"
+              # precision for datetime
+              # limit for timestamp, timestamptz
+              precision = (type == :datetime ? options[:precision] : options[:limit]) || 6
+              existing_precision = existing_column.precision || existing_column.limit || 6
+
+              [:datetime, :timestamp, :timestamptz].include?(existing_type) &&
+              precision >= existing_precision &&
+              (type == existing_type ||
+                (postgresql_version >= Gem::Version.new("12") &&
+                connection.select_value("SHOW timezone") == "UTC"))
             else
               type == existing_type &&
               options[:limit] == existing_column.limit &&
