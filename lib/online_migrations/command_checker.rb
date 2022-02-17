@@ -229,7 +229,7 @@ module OnlineMigrations
               case existing_type
               when :string
                 !options[:limit] || (existing_column.limit && options[:limit] >= existing_column.limit)
-              when :text
+              when :text, :xml
                 !options[:limit]
               when :citext
                 !options[:limit] && !indexed?(table_name, column_name)

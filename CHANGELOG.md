@@ -8,6 +8,7 @@ New safe operations
 - Increasing the precision of an `interval` column
 - Changing a `cidr` column to an `inet` column
 - Changing an `xml` column to a `text` column
+- Changing an `xml` column to a `string` column with no `:limit`
 
 New unsafe operations
 

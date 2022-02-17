@@ -601,6 +601,36 @@ module CommandChecker
       assert_unsafe TextToXml
     end
 
+    class XmlToUnlimitedString < TestMigration
+      def up
+        add_column :files, :settings, :xml
+        change_column :files, :settings, :string
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_xml_to_unlimited_string
+      assert_safe XmlToUnlimitedString
+    end
+
+    class XmlToLimitedString < TestMigration
+      def up
+        add_column :files, :settings, :xml
+        change_column :files, :settings, :string, limit: 64
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_xml_to_limited_string
+      assert_unsafe XmlToLimitedString
+    end
+
     def test_add_not_null
       assert_unsafe AddNotNull, <<-MSG.strip_heredoc
         Changing the type is safe, but setting NOT NULL is not.
