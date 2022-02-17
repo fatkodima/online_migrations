@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix backfilling code in suggestion for changing column's NOT NULL
+
 New safe operations
 
 - Changing between `text` and `citext` when not indexed

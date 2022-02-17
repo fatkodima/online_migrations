@@ -214,11 +214,13 @@ class <%= migration_name %> < <%= migration_parent %>
 
   def change
     <%= add_constraint_code %>
-<% if backfill_code %>
+<% unless default.nil? %>
 
     # Passing a default value to change_column_null runs a single UPDATE query,
     # which can cause downtime. Instead, backfill the existing rows in batches.
-    <%= backfill_code %>
+    update_column_in_batches(:<%= table_name %>, :<%= column_name %>, <%= default.inspect %>) do |relation|
+      relation.where(<%= column_name %>: nil)
+    end
 
 <% end %>
     <%= validate_constraint_code %>

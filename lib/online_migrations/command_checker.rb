@@ -312,14 +312,12 @@ module OnlineMigrations
             constraint_name = "#{table_name}_#{column_name}_null"
             vars = {
               add_constraint_code: command_str(:add_not_null_constraint, table_name, column_name, name: constraint_name, validate: false),
-              backfill_code: nil,
               validate_constraint_code: command_str(:validate_not_null_constraint, table_name, column_name, name: constraint_name),
               remove_constraint_code: nil,
+              table_name: table_name,
+              column_name: column_name,
+              default: default,
             }
-
-            if !default.nil?
-              vars[:backfill_code] = command_str(:update_column_in_batches, table_name, column_name, default)
-            end
 
             if postgresql_version >= Gem::Version.new("12")
               vars[:remove_constraint_code] = command_str(:remove_check_constraint, table_name, name: constraint_name)

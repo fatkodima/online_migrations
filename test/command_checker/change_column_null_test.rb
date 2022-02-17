@@ -69,7 +69,9 @@ module CommandChecker
       assert_unsafe ChangeColumnNullToFalseDefault, <<-MSG
     # Passing a default value to change_column_null runs a single UPDATE query,
     # which can cause downtime. Instead, backfill the existing rows in batches.
-    update_column_in_batches :users, :name, "Guest"
+    update_column_in_batches(:users, :name, "Guest") do |relation|
+      relation.where(name: nil)
+    end
       MSG
     end
 
