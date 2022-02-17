@@ -271,6 +271,8 @@ module OnlineMigrations
               # PostgreSQL interval data type was added in https://github.com/rails/rails/pull/16919
               (existing_type == :interval || (Utils.ar_version < 6.1 && existing_column.sql_type.start_with?("interval"))) &&
               precision >= existing_precision
+            when :inet
+              existing_type == :cidr
             else
               type == existing_type &&
               options[:limit] == existing_column.limit &&

@@ -541,6 +541,36 @@ module CommandChecker
       def down; end
     end
 
+    class CidrToInet < TestMigration
+      def up
+        add_column :files, :ip, :cidr
+        change_column :files, :ip, :inet
+      end
+
+      def down
+        remove_column :files, :ip
+      end
+    end
+
+    def test_cidr_to_inet
+      assert_safe CidrToInet
+    end
+
+    class InetToCidr < TestMigration
+      def up
+        add_column :files, :ip, :inet
+        change_column :files, :ip, :cidr
+      end
+
+      def down
+        remove_column :files, :ip
+      end
+    end
+
+    def test_inet_to_cidr
+      assert_unsafe InetToCidr
+    end
+
     def test_add_not_null
       assert_unsafe AddNotNull, <<-MSG.strip_heredoc
         Changing the type is safe, but setting NOT NULL is not.
