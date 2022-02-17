@@ -7,6 +7,7 @@ New safe operations
 - Changing a `citext` column to a `string` column with no length limit
 - Increasing the precision of an `interval` column
 - Changing a `cidr` column to an `inet` column
+- Changing an `xml` column to a `text` column
 
 New unsafe operations
 

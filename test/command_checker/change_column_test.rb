@@ -571,6 +571,36 @@ module CommandChecker
       assert_unsafe InetToCidr
     end
 
+    class XmlToText < TestMigration
+      def up
+        add_column :files, :settings, :xml
+        change_column :files, :settings, :text
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_xml_to_text
+      assert_safe XmlToText
+    end
+
+    class TextToXml < TestMigration
+      def up
+        add_column :files, :settings, :text
+        change_column :files, :settings, :xml
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_text_to_xml
+      assert_unsafe TextToXml
+    end
+
     def test_add_not_null
       assert_unsafe AddNotNull, <<-MSG.strip_heredoc
         Changing the type is safe, but setting NOT NULL is not.

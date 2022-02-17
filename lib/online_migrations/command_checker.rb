@@ -235,7 +235,7 @@ module OnlineMigrations
                 !options[:limit] && !indexed?(table_name, column_name)
               end
             when :text
-              [:string, :text].include?(existing_type) ||
+              [:string, :text, :xml].include?(existing_type) ||
               (existing_type == :citext && !indexed?(table_name, column_name))
             when :citext
               [:string, :text].include?(existing_type) && !indexed?(table_name, column_name)
