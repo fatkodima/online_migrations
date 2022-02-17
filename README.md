@@ -288,7 +288,7 @@ Type | Safe Changes
 `datetime` | Increasing or removing `:precision`, changing to `timestamptz` when session time zone is UTC in PostgreSQL 12+
 `decimal` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`
 `numeric` | Increasing `:precision` at same `:scale`, removing `:precision` and `:scale`
-`string` | Increasing or removing `:limit`, changing to `text`
+`string` | Increasing or removing `:limit`, changing to `text`, changing to `citext` if not indexed
 `text` | Changing to `string` with no `:limit`, changing to `citext` if not indexed
 `timestamptz` | Increasing or removing `:limit`, changing to `datetime` when session time zone is UTC in PostgreSQL 12+
 

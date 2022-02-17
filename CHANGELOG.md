@@ -3,6 +3,7 @@
 New safe operations
 
 - Changing between `text` and `citext` when not indexed
+- Changing a `string` column to a `citext` column when not indexed
 
 ## 0.3.0 (2022-02-10)
 

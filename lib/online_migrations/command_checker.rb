@@ -234,7 +234,7 @@ module OnlineMigrations
               [:string, :text].include?(existing_type) ||
               (existing_type == :citext && !indexed?(table_name, column_name))
             when :citext
-              existing_type == :text && !indexed?(table_name, column_name)
+              [:string, :text].include?(existing_type) && !indexed?(table_name, column_name)
             when :numeric, :decimal
               # numeric and decimal are equivalent and can be used interchangably
               [:numeric, :decimal].include?(existing_type) &&

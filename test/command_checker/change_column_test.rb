@@ -314,6 +314,36 @@ module CommandChecker
       assert_unsafe CitextToTextIndexed
     end
 
+    class StringToCitext < TestMigration
+      def up
+        change_column :files, :name, :citext
+      end
+
+      def down
+        change_column :files, :name, :string
+      end
+    end
+
+    def test_string_to_citext
+      assert_safe StringToCitext
+    end
+
+    class StringToCitextIndexed < TestMigration
+      def up
+        safety_assured { add_index(:files, :name) }
+        change_column :files, :name, :citext
+      end
+
+      def down
+        remove_index :files, :name
+        change_column :files, :name, :string
+      end
+    end
+
+    def test_string_to_citext_indexed
+      assert_unsafe StringToCitextIndexed
+    end
+
     class AddNotNull < TestMigration
       def up
         change_column :files, :cost_per_gb, :decimal, null: false
