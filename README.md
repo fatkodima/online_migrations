@@ -10,6 +10,10 @@ Catch unsafe PostgreSQL migrations in development and run them easier in product
 
 [![Build Status](https://github.com/fatkodima/online_migrations/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/fatkodima/online_migrations/actions/workflows/test.yml)
 
+## Cool, but there is a `strong_migrations` already
+
+See [comparison to `strong_migrations`](#comparison-to-strong_migrations)
+
 ## Requirements
 
 - Ruby 2.1+
@@ -1297,6 +1301,33 @@ Background migrations:
 - extract as a separate gem
 - add UI
 - support batching over non-integer and multiple columns
+
+## Comparison to `strong_migrations`
+
+This gem was heavily inspired by the `strong_migrations` and GitLab's approaches to database migrations. This gem is a superset of `strong_migrations`, feature-wise, and has the same APIs.
+
+The main differences are:
+
+1. `strong_migrations` provides you **text guidance** on how to run migrations safer and you should implement them yourself. This new gem has actual [**code helpers**](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/schema_statements.rb) (and suggests them when fails on unsafe migrations) you can use to do what you want. See [example](#example) for an example.
+
+It has migrations helpers for:
+
+* renaming tables/columns
+* changing columns types (including changing primary/foreign keys from `integer` to `bigint`)
+* adding columns with default values
+* backfilling data
+* adding different types of constraints
+* and others
+
+2. This gem has a [powerful internal framework](https://github.com/fatkodima/online_migrations/blob/master/BACKGROUND_MIGRATIONS.md) for running data migrations on very large tables using background migrations.
+
+For example, you can use background migrations to migrate data that’s stored in a single JSON column to a separate table instead; backfill values from one column to another (as one of the steps when changing column type); or backfill some column’s value from an API.
+
+3. Yet, it has more checks for unsafe changes (see [checks](#checks)).
+
+4. Currently, this gem supports only PostgreSQL, while `strong_migrations` also checks `MySQL` and `MariaDB` migrations.
+
+5. This gem is more flexible in terms of configuration - see [config file](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/config.rb) for additional configuration options.
 
 ## License
 
