@@ -288,6 +288,8 @@ A few changes don't require a table rewrite (and are safe) in PostgreSQL:
 
 Type | Safe Changes
 --- | ---
+`bit` | Changing to `bit_varying`
+`bit_varying` | Increasing or removing `:limit`
 `cidr` | Changing to `inet`
 `citext` | Changing to `text` if not indexed, changing to `string` with no `:limit` if not indexed
 `datetime` | Increasing or removing `:precision`, changing to `timestamptz` when session time zone is UTC in PostgreSQL 12+

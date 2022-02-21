@@ -7,15 +7,19 @@ New safe operations
 - Changing between `text` and `citext` when not indexed
 - Changing a `string` column to a `citext` column when not indexed
 - Changing a `citext` column to a `string` column with no length limit
-- Increasing the precision of an `interval` column
+- Increasing the `:precision` of an `interval` column
 - Changing a `cidr` column to an `inet` column
 - Changing an `xml` column to a `text` column
 - Changing an `xml` column to a `string` column with no `:limit`
+- Changing a `bit` column to a `bit_varying` column
+- Increasing or removing the `:limit` of a `bit_varying` column
 
 New unsafe operations
 
 - Decreasing `:precision` of a `datetime` column
 - Decreasing `:limit` of a `timestamptz` column
+- Decreasing `:limit` of a `bit_varying` column
+- Adding a `:limit` to a `bit_varying` column
 
 ## 0.3.0 (2022-02-10)
 

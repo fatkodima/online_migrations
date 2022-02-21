@@ -239,6 +239,15 @@ module OnlineMigrations
               (existing_type == :citext && !indexed?(table_name, column_name))
             when :citext
               [:string, :text].include?(existing_type) && !indexed?(table_name, column_name)
+            when :bit_varying
+              case existing_type
+              when :bit
+                !options[:limit]
+              when :bit_varying
+                # safe to increase limit or remove it
+                # not safe to decrease limit or add a limit
+                !options[:limit] || (existing_column.limit && options[:limit] >= existing_column.limit)
+              end
             when :numeric, :decimal
               # numeric and decimal are equivalent and can be used interchangably
               [:numeric, :decimal].include?(existing_type) &&

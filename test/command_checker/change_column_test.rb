@@ -533,14 +533,6 @@ module CommandChecker
       assert_unsafe IntervalDecreasePrecision
     end
 
-    class AddNotNull < TestMigration
-      def up
-        change_column :files, :cost_per_gb, :decimal, null: false
-      end
-
-      def down; end
-    end
-
     class CidrToInet < TestMigration
       def up
         add_column :files, :ip, :cidr
@@ -629,6 +621,89 @@ module CommandChecker
 
     def test_xml_to_limited_string
       assert_unsafe XmlToLimitedString
+    end
+
+    class VarbitToUnlimitedVarbit < TestMigration
+      def up
+        add_column :files, :settings, :bit_varying, limit: 16
+        change_column :files, :settings, :bit_varying
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_varbit_to_unlimited_varbit
+      assert_safe VarbitToUnlimitedVarbit
+    end
+
+    class VarbitToLargerVarbit < TestMigration
+      def up
+        add_column :files, :settings, :bit_varying, limit: 16
+        change_column :files, :settings, :bit_varying, limit: 32
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_varbit_to_larger_varbit
+      assert_safe VarbitToLargerVarbit
+    end
+
+    class VarbitToSmallerVarbit < TestMigration
+      def up
+        add_column :files, :settings, :bit_varying, limit: 16
+        change_column :files, :settings, :bit_varying, limit: 8
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_varbit_to_smaller_varbit
+      assert_unsafe VarbitToSmallerVarbit
+    end
+
+    class BitToUnlimitedVarbit < TestMigration
+      def up
+        add_column :files, :settings, :bit, limit: 16
+        change_column :files, :settings, :bit_varying
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_bit_to_unlimited_varbit
+      assert_safe BitToUnlimitedVarbit
+    end
+
+    class BitToLimitedVarbit < TestMigration
+      def up
+        add_column :files, :settings, :bit, limit: 16
+        change_column :files, :settings, :bit_varying, limit: 32
+      end
+
+      def down
+        remove_column :files, :settings
+      end
+    end
+
+    def test_bit_to_limited_varbit
+      assert_unsafe BitToLimitedVarbit
+    end
+
+    class AddNotNull < TestMigration
+      def up
+        change_column :files, :cost_per_gb, :decimal, null: false
+      end
+
+      def down; end
     end
 
     def test_add_not_null
