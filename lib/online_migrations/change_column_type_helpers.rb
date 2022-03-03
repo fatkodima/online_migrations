@@ -110,7 +110,7 @@ module OnlineMigrations
           column_options = options[column_name] || {}
           tmp_column_name = conversions[column_name]
 
-          if @connection.server_version >= 11_00_00 &&
+          if __raw_connection.server_version >= 11_00_00 &&
              primary_key(table_name) == column_name.to_s && old_col.type == :integer
             # If the column to be converted is a Primary Key, set it to
             # `NOT NULL DEFAULT 0` and we'll copy the correct values when backfilling.
