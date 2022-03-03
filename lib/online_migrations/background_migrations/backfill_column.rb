@@ -42,7 +42,7 @@ module OnlineMigrations
           @model ||= if model_name.present?
                        Object.const_get(model_name, false)
                      else
-                       Utils.define_model(ActiveRecord::Base.connection, table_name)
+                       Utils.define_model(table_name)
                      end
         end
 

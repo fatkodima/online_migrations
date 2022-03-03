@@ -53,7 +53,7 @@ module OnlineMigrations
         end
       end
 
-      def define_model(connection, table_name)
+      def define_model(table_name, connection = ActiveRecord::Base.connection)
         Class.new(ActiveRecord::Base) do
           self.table_name = table_name
           self.inheritance_column = :_type_disabled
