@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Raise an error for unsupported database versions
 - Fix backfilling code in suggestion for changing column's NOT NULL
 
 New safe operations

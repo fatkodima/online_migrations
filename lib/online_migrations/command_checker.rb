@@ -27,6 +27,7 @@ module OnlineMigrations
     end
 
     def check(command, *args, &block)
+      check_database_version
       check_lock_timeout
 
       unless safe?
@@ -43,6 +44,22 @@ module OnlineMigrations
     end
 
     private
+      def check_database_version
+        return if defined?(@database_version_checked)
+
+        adapter = connection.adapter_name
+        case adapter
+        when /postg/i
+          if postgresql_version < Gem::Version.new("9.6")
+            raise "#{adapter} < 9.6 is not supported"
+          end
+        else
+          raise "#{adapter} is not supported"
+        end
+
+        @database_version_checked = true
+      end
+
       def check_lock_timeout
         limit = OnlineMigrations.config.lock_timeout_limit
 

@@ -25,6 +25,22 @@ module CommandChecker
       end
     end
 
+    def test_unsupported_database
+      @connection.stub(:adapter_name, "MySQL") do
+        assert_raises(StandardError, /MySQL is not supported/i) do
+          migrate ForceCreateTable
+        end
+      end
+    end
+
+    def test_unsupported_version
+      with_target_version(9.5) do
+        assert_raises(StandardError, /PostgreSQL < 9.6 is not supported/i) do
+          migrate ForceCreateTable
+        end
+      end
+    end
+
     def test_force_create_table
       assert_unsafe ForceCreateTable
     end

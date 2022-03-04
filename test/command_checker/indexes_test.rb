@@ -95,7 +95,7 @@ module CommandChecker
     end
 
     def test_add_hash_index_before_10
-      with_target_version(9) do
+      with_target_version(9.6) do
         assert_unsafe AddHashIndex, "hash index use is discouraged"
       end
     end
@@ -116,7 +116,7 @@ module CommandChecker
     end
 
     def test_add_hash_index_table_definition_before_10
-      with_target_version(9) do
+      with_target_version(9.6) do
         assert_unsafe AddHashIndexTableDefinition, "hash index use is discouraged"
       end
     end
@@ -136,7 +136,7 @@ module CommandChecker
     end
 
     def test_add_hash_index_column_definition_before_10
-      with_target_version(9) do
+      with_target_version(9.6) do
         assert_unsafe AddHashIndexColumnDefinition, "hash index use is discouraged"
       end
     end
@@ -156,7 +156,7 @@ module CommandChecker
     end
 
     def test_add_hash_index_reference_definition_before_10
-      with_target_version(9) do
+      with_target_version(9.6) do
         assert_unsafe AddHashIndexReferenceDefinition, "hash index use is discouraged"
       end
     end
