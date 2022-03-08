@@ -1,46 +1,60 @@
 # frozen_string_literal: true
 
 require "active_record"
-
-require "online_migrations/utils"
-require "online_migrations/error_messages"
-require "online_migrations/config"
-require "online_migrations/batch_iterator"
-require "online_migrations/verbose_sql_logs"
-require "online_migrations/migration"
-require "online_migrations/migrator"
-require "online_migrations/database_tasks"
-require "online_migrations/foreign_key_definition"
-require "online_migrations/foreign_keys_collector"
-require "online_migrations/index_definition"
-require "online_migrations/indexes_collector"
-require "online_migrations/command_checker"
-require "online_migrations/schema_cache"
-require "online_migrations/background_migration"
-require "online_migrations/background_migrations/config"
-require "online_migrations/background_migrations/migration_status_validator"
-require "online_migrations/background_migrations/migration_job_status_validator"
-require "online_migrations/background_migrations/background_migration_class_validator"
-require "online_migrations/background_migrations/backfill_column"
-require "online_migrations/background_migrations/copy_column"
-require "online_migrations/background_migrations/reset_counters"
-require "online_migrations/background_migrations/migration_job"
-require "online_migrations/background_migrations/migration"
-require "online_migrations/background_migrations/migration_job_runner"
-require "online_migrations/background_migrations/migration_runner"
-require "online_migrations/background_migrations/migration_helpers"
-require "online_migrations/background_migrations/advisory_lock"
-require "online_migrations/background_migrations/scheduler"
-require "online_migrations/lock_retrier"
-require "online_migrations/command_recorder"
-require "online_migrations/copy_trigger"
-require "online_migrations/change_column_type_helpers"
-require "online_migrations/schema_statements"
 require "online_migrations/version"
 
 module OnlineMigrations
   class Error < StandardError; end
   class UnsafeMigration < Error; end
+
+  extend ActiveSupport::Autoload
+
+  autoload :Utils
+  autoload :ErrorMessages
+  autoload :Config
+  autoload :BatchIterator
+  autoload :VerboseSqlLogs
+  autoload :Migration
+  autoload :Migrator
+  autoload :DatabaseTasks
+  autoload :ForeignKeyDefinition
+  autoload :ForeignKeysCollector
+  autoload :IndexDefinition
+  autoload :IndexesCollector
+  autoload :CommandChecker
+  autoload :SchemaCache
+  autoload :BackgroundMigration
+
+  autoload_at "online_migrations/lock_retrier" do
+    autoload :LockRetrier
+    autoload :ConstantLockRetrier
+    autoload :ExponentialLockRetrier
+    autoload :NullLockRetrier
+  end
+
+  autoload :CommandRecorder
+  autoload :CopyTrigger
+  autoload :ChangeColumnTypeHelpers
+  autoload :SchemaStatements
+
+  module BackgroundMigrations
+    extend ActiveSupport::Autoload
+
+    autoload :Config
+    autoload :MigrationStatusValidator
+    autoload :MigrationJobStatusValidator
+    autoload :BackgroundMigrationClassValidator
+    autoload :BackfillColumn
+    autoload :CopyColumn
+    autoload :ResetCounters
+    autoload :MigrationJob
+    autoload :Migration
+    autoload :MigrationJobRunner
+    autoload :MigrationRunner
+    autoload :MigrationHelpers
+    autoload :AdvisoryLock
+    autoload :Scheduler
+  end
 
   class << self
     # @private

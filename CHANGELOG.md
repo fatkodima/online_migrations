@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Lazy load this gem
+
 - Add ability to reset counter caches using background migrations
 
     ```ruby
