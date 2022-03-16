@@ -27,10 +27,11 @@ module OnlineMigrations
 
       validates :migration_name, :batch_column_name, presence: true
 
-      validates :batch_pause, :min_value, :max_value, :batch_size, :sub_batch_size,
+      validates :min_value, :max_value, :batch_size, :sub_batch_size,
                   presence: true, numericality: { greater_than: 0 }
 
-      validates :sub_batch_pause_ms, presence: true, numericality: { greater_than_or_equal_to: 0 }
+      validates :batch_pause, :sub_batch_pause_ms, presence: true,
+                  numericality: { greater_than_or_equal_to: 0 }
       validates :rows_count, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
       validates :arguments, uniqueness: { scope: :migration_name }
 

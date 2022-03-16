@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Accept `0` as `batch_pause` value for background migrations
 - Ignore default scopes in `CopyColumn` and `BackfillColumn` background migrations
 - Raise an error for unsupported database versions
 - Fix backfilling code in suggestion for changing column's NOT NULL

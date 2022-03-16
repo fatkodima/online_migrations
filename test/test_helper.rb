@@ -52,7 +52,7 @@ OnlineMigrations.configure do |config|
   config.background_migrations.migrations_module = "BackgroundMigrations"
 
   # Do not waste time sleeping in tests
-  config.background_migrations.batch_pause = 1.second
+  config.background_migrations.batch_pause = 0.seconds
   config.background_migrations.sub_batch_pause_ms = 0
 
   # ActiveRecord 5.1 changed the default primary and foreign key type to bigint.

@@ -39,6 +39,16 @@ module BackgroundMigrations
       assert_includes m.errors.full_messages, "sub_batch_size should be smaller than or equal to batch_size"
     end
 
+    def test_batch_pause_validations
+      m = build_migration(batch_pause: 0)
+      assert m.valid?
+
+      m = build_migration(batch_pause: -1.second)
+      m.valid?
+
+      assert_includes m.errors.full_messages, "Batch pause must be greater than or equal to 0"
+    end
+
     def test_migration_relation_not_active_record_relation
       m = build_migration(migration_name: "RelationNotARRelation")
       m.valid?
