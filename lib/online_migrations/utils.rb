@@ -101,7 +101,14 @@ module OnlineMigrations
           WHERE relname = #{quoted_table}
             AND relnamespace = current_schema()::regnamespace
         SQL
-        count.to_i if count
+
+        if count
+          count = count.to_i
+          # If the table has never yet been vacuumed or analyzed, reltuples contains -1
+          # indicating that the row count is unknown.
+          count = 0 if count == -1
+          count
+        end
       end
 
       def ar_where_not_multiple_conditions(relation, conditions)
