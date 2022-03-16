@@ -20,9 +20,9 @@ module OnlineMigrations
           # Otherwise, the SQL is `WHERE column != value`. This condition ignores column
           # with NULLs in it, so we need to also manually check for NULLs.
           quoted_column = connection.quote_column_name(column)
-          model.where("#{quoted_column} != ? OR #{quoted_column} IS NULL", value)
+          model.unscoped.where("#{quoted_column} != ? OR #{quoted_column} IS NULL", value)
         else
-          Utils.ar_where_not_multiple_conditions(model, updates)
+          Utils.ar_where_not_multiple_conditions(model.unscoped, updates)
         end
       end
 

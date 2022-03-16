@@ -5,20 +5,22 @@ require "test_helper"
 module BackgroundMigrations
   class BackfillColumnTest < MiniTest::Test
     class User < ActiveRecord::Base
+      default_scope { where(banned: false) }
     end
 
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade) do |t|
         t.boolean :admin
+        t.boolean :banned, default: false
       end
 
       User.reset_column_information
 
-      @user1 = User.create!(admin: nil)
+      @user1 = User.create!(admin: nil, banned: true)
       @user2 = User.create!(admin: true)
       @user3 = User.create!(admin: false)
-      @migration = OnlineMigrations::BackgroundMigrations::BackfillColumn.new(:users, { "admin" => false })
+      @migration = OnlineMigrations::BackgroundMigrations::BackfillColumn.new(:users, { "admin" => false }, User.name)
     end
 
     def teardown

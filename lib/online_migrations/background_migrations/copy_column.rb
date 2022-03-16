@@ -26,6 +26,7 @@ module OnlineMigrations
 
       def relation
         relation = model
+          .unscoped
           .where(copy_to.map { |to_column| [to_column, nil] }.to_h)
 
         Utils.ar_where_not_multiple_conditions(
