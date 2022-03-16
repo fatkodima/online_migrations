@@ -9,6 +9,8 @@ module BackgroundMigrations
       @connection.create_table(:users) do |t|
         t.boolean :admin
       end
+
+      User.reset_column_information
     end
 
     def teardown

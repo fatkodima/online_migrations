@@ -29,6 +29,7 @@ module SchemaStatements
 
       @connection.add_check_constraint(:projects, "star_count >= 0")
 
+      User.reset_column_information
       Project.reset_column_information
     end
 

@@ -16,6 +16,8 @@ module SchemaStatements
         t.bigint :id_for_type_change
         t.string :name_for_type_change
       end
+
+      User.reset_column_information
     end
 
     def teardown
@@ -68,6 +70,13 @@ module SchemaStatements
 
       assert_equal "CopyColumn", m.migration_name
       assert_equal ["users", ["id", "name"], ["id_for_type_change", "name_for_type_change"], "SchemaStatements::MiscTest::User", {}], m.arguments
+    end
+
+    def test_reset_counters_in_background
+      m = @connection.reset_counters_in_background(User.name, :projects, :friends, touch: true)
+
+      assert_equal "ResetCounters", m.migration_name
+      assert_equal [User.name, ["projects", "friends"], { "touch" => true }], m.arguments
     end
 
     def test_enqueue_background_migration

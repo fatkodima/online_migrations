@@ -17,6 +17,8 @@ module BackgroundMigrations
       @connection.create_table(:projects) do |t|
         t.bigint :user_id
       end
+
+      User.reset_column_information
     end
 
     def teardown

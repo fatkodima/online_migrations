@@ -114,6 +114,12 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 * **Isolation**: Background migrations should be isolated and not use application code (for example, models defined in `app/models`). Since these migrations can take a long time to run it's possible for new versions to be deployed while they are still running.
 * **Idempotence**: It should be safe to run `process_batch` multiple times for the same elements. It's important if the Background Migration errors and you run it again, because the same element that errored may be processed again. Make sure that in case that your migration job is going to be retried data integrity is guaranteed.
 
+## Predefined background migrations
+
+* `BackfillColumn` - backfills column(s) with scalar values
+* `CopyColumn` - copies data from one column(s) to other(s)
+* `ResetCounters` - resets one or more counter caches to their correct value
+
 ## Testing
 
 At a minimum, it's recommended that the `#process_batch` method in your background migration is tested. You may also want to test the `#relation` and `#count` methods if they are sufficiently complex.

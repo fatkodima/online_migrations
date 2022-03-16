@@ -166,6 +166,45 @@ module OnlineMigrations
         )
       end
 
+      # Resets one or more counter caches to their correct value using background migrations.
+      # This is useful when adding new counter caches, or if the counter has been corrupted or modified directly by SQL.
+      #
+      # @param model_name [String]
+      # @param counters [Array]
+      # @param touch [Boolean, Symbol, Array] touch timestamp columns when updating.
+      #   - when `true` - will touch `updated_at` and/or `updated_on`
+      #   - when `Symbol` or `Array` - will touch specific column(s)
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
+      #
+      # @example
+      #     reset_counters_in_background("User", :projects, :friends, touch: true)
+      #
+      # @example Touch specific column
+      #     reset_counters_in_background("User", :projects, touch: :touched_at)
+      #
+      # @example Touch with specific time value
+      #     reset_counters_in_background("User", :projects, touch: [time: 2.days.ago])
+      #
+      # @see https://api.rubyonrails.org/classes/ActiveRecord/CounterCache/ClassMethods.html#method-i-reset_counters
+      #
+      # @note This method is better suited for extra large tables (100s of millions of records).
+      #     For smaller tables it is probably better and easier to use `reset_counters` from the ActiveRecord.
+      #
+      def reset_counters_in_background(model_name, *counters, touch: nil, **options)
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "ResetCounters",
+          model_name,
+          counters,
+          { touch: touch },
+          **options
+        )
+      end
+
       # Creates a background migration for the given job class name.
       #
       # A background migration runs one job at a time, computing the bounds of the next batch
