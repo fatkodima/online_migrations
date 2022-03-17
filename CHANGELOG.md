@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.4.0 (2022-03-17)
+
 - Lazy load this gem
 
 - Add ability to reset counter caches using background migrations
