@@ -47,8 +47,6 @@ TestMigration = OnlineMigrations::Utils.migration_parent
 TestMigration.version = 20200101000001
 
 OnlineMigrations.configure do |config|
-  config.target_version = 14.2
-
   config.background_migrations.migrations_module = "BackgroundMigrations"
 
   # Do not waste time sleeping in tests

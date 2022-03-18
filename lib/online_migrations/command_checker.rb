@@ -592,7 +592,7 @@ module OnlineMigrations
             target_version.to_s
           else
             # For rails 6.0+ we can use connection.database_version
-            pg_connection = connection.send(:__raw_connection)
+            pg_connection = connection.raw_connection
             database_version = pg_connection.server_version
             patch = database_version % 100
             database_version /= 100

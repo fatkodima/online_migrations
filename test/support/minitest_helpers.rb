@@ -76,7 +76,7 @@ module MinitestHelpers
   end
 
   def with_postgres(major_version, &block)
-    pg_connection = ActiveRecord::Base.connection.send(:__raw_connection)
+    pg_connection = ActiveRecord::Base.connection.raw_connection
     pg_connection.stub(:server_version, major_version * 1_00_00, &block)
   end
 

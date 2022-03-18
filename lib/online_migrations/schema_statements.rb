@@ -396,7 +396,7 @@ module OnlineMigrations
         raise ArgumentError, "Expressions as default are not supported"
       end
 
-      if __raw_connection.server_version >= 11_00_00 && !Utils.volatile_default?(self, type, default)
+      if raw_connection.server_version >= 11_00_00 && !Utils.volatile_default?(self, type, default)
         add_column(table_name, column_name, type, **options)
       else
         __ensure_not_in_transaction!
@@ -422,7 +422,7 @@ module OnlineMigrations
           add_not_null_constraint(table_name, column_name, validate: false)
           validate_not_null_constraint(table_name, column_name)
 
-          if __raw_connection.server_version >= 12_00_00
+          if raw_connection.server_version >= 12_00_00
             # In PostgreSQL 12+ it is safe to "promote" a CHECK constraint to `NOT NULL` for the column
             change_column_null(table_name, column_name, false)
             remove_not_null_constraint(table_name, column_name)
@@ -1045,15 +1045,6 @@ module OnlineMigrations
       def __schema_for_table(table_name)
         _, schema = table_name.to_s.split(".").reverse
         schema ? quote(schema) : "current_schema()"
-      end
-
-      def __raw_connection
-        # ActiveRecord > 7.0.2.2 (https://github.com/rails/rails/pull/44530)
-        if defined?(@raw_connection)
-          @raw_connection
-        else
-          @connection
-        end
       end
   end
 end
