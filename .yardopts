@@ -1,1 +1,5 @@
---no-private --markup markdown lib/**/**.rb - README.md
+--no-private
+--fail-on-warning
+--markup markdown
+lib/**/**.rb
+- README.md BACKGROUND_MIGRATIONS.md
