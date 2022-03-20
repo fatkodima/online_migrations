@@ -118,6 +118,7 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 
 * `BackfillColumn` - backfills column(s) with scalar values
 * `CopyColumn` - copies data from one column(s) to other(s)
+* `DeleteOrphanedRecords` - deletes records with one or more missing relations
 * `ResetCounters` - resets one or more counter caches to their correct value
 
 ## Testing

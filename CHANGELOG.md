@@ -1,5 +1,23 @@
 ## master (unreleased)
 
+- Add ability to delete orphaned records using background migrations
+
+    ```ruby
+      class User < ApplicationRecord
+        has_many :posts
+      end
+
+      class Post < ApplicationRecord
+        belongs_to :author, class_name: 'User'
+      end
+
+      class DeleteOrphanedPosts < ActiveRecord::Migration[7.0]
+        def up
+          delete_orphaned_records_in_background("Post", :author)
+        end
+      end
+    ```
+
 ## 0.4.1 (2022-03-21)
 
 - Fix missing options in suggested command for columns removal

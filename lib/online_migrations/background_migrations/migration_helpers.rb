@@ -205,6 +205,38 @@ module OnlineMigrations
         )
       end
 
+      # Deletes records with one or more missing relations using background migrations.
+      # This is useful when some referential integrity in the database is broken and
+      # you want to delete orphaned records.
+      #
+      # @param model_name [String]
+      # @param associations [Array]
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
+      #
+      # @example
+      #     delete_orphaned_records_in_background("Post", :author)
+      #
+      # @note This method is better suited for extra large tables (100s of millions of records).
+      #     For smaller tables it is probably better and easier to directly find and delete orpahed records.
+      #
+      def delete_orphaned_records_in_background(model_name, *associations, **options)
+        if Utils.ar_version <= 4.2
+          raise "#{__method__} does not support ActiveRecord <= 4.2 yet"
+        end
+
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "DeleteOrphanedRecords",
+          model_name,
+          associations,
+          **options
+        )
+      end
+
       # Creates a background migration for the given job class name.
       #
       # A background migration runs one job at a time, computing the bounds of the next batch

@@ -5,6 +5,11 @@ require "test_helper"
 module SchemaStatements
   class MiscTest < MiniTest::Test
     class User < ActiveRecord::Base
+      has_many :posts
+    end
+
+    class Post < ActiveRecord::Base
+      belongs_to :author, class_name: User.name
     end
 
     def setup
@@ -17,12 +22,18 @@ module SchemaStatements
         t.string :name_for_type_change
       end
 
+      @connection.create_table(:posts, force: :cascade) do |t|
+        t.belongs_to :author
+      end
+
       User.reset_column_information
+      Post.reset_column_information
     end
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
       @connection.drop_table(:users) rescue nil
+      @connection.drop_table(:posts) rescue nil
     end
 
     def test_schema
@@ -77,6 +88,15 @@ module SchemaStatements
 
       assert_equal "ResetCounters", m.migration_name
       assert_equal [User.name, ["projects", "friends"], { "touch" => true }], m.arguments
+    end
+
+    def test_delete_orphaned_records_in_background
+      skip if ar_version <= 4.2
+
+      m = @connection.delete_orphaned_records_in_background(Post.name, :author)
+
+      assert_equal "DeleteOrphanedRecords", m.migration_name
+      assert_equal [Post.name, ["author"]], m.arguments
     end
 
     def test_enqueue_background_migration
