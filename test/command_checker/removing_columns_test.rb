@@ -8,7 +8,7 @@ module CommandChecker
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade) do |t|
         t.string :name
-        t.string :email
+        t.string :email, null: false
         t.timestamps(null: false)
       end
 
@@ -26,7 +26,7 @@ module CommandChecker
 
     class RemoveColumn < TestMigration
       def change
-        remove_column :users, :email
+        remove_column :users, :email, :string, null: false
       end
     end
 
@@ -47,7 +47,7 @@ module CommandChecker
 
             class CommandChecker::RemovingColumnsTest::RemoveColumn < #{migration_parent_string}
               def change
-                safety_assured { remove_column :users, :email }
+                safety_assured { remove_column :users, :email, :string, null: false }
               end
             end
 

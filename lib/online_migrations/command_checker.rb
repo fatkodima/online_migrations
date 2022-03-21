@@ -381,7 +381,7 @@ module OnlineMigrations
           raise_error :remove_column,
             model: table_name.to_s.classify,
             columns: columns.inspect,
-            command: command_str(command, *args),
+            command: command_str(command, *args, options),
             table_name: table_name.inspect,
             indexes: indexes.map { |i| i.name.to_sym.inspect }
         end
