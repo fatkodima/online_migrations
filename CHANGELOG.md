@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.4.1 (2022-03-21)
+
 - Fix missing options in suggested command for columns removal
 - Fix retrieving raw postgresql connection
 
