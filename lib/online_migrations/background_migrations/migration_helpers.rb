@@ -237,6 +237,36 @@ module OnlineMigrations
         )
       end
 
+      # Deletes associated records for a specific parent record using background migrations.
+      # This is useful when you are planning to remove a parent object (user, account etc)
+      # and needs to remove lots of its associated objects.
+      #
+      # @param model_name [String]
+      # @param record_id [Integer, String] parent record primary key's value
+      # @param association [String, Symbol] association name for which records will be removed
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
+      #
+      # @example
+      #     delete_associated_records_in_background("Link", 1, :clicks)
+      #
+      # @note This method is better suited for large tables (10/100s of millions of records).
+      #     For smaller tables it is probably better and easier to directly delete associated records.
+      #
+      def delete_associated_records_in_background(model_name, record_id, association, **options)
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "DeleteAssociatedRecords",
+          model_name,
+          record_id,
+          association,
+          **options
+        )
+      end
+
       # Creates a background migration for the given job class name.
       #
       # A background migration runs one job at a time, computing the bounds of the next batch

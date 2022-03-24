@@ -46,6 +46,7 @@ module OnlineMigrations
     autoload :BackgroundMigrationClassValidator
     autoload :BackfillColumn
     autoload :CopyColumn
+    autoload :DeleteAssociatedRecords
     autoload :DeleteOrphanedRecords
     autoload :ResetCounters
     autoload :MigrationJob

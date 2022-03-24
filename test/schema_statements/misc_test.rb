@@ -5,7 +5,7 @@ require "test_helper"
 module SchemaStatements
   class MiscTest < MiniTest::Test
     class User < ActiveRecord::Base
-      has_many :posts
+      has_many :posts, foreign_key: :author_id
     end
 
     class Post < ActiveRecord::Base
@@ -97,6 +97,14 @@ module SchemaStatements
 
       assert_equal "DeleteOrphanedRecords", m.migration_name
       assert_equal [Post.name, ["author"]], m.arguments
+    end
+
+    def test_delete_associated_records_in_background
+      user = User.create!
+      m = @connection.delete_associated_records_in_background(User.name, user.id, :posts)
+
+      assert_equal "DeleteAssociatedRecords", m.migration_name
+      assert_equal [User.name, user.id, "posts"], m.arguments
     end
 
     def test_enqueue_background_migration

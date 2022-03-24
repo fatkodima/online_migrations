@@ -1,5 +1,24 @@
 ## master (unreleased)
 
+- Add ability to delete records associated with a parent object using background migrations
+
+    ```ruby
+      class Link < ActiveRecord::Base
+        has_many :clicks
+      end
+
+      class Click < ActiveRecord::Base
+        belongs_to :link
+      end
+
+      class DeleteSomeLinkClicks < ActiveRecord::Migration[7.0]
+        def up
+          some_link = ...
+          delete_associated_records_in_background("Link", some_link.id, :clicks)
+        end
+      end
+    ```
+
 - Add ability to delete orphaned records using background migrations
 
     ```ruby

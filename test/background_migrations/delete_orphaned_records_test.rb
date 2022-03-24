@@ -36,7 +36,7 @@ module BackgroundMigrations
       end
 
       User.reset_column_information
-      Project.reset_column_information
+      Post.reset_column_information
       Comment.reset_column_information
 
       user = User.create!
