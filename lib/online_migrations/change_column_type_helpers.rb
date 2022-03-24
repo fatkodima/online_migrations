@@ -173,7 +173,7 @@ module OnlineMigrations
     #   backfill_column_for_type_change(:files, :size, batch_size: 10_000)
     #
     # @note This method should not be run within a transaction
-    # @note For extra large tables (100s of millions of records)
+    # @note For large tables (10/100s of millions of records)
     #   it is recommended to use `backfill_column_for_type_change_in_background`.
     #
     def backfill_column_for_type_change(table_name, column_name, type_cast_function: nil, **options)

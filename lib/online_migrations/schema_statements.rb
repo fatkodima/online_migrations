@@ -48,7 +48,7 @@ module OnlineMigrations
     # @note This method should not be run within a transaction
     # @note Consider `update_columns_in_batches` when updating multiple columns
     #   to avoid rewriting the table multiple times.
-    # @note For extra large tables (100s of millions of records)
+    # @note For large tables (10/100s of millions of records)
     #   you may consider using `backfill_column_in_background` or `copy_column_in_background`.
     #
     def update_column_in_batches(table_name, column_name, value, **options, &block)
@@ -361,7 +361,7 @@ module OnlineMigrations
     # These steps ensure a column can be added to a large and commonly used table
     # without locking the entire table for the duration of the table modification.
     #
-    # For extra large tables (100s of millions of records) you may consider implementing
+    # For large tables (10/100s of millions of records) you may consider implementing
     #   the steps from this helper method yourself as a separate migrations, replacing step #3
     #   with the help of background migrations (see `backfill_column_in_background`).
     #

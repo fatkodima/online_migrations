@@ -21,7 +21,7 @@ module OnlineMigrations
       # @example Additional background migration options
       #   backfill_column_in_background(:users, :admin, false, batch_size: 10_000)
       #
-      # @note This method is better suited for extra large tables (100s of millions of records).
+      # @note This method is better suited for large tables (10/100s of millions of records).
       #     For smaller tables it is probably better and easier to use more flexible `update_column_in_batches`.
       #
       # @note Consider `backfill_columns_in_background` when backfilling multiple columns
@@ -76,7 +76,7 @@ module OnlineMigrations
       # @example Additional background migration options
       #   backfill_column_for_type_change_in_background(:files, :size, batch_size: 10_000)
       #
-      # @note This method is better suited for extra large tables (100s of millions of records).
+      # @note This method is better suited for large tables (10/100s of millions of records).
       #     For smaller tables it is probably better and easier to use more flexible `backfill_column_for_type_change`.
       #
       def backfill_column_for_type_change_in_background(table_name, column_name, model_name: nil,
@@ -131,7 +131,7 @@ module OnlineMigrations
       # @example
       #   copy_column_in_background(:users, :id, :id_for_type_change)
       #
-      # @note This method is better suited for extra large tables (100s of millions of records).
+      # @note This method is better suited for large tables (10/100s of millions of records).
       #     For smaller tables it is probably better and easier to use more flexible `update_column_in_batches`.
       #
       def copy_column_in_background(table_name, copy_from, copy_to, model_name: nil, type_cast_function: nil, **options)
@@ -190,7 +190,7 @@ module OnlineMigrations
       #
       # @see https://api.rubyonrails.org/classes/ActiveRecord/CounterCache/ClassMethods.html#method-i-reset_counters
       #
-      # @note This method is better suited for extra large tables (100s of millions of records).
+      # @note This method is better suited for large tables (10/100s of millions of records).
       #     For smaller tables it is probably better and easier to use `reset_counters` from the ActiveRecord.
       #
       def reset_counters_in_background(model_name, *counters, touch: nil, **options)
@@ -219,7 +219,7 @@ module OnlineMigrations
       # @example
       #     delete_orphaned_records_in_background("Post", :author)
       #
-      # @note This method is better suited for extra large tables (100s of millions of records).
+      # @note This method is better suited for large tables (10/100s of millions of records).
       #     For smaller tables it is probably better and easier to directly find and delete orpahed records.
       #
       def delete_orphaned_records_in_background(model_name, *associations, **options)
