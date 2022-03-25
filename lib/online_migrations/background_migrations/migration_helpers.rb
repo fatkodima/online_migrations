@@ -267,6 +267,53 @@ module OnlineMigrations
         )
       end
 
+      # Performs specific action on a relation or individual records.
+      # This is useful when you want to delete/destroy/update/etc records based on some conditions.
+      #
+      # @param model_name [String]
+      # @param conditions [Array, Hash, String] conditions to filter the relation
+      # @param action [String, Symbol] action to perform on the relation or individual records.
+      #     Relation-wide available actions: `:delete_all`, `:destroy_all`, and `:update_all`.
+      # @param updates [Hash] updates to perform when `action` is set to `:update_all`
+      # @param options [Hash] used to control the behavior of background migration.
+      #     See `#enqueue_background_migration`
+      #
+      # @return [OnlineMigrations::BackgroundMigrations::Migration]
+      #
+      # @example Delete records
+      #     perform_action_on_relation_in_background("User", { banned: true }, :delete_all)
+      #
+      # @example Destroy records
+      #     perform_action_on_relation_in_background("User", { banned: true }, :destroy_all)
+      #
+      # @example Update records
+      #     perform_action_on_relation_in_background("User", { banned: nil }, :update_all, updates: { banned: false })
+      #
+      # @example Perform custom method on individual records
+      #     class User < ApplicationRecord
+      #       def generate_invite_token
+      #         self.invite_token = # some complex logic
+      #       end
+      #     end
+      #
+      #     perform_action_on_relation_in_background("User", { invite_token: nil }, :generate_invite_token)
+      #
+      # @note This method is better suited for large tables (10/100s of millions of records).
+      #     For smaller tables it is probably better and easier to directly delete associated records.
+      #
+      def perform_action_on_relation_in_background(model_name, conditions, action, updates: nil, **options)
+        model_name = model_name.name if model_name.is_a?(Class)
+
+        enqueue_background_migration(
+          "PerformActionOnRelation",
+          model_name,
+          conditions,
+          action,
+          { updates: updates },
+          **options
+        )
+      end
+
       # Creates a background migration for the given job class name.
       #
       # A background migration runs one job at a time, computing the bounds of the next batch

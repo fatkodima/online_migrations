@@ -1,5 +1,31 @@
 ## master (unreleased)
 
+- Add ability to perform specific action on a relation or individual records using background migrations
+
+    Example, assuming you have lots and lots of fraud likes:
+
+    ```ruby
+    class DeleteFraudLikes < ActiveRecord::Migration[7.0]
+      def up
+        perform_action_on_relation_in_background("Like", { fraud: true }, :delete_all)
+      end
+    end
+    ```
+
+    Example, assuming you added a new column to the users and want to populate it:
+
+    ```ruby
+    class User < ApplicationRecord
+      def generate_invite_token
+        self.invite_token = # some complex logic
+      end
+    end
+
+    perform_action_on_relation_in_background("User", { invite_token: nil }, :generate_invite_token)
+    ```
+
+    You can use `delete_all`/`destroy_all`/`update_all` for the whole relation or run specific methods on individual records.
+
 - Add ability to delete records associated with a parent object using background migrations
 
     ```ruby

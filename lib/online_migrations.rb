@@ -48,6 +48,7 @@ module OnlineMigrations
     autoload :CopyColumn
     autoload :DeleteAssociatedRecords
     autoload :DeleteOrphanedRecords
+    autoload :PerformActionOnRelation
     autoload :ResetCounters
     autoload :MigrationJob
     autoload :Migration

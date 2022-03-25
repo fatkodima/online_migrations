@@ -120,6 +120,7 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 * `CopyColumn` - copies data from one column(s) to other(s) (enqueue using `copy_column_in_background`)
 * `DeleteAssociatedRecords` - deletes records associated with a parent object (enqueue using `delete_associated_records_in_background`)
 * `DeleteOrphanedRecords` - deletes records with one or more missing relations (enqueue using `delete_orphaned_records_in_background`)
+* `PerformActionOnRelation` - performs specific action on a relation or indvidual records (enqueue using `perform_action_on_relation_in_background`)
 * `ResetCounters` - resets one or more counter caches to their correct value (enqueue using `reset_counters_in_background`)
 
 ## Testing

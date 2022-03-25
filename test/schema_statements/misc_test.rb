@@ -18,6 +18,7 @@ module SchemaStatements
         t.text :name
         t.string :status
         t.boolean :admin
+        t.boolean :banned
         t.bigint :id_for_type_change
         t.string :name_for_type_change
       end
@@ -105,6 +106,13 @@ module SchemaStatements
 
       assert_equal "DeleteAssociatedRecords", m.migration_name
       assert_equal [User.name, user.id, "posts"], m.arguments
+    end
+
+    def test_perform_action_on_relation_in_background
+      m = @connection.perform_action_on_relation_in_background(User.name, { banned: true }, :delete_all)
+
+      assert_equal "PerformActionOnRelation", m.migration_name
+      assert_equal [User.name, { "banned" => true }, "delete_all", { "updates" => nil }], m.arguments
     end
 
     def test_enqueue_background_migration
