@@ -383,7 +383,8 @@ module OnlineMigrations
             columns: columns.inspect,
             command: command_str(command, *args, options),
             table_name: table_name.inspect,
-            indexes: indexes.map { |i| i.name.to_sym.inspect }
+            indexes: indexes.map { |i| i.name.to_sym.inspect },
+            small_table: small_table?(table_name)
         end
       end
 
@@ -576,14 +577,15 @@ module OnlineMigrations
       end
 
       def new_or_small_table?(table_name)
-        small_tables = OnlineMigrations.config.small_tables
-
-        new_table?(table_name) ||
-          small_tables.include?(table_name.to_s)
+        new_table?(table_name) || small_table?(table_name)
       end
 
       def new_table?(table_name)
         @new_tables.include?(table_name.to_s)
+      end
+
+      def small_table?(table_name)
+        OnlineMigrations.config.small_tables.include?(table_name.to_s)
       end
 
       def postgresql_version

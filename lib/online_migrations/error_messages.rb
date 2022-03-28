@@ -233,7 +233,7 @@ class <%= migration_name %> < <%= migration_parent %>
 end",
 
       remove_column:
-"<% if indexes.any? %>
+"<% if !small_table && indexes.any? %>
 Removing a column will automatically remove all of the indexes that involved the removed column.
 But the indexes would be removed non-concurrently, so you need to safely remove the indexes first:
 

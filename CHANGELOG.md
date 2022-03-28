@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- No need to separately remove indexes when removing a column from the small table
+
 - Add ability to perform specific action on a relation or individual records using background migrations
 
     Example, assuming you have lots and lots of fraud likes:

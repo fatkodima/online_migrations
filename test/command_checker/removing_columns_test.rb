@@ -117,6 +117,14 @@ module CommandChecker
         "remove_index :users, name: :index_users_on_name_and_email, algorithm: :concurrently"
     end
 
+    def test_remove_column_with_index_small_table
+      OnlineMigrations.config.small_tables = [:users]
+
+      assert_unsafe RemoveColumnWithIndex, "ActiveRecord caches database columns at runtime"
+    ensure
+      OnlineMigrations.config.small_tables.clear
+    end
+
     class RemoveColumns < TestMigration
       def change
         remove_columns :users, :name, :email, type: :string
