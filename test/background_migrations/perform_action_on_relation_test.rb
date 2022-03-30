@@ -92,7 +92,7 @@ module BackgroundMigrations
       migration.process_batch(migration.relation)
 
       assert_equal false, @user1.reload.banned
-      assert_equal true,  @user2.reload.banned
+      assert @user2.reload.banned
       assert_equal false, @user3.reload.banned
     end
 

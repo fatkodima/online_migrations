@@ -16,7 +16,9 @@ module OnlineMigrations
       :swap_column_names,
       :add_column_with_default,
       :add_not_null_constraint,
+      :remove_not_null_constraint,
       :add_text_limit_constraint,
+      :remove_text_limit_constraint,
       :add_reference_concurrently,
       :change_column_type_in_background,
       :enqueue_background_migration,
@@ -127,11 +129,14 @@ module OnlineMigrations
       end
 
       def invert_remove_text_limit_constraint(args)
-        unless args[2]
+        options = args.extract_options!
+        table_name, column, limit = args
+
+        unless limit
           raise ActiveRecord::IrreversibleMigration, "remove_text_limit_constraint is only reversible if given a limit."
         end
 
-        super
+        [:add_text_limit_constraint, [table_name, column, limit, **options]]
       end
   end
 end

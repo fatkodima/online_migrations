@@ -52,7 +52,7 @@ module MinitestHelpers
     patterns_to_match.each do |pattern|
       failed_patterns << pattern if queries.none? { |sql| sql.include?(pattern) }
     end
-    assert failed_patterns.empty?,
+    assert_empty failed_patterns,
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} not found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 
@@ -63,7 +63,7 @@ module MinitestHelpers
     patterns_to_match.each do |pattern|
       failed_patterns << pattern if queries.any? { |sql| sql.include?(pattern) }
     end
-    assert failed_patterns.empty?,
+    assert_empty failed_patterns,
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 

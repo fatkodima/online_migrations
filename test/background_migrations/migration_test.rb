@@ -113,7 +113,7 @@ module BackgroundMigrations
 
     def test_progress_succeded_migration
       m = create_migration(status: OnlineMigrations::BackgroundMigrations::Migration.statuses[:succeeded])
-      assert_equal 1.0, m.progress
+      assert_in_delta 1.0, m.progress
     end
 
     def test_progress_not_finished_migration
@@ -121,10 +121,10 @@ module BackgroundMigrations
       m = create_migration(migration_name: "MigrationWithCount", batch_size: 1, sub_batch_size: 1)
 
       run_migration_job(m)
-      assert_equal 0.5, m.progress
+      assert_in_delta 0.5, m.progress
 
       run_migration_job(m)
-      assert_equal 1.0, m.progress
+      assert_in_delta 1.0, m.progress
     end
 
     def test_migration_class

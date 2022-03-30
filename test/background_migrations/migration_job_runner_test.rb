@@ -33,7 +33,7 @@ module BackgroundMigrations
       assert job.started_at.present?
       assert job.finished_at.present?
 
-      assert User.count, User.where(admin: false).count
+      assert_equal User.count, User.where(admin: false).count
     end
 
     def test_run_saves_error_when_failed

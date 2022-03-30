@@ -1,3 +1,5 @@
+require: rubocop-minitest
+
 AllCops:
   NewCops: enable
   SuggestExtensions: false
@@ -117,4 +119,13 @@ Gemspec/RequireMFA:
   Enabled: false
 
 Metrics:
+  Enabled: false
+
+Minitest/MultipleAssertions:
+  Enabled: false
+
+Minitest/RefuteFalse:
+  Enabled: false
+
+Minitest/AssertPredicate:
   Enabled: false

@@ -109,11 +109,9 @@ module SchemaStatements
     end
 
     def test_update_column_in_batches_raises_when_non_callable_progress
-      error = assert_raises do
+      assert_raises(ArgumentError, /needs to be a callable/i) do
         connection.update_column_in_batches(:milestones, :points, 0, progress: :not_callable)
       end
-
-      assert_equal "The progress body needs to be a callable.", error.message
     end
   end
 end

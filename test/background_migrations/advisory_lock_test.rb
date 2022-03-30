@@ -14,7 +14,7 @@ module BackgroundMigrations
 
     def test_try_lock
       locked = @lock.try_lock
-      assert_equal true, locked
+      assert locked
       assert @lock.active?
     end
 

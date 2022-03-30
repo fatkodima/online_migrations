@@ -210,8 +210,8 @@ class CommandRecorderTest < MiniTest::Test
     end
   end
 
-  def text_remove_not_null_constraint
-    connection.add_not_null_constraint :users, :name
+  def test_remove_not_null_constraint
+    @connection.add_not_null_constraint :users, :name
 
     migrate(RemoveNotNullConstraint, direction: :up)
     assert_not @connection.send(:__not_null_constraint_exists?, :users, :name)
@@ -240,8 +240,8 @@ class CommandRecorderTest < MiniTest::Test
     end
   end
 
-  def text_remove_text_limit_constraint
-    connection.add_text_limit_constraint :users, :name, 255
+  def test_remove_text_limit_constraint
+    @connection.add_text_limit_constraint :users, :name, 255
 
     migrate(RemoveTextLimitConstraint, direction: :up)
     assert_not @connection.send(:__text_limit_constraint_exists?, :users, :name)

@@ -18,6 +18,7 @@ else
 
   # Run Rubocop only on latest rubies, because it is incompatible with older versions.
   gem "rubocop", "~> 1.24"
+  gem "rubocop-minitest"
 end
 
 if defined?(@pg_gem_requirement)
