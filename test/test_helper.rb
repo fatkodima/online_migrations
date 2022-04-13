@@ -18,7 +18,7 @@ ActiveRecord::Base.establish_connection(:postgresql)
 if ENV["VERBOSE"]
   ActiveRecord::Base.logger = ActiveSupport::Logger.new($stdout)
 else
-  ActiveRecord::Base.logger = ActiveSupport::Logger.new("debug.log", 0, 100 * 1024 * 1024) # 100 mb
+  ActiveRecord::Base.logger = ActiveSupport::Logger.new("debug.log", 1, 100 * 1024 * 1024) # 100 mb
   ActiveRecord::Migration.verbose = false
 end
 
