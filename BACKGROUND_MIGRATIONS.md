@@ -265,8 +265,6 @@ The error handler should be a lambda that accepts 2 arguments:
 
 * `error`: The exception that was raised.
 * `errored_job`: An `OnlineMigrations::BackgroundMigrations::MigrationJob` object that represents a failed batch.
-* `errored_element`: The `OnlineMigrations::BackgroundMigrations::MigrationJob` object representing a batch,
-  that was being processed when the Background Migration raised an exception.
 
 ### Customizing the background migrations module
 
