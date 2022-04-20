@@ -176,10 +176,9 @@ module BackgroundMigrations
       m = create_migration
 
       Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
-        error = assert_raises(RuntimeError) do
+        assert_raises_with_message(RuntimeError, "This method is not intended for use in production environments") do
           run_all_migration_jobs(m)
         end
-        assert_equal "This method is not intended for use in production environments", error.message
       end
     end
 

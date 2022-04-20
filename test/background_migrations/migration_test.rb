@@ -211,7 +211,7 @@ module BackgroundMigrations
 
       run_migration_job(m)
 
-      assert_raises(ActiveRecord::RecordInvalid, /all migration jobs must be succeeded/) do
+      assert_raises_with_message(ActiveRecord::RecordInvalid, /all migration jobs must be succeeded/) do
         m.succeeded!
       end
     end
@@ -231,7 +231,7 @@ module BackgroundMigrations
       2.times { run_migration_job(m) }
       assert m.migration_jobs.all?(&:succeeded?)
 
-      assert_raises(ActiveRecord::RecordInvalid, /at least one migration job must be failed/) do
+      assert_raises_with_message(ActiveRecord::RecordInvalid, /at least one migration job must be failed/) do
         m.failed!
       end
     end

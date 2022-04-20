@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module MinitestHelpers
+  def assert_raises_with_message(exception_class, message, &block)
+    error = assert_raises(exception_class, &block)
+    assert_match message, error.message
+  end
+
   def migrate(migration, direction: :up)
     ActiveRecord::SchemaMigration.delete_all
 

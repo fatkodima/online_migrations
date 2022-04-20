@@ -55,10 +55,9 @@ module BackgroundMigrations
     def test_raises_for_unknown_association
       migration = OnlineMigrations::BackgroundMigrations::DeleteAssociatedRecords.new(Link.name, @link1.id, :non_existent)
 
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "'#{Link.name}' has no association called 'non_existent'") do
         migration.process_batch(migration.relation)
       end
-      assert_equal "'#{Link.name}' has no association called 'non_existent'", error.message
     end
 
     def test_count

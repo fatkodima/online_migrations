@@ -108,10 +108,9 @@ module SchemaStatements
     end
 
     def test_validate_non_existing_foreign_key
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "has no foreign key") do
         connection.validate_foreign_key :milestones, :non_existing
       end
-      assert_match("has no foreign key", error.message)
     end
   end
 end

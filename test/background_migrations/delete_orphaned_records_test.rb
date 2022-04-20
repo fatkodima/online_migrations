@@ -75,10 +75,9 @@ module BackgroundMigrations
     def test_raises_for_unknown_association
       migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:non_existent])
 
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "'#{Post.name}' has no association called 'non_existent'") do
         migration.process_batch(migration.relation)
       end
-      assert_equal "'#{Post.name}' has no association called 'non_existent'", error.message
     end
 
     def test_multiple_associations

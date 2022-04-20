@@ -81,10 +81,9 @@ module BackgroundMigrations
     def test_raises_for_unknown_association
       migration = OnlineMigrations::BackgroundMigrations::ResetCounters.new(User.name, [:non_existent])
 
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "'#{User.name}' has no association called 'non_existent'") do
         migration.process_batch(migration.relation)
       end
-      assert_equal "'#{User.name}' has no association called 'non_existent'", error.message
     end
 
     def test_counter_as_column_name

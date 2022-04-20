@@ -51,7 +51,7 @@ class ConfigTest < MiniTest::Test
   def test_start_after_multiple_dbs_below_6
     skip if supports_multiple_dbs?
 
-    assert_raises(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+    assert_raises_with_message(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
       config.start_after = { primary: 20200101000001 }
     end
   end
@@ -74,7 +74,7 @@ class ConfigTest < MiniTest::Test
     skip unless supports_multiple_dbs?
 
     with_multiple_dbs(connects_to: :primary) do
-      assert_raises(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
+      assert_raises_with_message(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
         with_start_after({ animals: 20200101000001 }) do
           assert_safe RemoveNameFromUsers
         end
@@ -103,7 +103,7 @@ class ConfigTest < MiniTest::Test
   def test_target_version_multiple_dbs_below_6
     skip if supports_multiple_dbs?
 
-    assert_raises(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+    assert_raises_with_message(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
       config.target_version = { primary: 10 }
     end
   end
@@ -126,7 +126,7 @@ class ConfigTest < MiniTest::Test
     skip unless supports_multiple_dbs?
 
     with_multiple_dbs(connects_to: :primary) do
-      assert_raises(StandardError, /OnlineMigrations.config.with_target_version is not configured for :primary/i) do
+      assert_raises_with_message(StandardError, /OnlineMigrations.config.target_version is not configured for :primary/i) do
         with_target_version({ animals: 10 }) do
           assert_safe AddColumnDefault
         end
@@ -137,10 +137,9 @@ class ConfigTest < MiniTest::Test
   def test_background_migrations_throttler
     previous = config.background_migrations.throttler
 
-    error = assert_raises(ArgumentError) do
+    assert_raises_with_message(ArgumentError, "background_migrations throttler must be a callable.") do
       config.background_migrations.throttler = :not_callable
     end
-    assert_equal "background_migrations throttler must be a callable.", error.message
 
     config.background_migrations.throttler = -> { :callable }
   ensure

@@ -64,18 +64,16 @@ module SchemaStatements
     end
 
     def test_initialize_columns_type_change_raises_for_incorrect_column_and_type_format
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "columns_and_types must be an array of arrays") do
         @connection.initialize_columns_type_change(:projects, [:name, :string])
       end
-      assert_equal "columns_and_types must be an array of arrays", error.message
     end
 
     def test_initialize_columns_type_change_raises_for_incorrect_options_keys
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "Options has unknown keys: :not_a_column. Can contain only column names: :name, :user_id.") do
         @connection.initialize_columns_type_change(:projects, [[:name, :string], [:user_id, :bigint]],
             name: { limit: 100 }, not_a_column: { something: 42 })
       end
-      assert_equal "Options has unknown keys: :not_a_column. Can contain only column names: :name, :user_id.", error.message
     end
 
     def test_ignores_new_column_in_schema_cache

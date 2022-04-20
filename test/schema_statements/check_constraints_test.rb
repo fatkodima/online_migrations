@@ -86,10 +86,9 @@ module SchemaStatements
     end
 
     def test_validate_non_existing_check_constraint
-      error = assert_raises(ArgumentError) do
+      assert_raises(ArgumentError, "has no check constraint") do
         connection.validate_check_constraint :milestones, name: "non_existing"
       end
-      assert_match("has no check constraint", error.message)
     end
 
     def test_add_not_null_constraint
@@ -149,10 +148,9 @@ module SchemaStatements
     end
 
     def test_add_not_null_constraint_to_non_existent_table_raises
-      error = assert_raises(ActiveRecord::StatementInvalid) do
+      assert_raises_with_message(ActiveRecord::StatementInvalid, "does not exist") do
         connection.add_not_null_constraint :non_existent, :name
       end
-      assert_match "does not exist", error.message
     end
 
     def test_validate_not_null_constraint
@@ -174,10 +172,9 @@ module SchemaStatements
     end
 
     def test_validate_non_existing_not_null_constraint_raises
-      error = assert_raises(ArgumentError) do
+      assert_raises(ArgumentError, "has no check constraint") do
         connection.validate_not_null_constraint :milestones, :name, name: "non_existing"
       end
-      assert_match "has no check constraint", error.message
     end
 
     def test_remove_not_null_constraint
@@ -202,7 +199,7 @@ module SchemaStatements
     end
 
     def test_add_text_limit_constraint_to_not_text_column_raises
-      assert_raises(RuntimeError, /add_text_limit_constraint must be used only with :text columns/) do
+      assert_raises_with_message(RuntimeError, /add_text_limit_constraint must be used only with :text columns/) do
         connection.add_text_limit_constraint :milestones, :name, 100
       end
     end
@@ -241,10 +238,9 @@ module SchemaStatements
     end
 
     def test_validate_non_existing_text_limit_constraint_raises
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "has no check constraint") do
         connection.validate_text_limit_constraint :milestones, :description, name: "non_existing"
       end
-      assert_match "has no check constraint", error.message
     end
 
     def test_remove_text_limit_constraint

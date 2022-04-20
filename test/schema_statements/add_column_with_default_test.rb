@@ -82,11 +82,9 @@ module SchemaStatements
     def test_add_column_with_default_raises_for_expression_default_in_older_railses
       skip if ar_version >= 5.0
 
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, "Expressions as default are not supported") do
         connection.add_column_with_default(:milestones, :status, :integer, default: -> { "random()" })
       end
-
-      assert_equal "Expressions as default are not supported", error.message
     end
 
     def test_add_column_with_default_raises_in_transaction_before_11
