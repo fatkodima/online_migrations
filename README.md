@@ -351,7 +351,7 @@ A safer approach can be accomplished in several steps:
   ```ruby
   class CleanupChangeFilesSizeType < ActiveRecord::Migration[7.0]
     def up
-      cleanup_change_column_type_concurrently :files, :size
+      cleanup_column_type_change :files, :size
     end
 
     def down

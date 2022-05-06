@@ -316,7 +316,7 @@ module OnlineMigrations
               initialize_change_code: command_str(:initialize_column_type_change, table_name, column_name, type, **options),
               backfill_code: command_str(:backfill_column_for_type_change, table_name, column_name, **options),
               finalize_code: command_str(:finalize_column_type_change, table_name, column_name),
-              cleanup_code: command_str(:cleanup_change_column_type_concurrently, table_name, column_name),
+              cleanup_code: command_str(:cleanup_column_type_change, table_name, column_name),
               cleanup_down_code: command_str(:initialize_column_type_change, table_name, column_name, existing_type)
           end
         end

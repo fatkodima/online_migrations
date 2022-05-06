@@ -72,7 +72,7 @@ module CommandChecker
 
           class CleanupCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
             def up
-              cleanup_change_column_type_concurrently :files, :cost_per_gb
+              cleanup_column_type_change :files, :cost_per_gb
             end
 
             def down
