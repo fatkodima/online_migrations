@@ -74,6 +74,9 @@ Style/HashAsLastArrayItem:
 Style/MapToHash:
   Enabled: false
 
+Style/FetchEnvVar:
+  Enabled: false
+
 # we can not use new syntax for older rubies
 Lint/ErbNewArguments:
   Enabled: false
