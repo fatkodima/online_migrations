@@ -20,17 +20,7 @@ RDoc::Task.new(:rdoc) do |rdoc|
   rdoc.rdoc_files.include("lib/**/*.rb")
 end
 
-rubocop_exists = false
-begin
-  require "rubocop/rake_task"
-  rubocop_exists = true
-rescue LoadError
-  # Older version of ruby and active_record.
-end
+require "rubocop/rake_task"
 
-if rubocop_exists
-  RuboCop::RakeTask.new
-  task default: [:rubocop, :test]
-else
-  task default: :test
-end
+RuboCop::RakeTask.new
+task default: [:rubocop, :test]

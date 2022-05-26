@@ -7,6 +7,8 @@ gemspec
 
 gem "minitest", "~> 5.0"
 gem "rake", "~> 12.0"
+gem "rubocop", "< 2"
+gem "rubocop-minitest"
 gem "yard"
 
 if defined?(@ar_gem_requirement)
@@ -15,10 +17,6 @@ if defined?(@ar_gem_requirement)
 else
   gem "activerecord" # latest
   gem "railties" # to test generator
-
-  # Run Rubocop only on latest rubies, because it is incompatible with older versions.
-  gem "rubocop", "< 2"
-  gem "rubocop-minitest"
 end
 
 if defined?(@pg_gem_requirement)

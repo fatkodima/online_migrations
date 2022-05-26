@@ -1,6 +1,7 @@
 require: rubocop-minitest
 
 AllCops:
+  TargetRubyVersion: 2.3
   NewCops: enable
   SuggestExtensions: false
 
