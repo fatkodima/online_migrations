@@ -333,6 +333,11 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
+      add_index_corruption:
+"Adding an index concurrently can cause silent data corruption in PostgreSQL 14.0 to 14.3.
+Upgrade PostgreSQL before adding new indexes, or wrap this step in a safety_assured { ... }
+block to accept the risk.",
+
       remove_index:
 "Removing an index non-concurrently blocks writes. Instead, use:
 

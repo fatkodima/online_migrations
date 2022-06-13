@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Added check for index corruption with PostgreSQL 14.0 to 14.3
+
 - No need to separately remove indexes when removing a column from the small table
 
 - Add ability to perform specific action on a relation or individual records using background migrations

@@ -451,6 +451,10 @@ module OnlineMigrations
               command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
           end
 
+          if options[:algorithm] == :concurrently && index_corruption?
+            raise_error :add_index_corruption
+          end
+
           if @removed_indexes.any?
             index = IndexDefinition.new(table: table_name, columns: column_name, **options)
             existing_indexes = connection.indexes(table_name)
@@ -737,6 +741,12 @@ module OnlineMigrations
       # From ActiveRecord
       def derive_join_table_name(table1, table2)
         [table1.to_s, table2.to_s].sort.join("\0").gsub(/^(.*_)(.+)\0\1(.+)/, '\1\2_\3').tr("\0", "_")
+      end
+
+      def index_corruption?
+        postgresql_version >= Gem::Version.new("14.0") &&
+          postgresql_version < Gem::Version.new("14.4") &&
+          !Utils.developer_env?
       end
 
       def run_custom_checks(method, args)
