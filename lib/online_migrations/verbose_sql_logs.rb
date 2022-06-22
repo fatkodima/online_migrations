@@ -26,7 +26,7 @@ module OnlineMigrations
 
       private
         def verbose_query_logs
-          if Utils.ar_version > 7.0
+          if Utils.ar_version >= 7.0
             ActiveRecord.verbose_query_logs
           elsif Utils.ar_version >= 5.2
             ActiveRecord::Base.verbose_query_logs
@@ -34,7 +34,7 @@ module OnlineMigrations
         end
 
         def set_verbose_query_logs(value) # rubocop:disable Naming/AccessorMethodName
-          if Utils.ar_version > 7.0
+          if Utils.ar_version >= 7.0
             ActiveRecord.verbose_query_logs = value
           elsif Utils.ar_version >= 5.2
             ActiveRecord::Base.verbose_query_logs = value
