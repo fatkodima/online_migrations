@@ -22,6 +22,12 @@ else
   ActiveRecord::Migration.verbose = false
 end
 
+# disallowed_warnings was added in ActiveRecord 6.1
+if OnlineMigrations::Utils.ar_version >= 6.1
+  # Disallow ActiveSupport deprecations sprouting from this gem
+  ActiveSupport::Deprecation.disallowed_warnings = :all
+end
+
 # Is a boolean value and controls whether or not partial writes are used when creating new records
 # (i.e. whether inserts only set attributes that are different from the default). The default value is true.
 # This should be enabled when renaming columns, because the SchemaCache will return both (old and new)
