@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.5.0 (2022-06-23)
+
 - Added check for index corruption with PostgreSQL 14.0 to 14.3
 
 - No need to separately remove indexes when removing a column from the small table
