@@ -404,7 +404,7 @@ module OnlineMigrations
         batch_options = options.extract!(:batch_size, :batch_column_name, :progress, :pause_ms)
 
         if column_exists?(table_name, column_name)
-          Utils.say("Column was not created because it already exists (this may be due to an aborted migration "\
+          Utils.say("Column was not created because it already exists (this may be due to an aborted migration " \
                     "or similar) table_name: #{table_name}, column_name: #{column_name}")
         else
           transaction do
@@ -655,7 +655,7 @@ module OnlineMigrations
         schema = __schema_for_table(table_name)
 
         if __index_valid?(index_name, schema: schema)
-          Utils.say("Index was not created because it already exists (this may be due to an aborted migration "\
+          Utils.say("Index was not created because it already exists (this may be due to an aborted migration " \
                     "or similar): table_name: #{table_name}, column_name: #{column_name}")
           return
         else
@@ -699,7 +699,7 @@ module OnlineMigrations
           end
         end
       else
-        Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration "\
+        Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration " \
                   "or similar): table_name: #{table_name}, column_name: #{column_names}")
       end
     end
@@ -768,7 +768,7 @@ module OnlineMigrations
       constraint_name = __check_constraint_name(table_name, expression: expression, **options)
 
       if __check_constraint_exists?(table_name, constraint_name)
-        Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration "\
+        Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration " \
                   "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
       else
         query = "ALTER TABLE #{table_name} ADD CONSTRAINT #{constraint_name} CHECK (#{expression})"

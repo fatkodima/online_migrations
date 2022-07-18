@@ -100,7 +100,7 @@ module OnlineMigrations
       end.to_h
 
       if (extra_keys = (options.keys - conversions.keys)).any?
-        raise ArgumentError, "Options has unknown keys: #{extra_keys.map(&:inspect).join(', ')}. "\
+        raise ArgumentError, "Options has unknown keys: #{extra_keys.map(&:inspect).join(', ')}. " \
                              "Can contain only column names: #{conversions.keys.map(&:inspect).join(', ')}."
       end
 
@@ -400,7 +400,7 @@ module OnlineMigrations
 
           # This is necessary as we can't properly rename indexes such as "taggings_idx".
           unless index.name.include?(from_column)
-            raise "The index #{index.name} can not be copied as it does not "\
+            raise "The index #{index.name} can not be copied as it does not " \
                   "mention the old column. You have to rename this index manually first."
           end
 
