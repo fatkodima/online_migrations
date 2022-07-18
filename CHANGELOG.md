@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.5.1 (2022-07-19)
+
 - Raise for possible index corruption in all environments (previously, the check was made only
   in the production environment)
 
