@@ -56,10 +56,8 @@ module CommandChecker
     end
 
     def test_add_index_concurrently_corruption
-      OnlineMigrations::Utils.stub(:developer_env?, false) do
-        with_target_version(14.3) do
-          assert_unsafe AddIndexConcurrently, "can cause silent data corruption"
-        end
+      with_target_version(14.3) do
+        assert_unsafe AddIndexConcurrently, "can cause silent data corruption"
       end
     end
 

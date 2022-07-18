@@ -597,15 +597,14 @@ module OnlineMigrations
           if Utils.developer_env? && (target_version = OnlineMigrations.config.target_version)
             target_version.to_s
           else
-            # For rails 6.0+ we can use connection.database_version
-            pg_connection = connection.raw_connection
-            database_version = pg_connection.server_version
-            patch = database_version % 100
-            database_version /= 100
-            minor = database_version % 100
-            database_version /= 100
-            major = database_version
-            "#{major}.#{minor}.#{patch}"
+            database_version = connection.select_value("SHOW server_version_num").to_i
+            major = database_version / 10000
+            if database_version >= 100000
+              minor = database_version % 10000
+            else
+              minor = (database_version % 10000) / 100
+            end
+            "#{major}.#{minor}"
           end
 
         Gem::Version.new(version)
@@ -745,8 +744,7 @@ module OnlineMigrations
 
       def index_corruption?
         postgresql_version >= Gem::Version.new("14.0") &&
-          postgresql_version < Gem::Version.new("14.4") &&
-          !Utils.developer_env?
+          postgresql_version < Gem::Version.new("14.4")
       end
 
       def run_custom_checks(method, args)

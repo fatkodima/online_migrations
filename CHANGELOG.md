@@ -1,5 +1,8 @@
 ## master (unreleased)
 
+- Raise for possible index corruption in all environments (previously, the check was made only
+  in the production environment)
+
 ## 0.5.0 (2022-06-23)
 
 - Added check for index corruption with PostgreSQL 14.0 to 14.3
