@@ -30,10 +30,7 @@ module OnlineMigrations
       return false if where != other.where
       return false if other.respond_to?(:opclasses) && opclasses != other.opclasses
 
-      case [unique, other.unique]
-      when [true, true]
-        columns == other.columns
-      when [true, false]
+      if unique && !other.unique
         false
       else
         prefix?(self, other)

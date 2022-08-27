@@ -277,6 +277,22 @@ module CommandChecker
       assert_safe ReplaceIndexCoveringIndexExists
     end
 
+    class ReplaceUniqueIndexCoveringIndexExists < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        remove_index :projects, column: :creator_id, algorithm: :concurrently
+        add_index :projects, [:creator_id, :created_at], unique: true, algorithm: :concurrently
+      end
+    end
+
+    def test_replace_unique_index_covering_index_exists
+      @connection.add_index(:projects, :creator_id, unique: true)
+      @connection.add_index(:projects, [:creator_id, :id], unique: true)
+
+      assert_safe ReplaceUniqueIndexCoveringIndexExists
+    end
+
     class ReplaceIndexAlmostCoveringIndexExists < TestMigration
       disable_ddl_transaction!
 
@@ -291,26 +307,6 @@ module CommandChecker
       @connection.add_index(:projects, [:creator_id, :id], where: "status = 1") # "where" makes it non-covering
 
       assert_unsafe ReplaceIndexAlmostCoveringIndexExists, /removing an old index/i
-    end
-
-    class ReplaceExpressionIndex < TestMigration
-      disable_ddl_transaction!
-
-      def change
-        remove_index :projects, column: "lower(name)", algorithm: :concurrently
-        add_index :projects, ["lower(name)", :created_at], algorithm: :concurrently
-      end
-    end
-
-    def test_replace_expression_index
-      # Active Record 4.2 incorrectly quotes expression indexes:
-      # ActiveRecord::StatementInvalid: PG::UndefinedColumn: ERROR:  column "lower(name)" does not exist
-      # : CREATE  INDEX  "index_projects_on_lower(name)" ON "projects"  ("lower(name)")
-      skip if ar_version <= 4.2
-
-      @connection.add_index(:projects, "lower(name)")
-
-      assert_unsafe ReplaceExpressionIndex, /removing an old index/i
     end
   end
 end

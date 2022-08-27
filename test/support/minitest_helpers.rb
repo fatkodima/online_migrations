@@ -14,7 +14,15 @@ module MinitestHelpers
     if direction == :down
       ActiveRecord::SchemaMigration.create!(version: migration.version)
     end
-    args = ActiveRecord::VERSION::MAJOR >= 6 ? [ActiveRecord::SchemaMigration] : []
+
+    args =
+      if OnlineMigrations::Utils.ar_version >= 7.1
+        [ActiveRecord::SchemaMigration, ActiveRecord::InternalMetadata]
+      elsif OnlineMigrations::Utils.ar_version >= 6
+        [ActiveRecord::SchemaMigration]
+      else
+        []
+      end
     ActiveRecord::Migrator.new(direction, [migration], *args).migrate
     true
   end

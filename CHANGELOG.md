@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Replacing a unique index when other unique index with the prefix of columns exists is safe
+
 ## 0.5.1 (2022-07-19)
 
 - Raise for possible index corruption in all environments (previously, the check was made only

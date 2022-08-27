@@ -478,9 +478,17 @@ module OnlineMigrations
             command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
         end
 
-        if options[:column] || options[:name]
-          options[:column] ||= connection.indexes(table_name).find { |index| index.name == options[:name].to_s }
-          @removed_indexes << IndexDefinition.new(table: table_name, columns: options.delete(:column), **options)
+        index_def = connection.indexes(table_name).find do |index|
+          index.name == options[:name].to_s ||
+            Array(index.columns).map(&:to_s) == Array(options[:column]).map(&:to_s)
+        end
+
+        if index_def
+          existing_options = [:name, :columns, :unique, :where, :type, :using, :opclasses].map do |option|
+            [option, index_def.public_send(option)] if index_def.respond_to?(option)
+          end.compact.to_h
+
+          @removed_indexes << IndexDefinition.new(table: table_name, **existing_options)
         end
       end
 
