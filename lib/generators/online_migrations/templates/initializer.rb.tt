@@ -59,11 +59,11 @@ OnlineMigrations.configure do |config|
 
   # Add custom checks. Use the `stop!` method to stop migrations.
   #
-  #   config.add_check do |method, args|
-  #     if method == :add_column && args[0].to_s == "users"
-  #       stop!("No more columns on the users table")
-  #     end
+  # config.add_check do |method, args|
+  #   if method == :add_column && args[0].to_s == "users"
+  #     stop!("No more columns on the users table")
   #   end
+  # end
 
   # ==> Background migrations configuration
   # The number of rows to process in a single background migration run.
