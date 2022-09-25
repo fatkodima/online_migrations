@@ -48,6 +48,24 @@ module CommandChecker
       end
     end
 
+    class AddColumnDefaultNull < TestMigration
+      def change
+        add_column :users, :admin, :boolean, default: nil
+      end
+    end
+
+    def test_add_column_default_null_before_11
+      with_target_version(10) do
+        assert_unsafe AddColumnDefaultNull
+      end
+    end
+
+    def test_add_column_default_null
+      with_target_version(11) do
+        assert_safe AddColumnDefaultNull
+      end
+    end
+
     class AddColumnVolatileUuidDefault < TestMigration
       def change
         # NOTE: ActiveRecord accepts non-block (string) version for uuid

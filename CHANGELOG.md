@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix check for `add_column` with `default: nil` for PostgreSQL < 11
 - Replacing a unique index when other unique index with the prefix of columns exists is safe
 
 ## 0.5.1 (2022-07-19)

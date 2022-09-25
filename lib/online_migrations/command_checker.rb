@@ -174,8 +174,8 @@ module OnlineMigrations
       def add_column(table_name, column_name, type, **options)
         default = options[:default]
         volatile_default = false
-        if !new_or_small_table?(table_name) && !default.nil? &&
-           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, type, default)))
+        if !new_or_small_table?(table_name) && options.key?(:default) &&
+           (postgresql_version < Gem::Version.new("11") || (!default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))))
 
           raise_error :add_column_with_default,
             code: command_str(:add_column_with_default, table_name, column_name, type, options),
