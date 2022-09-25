@@ -1,5 +1,27 @@
 ## master (unreleased)
 
+- Fix `update_column_in_batches` for SQL subquery values
+
+    It generated inefficient queries before, e.g.:
+
+    ```ruby
+    update_column_in_batches(:users, :comments_count, Arel.sql(<<~SQL))
+      (select count(*) from comments where comments.user_id = users.id)
+    SQL
+    ```
+
+    Generated SQL queries before:
+    ```sql
+    update users
+    set comments_count = (..count subquery..)
+    where comments_count is null or comments_count != (..count subquery..)
+    ```
+
+    Generated SQL queries now:
+    ```sql
+    update users set comments_count = (..count subquery..)
+    ```
+
 - Fix check for `add_column` with `default: nil` for PostgreSQL < 11
 - Replacing a unique index when other unique index with the prefix of columns exists is safe
 

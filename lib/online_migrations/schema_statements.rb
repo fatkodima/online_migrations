@@ -85,9 +85,13 @@ module OnlineMigrations
 
       conditions = columns_and_values.map do |(column_name, value)|
         value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
-        arel_column = model.arel_table[column_name]
-        arel_column.not_eq(value).or(arel_column.eq(nil))
-      end
+
+        # Ignore subqueries in conditions
+        unless value.is_a?(Arel::Nodes::SqlLiteral) && value.to_s =~ /select\s+/i
+          arel_column = model.arel_table[column_name]
+          arel_column.not_eq(value).or(arel_column.eq(nil))
+        end
+      end.compact
 
       batch_relation = model.where(conditions.inject(:and))
       batch_relation = yield batch_relation if block_given?

@@ -79,6 +79,15 @@ module SchemaStatements
       assert_equal m1.started_at, m2.reload.started_at
     end
 
+    def test_update_column_in_batches_value_is_subquery
+      Milestone.create!
+
+      refute_sql('"milestones"."points" != (SELECT') do
+        connection.update_column_in_batches(:milestones, :points,
+          Arel.sql("(SELECT m1.points FROM milestones m1 WHERE m1.id = milestones.id)"))
+      end
+    end
+
     def test_update_column_in_batches_configurable_batches
       3.times { Milestone.create! }
 
