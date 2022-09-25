@@ -10,12 +10,12 @@ module OnlineMigrations
 
     source_root File.expand_path("templates", __dir__)
 
-    def create_migration_file
-      migration_template("migration.rb", File.join(migrations_dir, "install_online_migrations.rb"))
-    end
-
     def copy_initializer_file
       template("initializer.rb", "config/initializers/online_migrations.rb")
+    end
+
+    def create_migration_file
+      migration_template("migration.rb", File.join(migrations_dir, "install_online_migrations.rb"))
     end
 
     private
@@ -24,7 +24,7 @@ module OnlineMigrations
       end
 
       def start_after
-        self.class.next_migration_number(migrations_dir)
+        self.class.current_migration_number(migrations_dir)
       end
 
       def migrations_dir
