@@ -824,6 +824,29 @@ module OnlineMigrations
       end
     end
 
+    # @private
+    def pk_and_sequence_for(table)
+      views = self.views
+
+      table_renames = OnlineMigrations.config.table_renames
+      renamed_tables = table_renames.select do |old_name, _|
+        views.include?(old_name)
+      end
+
+      column_renames = OnlineMigrations.config.column_renames
+      renamed_columns = column_renames.select do |table_name, _|
+        views.include?(table_name)
+      end
+
+      if renamed_tables.key?(table)
+        super(renamed_tables[table])
+      elsif renamed_columns.key?(table)
+        super("#{table}_column_rename")
+      else
+        super
+      end
+    end
+
     # Disables statement timeout while executing &block
     #
     # Long-running migrations may take more than the timeout allowed by the database.

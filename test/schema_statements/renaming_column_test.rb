@@ -50,9 +50,9 @@ module SchemaStatements
       @connection.execute("ALTER TABLE projects RENAME TO projects_column_rename")
       @connection.execute("CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename")
 
-      milestone = Project.create!(name: "Name")
-      assert milestone.persisted?
-      assert_equal "Name", milestone.name
+      project = Project.create!(name: "Name")
+      assert project.persisted?
+      assert_equal "Name", project.name
     end
 
     def test_old_code_reloads_after_rename_column
@@ -64,9 +64,9 @@ module SchemaStatements
       @schema_cache.clear!
       Project.reset_column_information
 
-      milestone = Project.create!(name: "Name")
-      assert milestone.persisted?
-      assert_equal "Name", milestone.name
+      project = Project.create!(name: "Name")
+      assert project.persisted?
+      assert_equal "Name", project.name
     end
 
     def test_old_code_uses_original_table_for_metadata
@@ -97,9 +97,9 @@ module SchemaStatements
       @connection.execute("ALTER TABLE projects RENAME TO projects_column_rename")
       @connection.execute("CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename")
 
-      milestone_old = Project.create!(name: "Name")
-      assert_equal Project.last.id, milestone_old.id
-      assert_equal "Name", milestone_old.name
+      project_old = Project.create!(name: "Name")
+      assert_equal Project.last.id, project_old.id
+      assert_equal "Name", project_old.name
     end
 
     def test_new_code_accepts_crud_operations
@@ -107,9 +107,9 @@ module SchemaStatements
       Project.reset_column_information
       @schema_cache.clear!
 
-      milestone = Project.create!(name_new: "Name")
-      assert_equal Project.last.id, milestone.id
-      assert_equal "Name", milestone.name_new
+      project = Project.create!(name_new: "Name")
+      assert_equal Project.last.id, project.id
+      assert_equal "Name", project.name_new
     end
 
     def test_revert_initialize_column_rename
@@ -146,6 +146,21 @@ module SchemaStatements
       ) do
         @connection.revert_finalize_column_rename(:projects, :name, :name_new)
       end
+    end
+
+    # Test that it is properly reset in rails tests using fixtures.
+    def test_initialize_column_rename_and_resetting_sequence
+      skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
+
+      @connection.initialize_column_rename(:projects, :name, :name_new)
+
+      @schema_cache.clear!
+      Project.reset_column_information
+
+      _project1 = Project.create!(id: 100_000, name: "Old")
+      @connection.reset_pk_sequence!("projects")
+      project2 = Project.create!(name: "New")
+      assert_equal project2, Project.last
     end
   end
 end

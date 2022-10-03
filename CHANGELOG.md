@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix sequence resetting in tests that use fixtures
+
 - Fix `update_column_in_batches` for SQL subquery values
 
     It generated inefficient queries before, e.g.:

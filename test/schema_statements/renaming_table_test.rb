@@ -53,8 +53,8 @@ module SchemaStatements
       @connection.execute("ALTER TABLE projects RENAME TO projects_new")
       @connection.execute("CREATE VIEW projects AS SELECT * FROM projects_new")
 
-      milestone = ProjectOld.create!
-      assert milestone.persisted?
+      project = ProjectOld.create!
+      assert project.persisted?
     end
 
     def test_old_code_uses_new_table_for_metadata
@@ -83,11 +83,11 @@ module SchemaStatements
       ProjectNew.reset_column_information
       @schema_cache.clear!
 
-      milestone_old = ProjectOld.create!
-      assert_equal ProjectNew.last.id, milestone_old.id
+      project_old = ProjectOld.create!
+      assert_equal ProjectNew.last.id, project_old.id
 
-      milestone_new = ProjectNew.create!
-      assert_equal ProjectOld.last.id, milestone_new.id
+      project_new = ProjectNew.create!
+      assert_equal ProjectOld.last.id, project_new.id
     end
 
     def test_revert_initialize_table_rename
@@ -116,6 +116,21 @@ module SchemaStatements
       assert_sql("CREATE VIEW projects AS SELECT * FROM projects_new") do
         @connection.revert_finalize_table_rename(:projects, :projects_new)
       end
+    end
+
+    # Test that it is properly reset in rails tests using fixtures.
+    def test_initialize_table_rename_and_resetting_sequence
+      skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
+
+      @connection.initialize_table_rename(:projects, :projects_new)
+
+      @schema_cache.clear!
+      ProjectNew.reset_column_information
+
+      _project1 = ProjectNew.create!(id: 100_000, name: "Old")
+      @connection.reset_pk_sequence!("projects")
+      project2 = ProjectNew.create!(name: "New")
+      assert_equal project2, ProjectNew.last
     end
   end
 end
