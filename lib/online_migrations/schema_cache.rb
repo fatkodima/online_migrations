@@ -69,8 +69,9 @@ module OnlineMigrations
       def renamed_tables
         @renamed_tables ||= begin
           table_renames = OnlineMigrations.config.table_renames
+          views = connection.views
           table_renames.select do |old_name, _|
-            connection.views.include?(old_name)
+            views.include?(old_name)
           end
         end
       end
@@ -78,8 +79,9 @@ module OnlineMigrations
       def renamed_columns
         @renamed_columns ||= begin
           column_renames = OnlineMigrations.config.column_renames
+          views = connection.views
           column_renames.select do |table_name, _|
-            connection.views.include?(table_name)
+            views.include?(table_name)
           end
         end
       end
