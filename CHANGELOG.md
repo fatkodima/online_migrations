@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.5.2 (2022-10-04)
+
 - Fix sequence resetting in tests that use fixtures
 
 - Fix `update_column_in_batches` for SQL subquery values
