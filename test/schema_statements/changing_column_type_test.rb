@@ -328,7 +328,7 @@ module SchemaStatements
       end
 
       def change_column_type(table_name, column_name, type, **options)
-        @connection.initialize_column_type_change(table_name, column_name, type, **options)
+        @connection.initialize_column_type_change(table_name, column_name, type, **options.except(:type_cast_function))
         @connection.backfill_column_for_type_change(table_name, column_name, **options)
         @connection.finalize_column_type_change(table_name, column_name)
         @connection.cleanup_column_type_change(table_name, column_name)

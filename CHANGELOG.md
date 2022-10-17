@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Improve error message for adding column with a NULL default for PostgreSQL < 11
+
 ## 0.5.2 (2022-10-04)
 
 - Fix sequence resetting in tests that use fixtures

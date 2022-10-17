@@ -56,7 +56,16 @@ module CommandChecker
 
     def test_add_column_default_null_before_11
       with_target_version(10) do
-        assert_unsafe AddColumnDefaultNull
+        assert_unsafe AddColumnDefaultNull, <<-MSG.strip_heredoc
+          Adding a column with a null default blocks reads and writes while the entire table is rewritten.
+          Instead, add the column without a default value.
+
+          class CommandChecker::AddColumnTest::AddColumnDefaultNull < #{migration_parent_string}
+            def change
+              add_column :users, :admin, :boolean
+            end
+          end
+        MSG
       end
     end
 

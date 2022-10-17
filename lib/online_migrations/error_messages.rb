@@ -74,6 +74,16 @@ class <%= migration_name %> < <%= migration_parent %>
 end
 <% end %>",
 
+      add_column_with_default_null:
+"Adding a column with a null default blocks reads and writes while the entire table is rewritten.
+Instead, add the column without a default value.
+
+class <%= migration_name %> < <%= migration_parent %>
+  def change
+    <%= code %>
+  end
+end",
+
       add_column_json:
 "There's no equality operator for the json column type, which can cause errors for
 existing SELECT DISTINCT queries in your application. Use jsonb instead.
