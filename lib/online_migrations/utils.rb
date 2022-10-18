@@ -9,7 +9,7 @@ module OnlineMigrations
       end
 
       def developer_env?
-        defined?(Rails) && (Rails.env.development? || Rails.env.test?)
+        defined?(Rails.env) && (Rails.env.development? || Rails.env.test?)
       end
 
       def say(message)

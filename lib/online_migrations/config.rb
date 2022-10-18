@@ -185,7 +185,7 @@ module OnlineMigrations
       @small_tables = []
       @check_down = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
-      @verbose_sql_logs = defined?(Rails) && Rails.env.production?
+      @verbose_sql_logs = defined?(Rails.env) && Rails.env.production?
     end
 
     def lock_retrier=(value)

@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix error when `Rails` defined without `Rails.env`
 - Improve error message for adding column with a NULL default for PostgreSQL < 11
 
 ## 0.5.2 (2022-10-04)
