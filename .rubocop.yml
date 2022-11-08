@@ -133,3 +133,6 @@ Minitest/RefuteFalse:
 
 Minitest/AssertPredicate:
   Enabled: false
+
+Minitest/EmptyLineBeforeAssertionMethods:
+  Enabled: false
