@@ -262,17 +262,13 @@ module OnlineMigrations
     private
       def ensure_supports_multiple_dbs
         unless Utils.supports_multiple_dbs?
-          raise "Multiple databases are not supported by this ActiveRecord version"
+          raise "OnlineMigrations does not support multiple databases for Active Record < 6.1"
         end
       end
 
       def db_config_name
         connection = OnlineMigrations.current_migration.connection
-        if Utils.ar_version < 6.1
-          connection.pool.spec.name
-        else
-          connection.pool.db_config.name
-        end
+        connection.pool.db_config.name
       end
   end
 end

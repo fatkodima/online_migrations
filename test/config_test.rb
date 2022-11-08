@@ -51,7 +51,7 @@ class ConfigTest < MiniTest::Test
   def test_start_after_multiple_dbs_below_6
     skip if supports_multiple_dbs?
 
-    assert_raises_with_message(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+    assert_raises_with_message(RuntimeError, "OnlineMigrations does not support multiple databases for Active Record < 6.1") do
       config.start_after = { primary: 20200101000001 }
     end
   end
@@ -103,7 +103,7 @@ class ConfigTest < MiniTest::Test
   def test_target_version_multiple_dbs_below_6
     skip if supports_multiple_dbs?
 
-    assert_raises_with_message(RuntimeError, "Multiple databases are not supported by this ActiveRecord version") do
+    assert_raises_with_message(RuntimeError, "OnlineMigrations does not support multiple databases for Active Record < 6.1") do
       config.target_version = { primary: 10 }
     end
   end

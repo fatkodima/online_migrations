@@ -26,7 +26,9 @@ module OnlineMigrations
       end
 
       def supports_multiple_dbs?
-        ar_version >= 6.0
+        # Technically, Active Record 6.0+ supports multiple databases,
+        # but we can not get the database spec name for this version.
+        ar_version >= 6.1
       end
 
       def migration_parent

@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix multiple databases support for `start_after` and `target_version` configs
 - Fix error when `Rails` defined without `Rails.env`
 - Improve error message for adding column with a NULL default for PostgreSQL < 11
 
