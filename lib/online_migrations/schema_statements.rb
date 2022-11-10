@@ -689,7 +689,18 @@ module OnlineMigrations
       index_name = options[:name]
       index_name ||= index_name(table_name, column_names)
 
-      if index_exists?(table_name, column_names, **options)
+      index_exists =
+        if Utils.ar_version <= 5.0
+          # Older Active Record is unable to handle blank columns correctly in `index_exists?`,
+          # so we need to use `index_name_exists?`.
+          index_name_exists?(table_name, index_name, nil)
+        elsif Utils.ar_version <= 6.0
+          index_name_exists?(table_name, index_name)
+        else
+          index_exists?(table_name, column_names, **options)
+        end
+
+      if index_exists
         disable_statement_timeout do
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
@@ -932,7 +943,7 @@ module OnlineMigrations
       def __index_column_names(column_names)
         if column_names.is_a?(String) && /\W/.match(column_names)
           column_names
-        else
+        elsif column_names.present?
           Array(column_names)
         end
       end

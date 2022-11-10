@@ -63,7 +63,15 @@ module SchemaStatements
 
     def test_remove_index
       @connection.add_index(:users, :name)
+      assert @connection.index_exists?(:users, :name)
       @connection.remove_index(:users, :name)
+      assert_not @connection.index_exists?(:users, :name)
+    end
+
+    def test_remove_index_by_name
+      @connection.add_index(:users, :name)
+      assert @connection.index_exists?(:users, :name)
+      @connection.remove_index(:users, name: :index_users_on_name)
       assert_not @connection.index_exists?(:users, :name)
     end
 
