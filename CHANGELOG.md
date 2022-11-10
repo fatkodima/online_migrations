@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.5.3 (2022-11-10)
+
 - Fix removing index by name
 - Fix multiple databases support for `start_after` and `target_version` configs
 - Fix error when `Rails` defined without `Rails.env`
