@@ -518,6 +518,12 @@ module OnlineMigrations
         end
       end
 
+      def add_exclusion_constraint(table_name, _expression, **_options)
+        unless new_or_small_table?(table_name)
+          raise_error :add_exclusion_constraint
+        end
+      end
+
       def add_check_constraint(table_name, expression, **options)
         if !new_or_small_table?(table_name) && options[:validate] != false
           name = options[:name] || check_constraint_name(table_name, expression)

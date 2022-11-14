@@ -384,6 +384,9 @@ end",
 "Validating a foreign key while holding heavy locks on tables is dangerous.
 Use disable_ddl_transaction! or a separate migration.",
 
+      add_exclusion_constraint:
+"Adding an exclusion constraint blocks reads and writes while every row is checked.",
+
       add_check_constraint:
 "Adding a check constraint blocks reads and writes while every row is checked.
 A safer approach is to add the check constraint without validating existing rows,
