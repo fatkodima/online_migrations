@@ -69,7 +69,7 @@ class AddAdminToUsers < ActiveRecord::Migration[7.0]
   # Do not wrap the migration in a transaction so that locks are held for a shorter time.
   disable_ddl_transaction!
 
-  def change
+  def up
     # Lower PostgreSQL's lock timeout to avoid statement queueing.
     execute "SET lock_timeout TO '5s'" # The lock_timeout duration is customizable.
 
@@ -87,6 +87,10 @@ class AddAdminToUsers < ActiveRecord::Migration[7.0]
     # the column contains no nulls.
     execute "SET statement_timeout TO '5s'"
     change_column_null :users, :admin, false
+  end
+  
+  def down
+    remove_column :users, :admin
   end
 end
 ```
