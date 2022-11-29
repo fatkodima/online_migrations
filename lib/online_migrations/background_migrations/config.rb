@@ -43,7 +43,7 @@ module OnlineMigrations
       # @return [Proc]
       #
       # @example
-      #   OnlineMigrations.config.backround_migrations.throttler = -> { DatabaseStatus.unhealthy? }
+      #   OnlineMigrations.config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
       #
       attr_reader :throttler
 
@@ -64,7 +64,7 @@ module OnlineMigrations
       # The callback to perform when an error occurs in the migration job.
       #
       # @example
-      #   OnlineMigrations.config.backround_migrations.error_handler = ->(error, errored_job) do
+      #   OnlineMigrations.config.background_migrations.error_handler = ->(error, errored_job) do
       #     Bugsnag.notify(error) do |notification|
       #       notification.add_metadata(:background_migration, { name: errored_job.migration_name })
       #     end

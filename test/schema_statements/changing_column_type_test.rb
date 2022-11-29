@@ -235,7 +235,7 @@ module SchemaStatements
       @connection.finalize_column_type_change(:projects, :id)
 
       project = Project.create!(description: "Description")
-      # We need to perform a direct SQL, since `_for_type_change` colums are ignored by SchemaCache.
+      # We need to perform a direct SQL, since `_for_type_change` columns are ignored by SchemaCache.
       old_id = @connection.select_value("SELECT id_for_type_change FROM projects WHERE id = #{project.id}").to_i
       assert_equal project.id, old_id
     end
