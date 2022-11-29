@@ -38,7 +38,7 @@ OnlineMigrations.configure do |config|
   # migration failure in production. This is also useful in development to get
   # a better grasp of what is going on for high-level statements like add_column_with_default.
   #
-  # Note: It can be overriden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+  # Note: It can be overridden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
   config.verbose_sql_logs = defined?(Rails) && Rails.env.production?
 
   # Lock retries.
@@ -67,25 +67,25 @@ OnlineMigrations.configure do |config|
 
   # ==> Background migrations configuration
   # The number of rows to process in a single background migration run.
-  # config.backround_migrations.batch_size = 20_000
+  # config.background_migrations.batch_size = 20_000
 
   # The smaller batches size that the batches will be divided into.
-  # config.backround_migrations.sub_batch_size = 1000
+  # config.background_migrations.sub_batch_size = 1000
 
   # The pause interval between each background migration job's execution (in seconds).
-  # config.backround_migrations.batch_pause = 0.seconds
+  # config.background_migrations.batch_pause = 0.seconds
 
   # The number of milliseconds to sleep between each sub_batch execution.
-  # config.backround_migrations.sub_batch_pause_ms = 100
+  # config.background_migrations.sub_batch_pause_ms = 100
 
   # Maximum number of batch run attempts.
   # When attempts are exhausted, the individual batch is marked as failed.
-  # config.backround_migrations.batch_max_attempts = 5
+  # config.background_migrations.batch_max_attempts = 5
 
   # Configure custom throttler for background migrations.
   # It will be called before each batch run.
   # If throttled, the current run will be retried next time.
-  # config.backround_migrations.throttler = -> { DatabaseStatus.unhealthy? }
+  # config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
 
   # The number of seconds that must pass before the running job is considered stuck.
   # config.background_migrations.stuck_jobs_timeout = 1.hour
@@ -95,7 +95,7 @@ OnlineMigrations.configure do |config|
   config.background_migrations.backtrace_cleaner = Rails.backtrace_cleaner
 
   # The callback to perform when an error occurs in the migration job.
-  # config.backround_migrations.error_handler = ->(error, errored_job) do
+  # config.background_migrations.error_handler = ->(error, errored_job) do
   #   Bugsnag.notify(error) do |notification|
   #     notification.add_metadata(:background_migration, { name: errored_job.migration_name })
   #   end

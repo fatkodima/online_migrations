@@ -271,7 +271,7 @@ module OnlineMigrations
                 !options[:limit] || (existing_column.limit && options[:limit] >= existing_column.limit)
               end
             when :numeric, :decimal
-              # numeric and decimal are equivalent and can be used interchangably
+              # numeric and decimal are equivalent and can be used interchangeably
               [:numeric, :decimal].include?(existing_type) &&
               (
                 (

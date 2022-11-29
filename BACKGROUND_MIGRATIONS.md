@@ -120,7 +120,7 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 * `CopyColumn` - copies data from one column(s) to other(s) (enqueue using `copy_column_in_background`)
 * `DeleteAssociatedRecords` - deletes records associated with a parent object (enqueue using `delete_associated_records_in_background`)
 * `DeleteOrphanedRecords` - deletes records with one or more missing relations (enqueue using `delete_orphaned_records_in_background`)
-* `PerformActionOnRelation` - performs specific action on a relation or indvidual records (enqueue using `perform_action_on_relation_in_background`)
+* `PerformActionOnRelation` - performs specific action on a relation or individual records (enqueue using `perform_action_on_relation_in_background`)
 * `ResetCounters` - resets one or more counter caches to their correct value (enqueue using `reset_counters_in_background`)
 
 ## Testing
@@ -240,7 +240,7 @@ Specify the throttle condition as a block:
 ```ruby
 # config/initializers/online_migrations.rb
 
-OnlineMigrations.config.backround_migrations.throttler = -> { DatabaseStatus.unhealthy? }
+OnlineMigrations.config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
 ```
 
 Note that it's up to you to define a throttling condition that makes sense for your app. For example, you can check various PostgreSQL metrics such as replication lag, DB threads, whether DB writes are available, etc.
@@ -254,7 +254,7 @@ If you want to integrate with an exception monitoring service (e.g. Bugsnag), yo
 ```ruby
 # config/initializers/online_migrations.rb
 
-OnlineMigrations.config.backround_migrations.error_handler = ->(error, errored_job) do
+OnlineMigrations.config.background_migrations.error_handler = ->(error, errored_job) do
   Bugsnag.notify(error) do |notification|
     notification.add_metadata(:background_migration, { name: errored_job.migration_name })
   end

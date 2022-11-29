@@ -173,7 +173,7 @@ module CommandChecker
     class MultipleFksAndNewTables < TestMigration
       def change
         create_table :parents
-        create_table :childs do |t|
+        create_table :children do |t|
           t.belongs_to :parent, foreign_key: true # references new table
         end
 

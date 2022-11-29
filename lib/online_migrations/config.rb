@@ -153,7 +153,7 @@ module OnlineMigrations
     # This feature is enabled by default in a production Rails environment.
     # @return [Boolean]
     #
-    # @note: It can be overriden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+    # @note: It can be overridden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
     #
     attr_accessor :verbose_sql_logs
 
