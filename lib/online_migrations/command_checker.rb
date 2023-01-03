@@ -42,6 +42,7 @@ module OnlineMigrations
 
       true
     end
+    ruby2_keywords(:check) if respond_to?(:ruby2_keywords, true)
 
     private
       def check_database_version
