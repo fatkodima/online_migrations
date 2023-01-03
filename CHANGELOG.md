@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+## 0.5.4 (2022-01-03)
+
+- Support ruby 3.2.0
+
 ## 0.5.3 (2022-11-10)
 
 - Fix removing index by name
