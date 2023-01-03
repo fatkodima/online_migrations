@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1.0
+          ruby-version: 3.2.0
           bundler-cache: true
       - run: bundle exec rubocop
 
@@ -93,12 +93,16 @@ jobs:
             gemfile: gemfiles/activerecord_70.gemfile
           - ruby-version: 3.1.0
             gemfile: gemfiles/activerecord_70.gemfile
+          - ruby-version: 3.2.0
+            gemfile: gemfiles/activerecord_70.gemfile
 
           - ruby-version: 2.7.4
             gemfile: gemfiles/activerecord_head.gemfile
           - ruby-version: 3.0.3
             gemfile: gemfiles/activerecord_head.gemfile
           - ruby-version: 3.1.0
+            gemfile: gemfiles/activerecord_head.gemfile
+          - ruby-version: 3.2.0
             gemfile: gemfiles/activerecord_head.gemfile
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
