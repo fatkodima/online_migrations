@@ -395,7 +395,7 @@ For the previous example, to rename `name` column to `first_name` of the `users`
 ```sql
 BEGIN;
 ALTER TABLE users RENAME TO users_column_rename;
-CREATE VIEW users AS SELECT *, first_name AS name FROM users;
+CREATE VIEW users AS SELECT *, first_name AS name FROM users_column_rename;
 COMMIT;
 ```
 
