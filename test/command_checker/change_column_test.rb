@@ -43,6 +43,9 @@ module CommandChecker
             end
           end
 
+        **Note**: `initialize_column_type_change` accepts additional options (like `:limit`, `:default` etc)
+        which will be passed to `add_column` when creating a new column, so you can override previous values.
+
         2. Backfill data from the old column to the new column:
 
           class BackfillCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
