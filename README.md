@@ -20,6 +20,8 @@ See [comparison to `strong_migrations`](#comparison-to-strong_migrations)
 - Rails 4.2+
 - PostgreSQL 9.6+
 
+**Note**: Since some migration helpers use database `VIEW`s to implement their logic, it is recommended to use `structure.sql` schema format, or otherwise add some gem (like [scenic](https://github.com/scenic-views/scenic)) to be able to dump them into the `schema.rb`.
+
 ## Installation
 
 Add this line to your application's Gemfile:
