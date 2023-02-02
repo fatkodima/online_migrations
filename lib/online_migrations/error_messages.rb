@@ -131,7 +131,8 @@ migration_helpers provides a safer approach to do this:
     }
   }
 <% unless partial_writes %>
-  NOTE: You also need to temporarily enable partial writes until the process of column rename is fully done.
+  NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
+  until the process of column rename is fully done.
   # config/application.rb
   config.active_record.<%= partial_writes_setting %> = true
 <% end %>
@@ -150,7 +151,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
 4. Replace usages of the old column with a new column in the codebase
 5. Deploy
 6. Remove the column rename config from step 1
-7. Remove the VIEW created in step 3:
+7. Remove the VIEW created in step 3 and finally rename the column:
 
   class Finalize<%= migration_name %> < <%= migration_parent %>
     def change

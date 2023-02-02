@@ -414,9 +414,21 @@ OnlineMigrations.config.column_renames = {
   }
 }
 ```
+NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
+until the process of column rename is fully done.
+```ruby
+# config/application.rb
+# For Active Record >= 7
+config.active_record.partial_inserts = true
+
+# Or for Active Record < 7
+config.active_record.partial_writes = true
+```
 
 2. Deploy
-3. Create a VIEW with aliased column:
+3. Tell the database that you are going to rename a column. This will not actually rename any columns,
+nor any data/indexes/foreign keys copying will be made, so will be instantaneous.
+It will use a combination of a VIEW and column aliasing to work with both column names simultaneously
 
 ```ruby
 class InitializeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
@@ -429,7 +441,7 @@ end
 4. Replace usages of the old column with a new column in the codebase
 5. Deploy
 6. Remove the column rename config from step 1
-7. Remove the VIEW created in step 3:
+7. Remove the VIEW created in step 3 and finally rename the column:
 
 ```ruby
 class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]

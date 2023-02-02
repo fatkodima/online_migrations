@@ -181,7 +181,7 @@ module CommandChecker
         4. Replace usages of the old column with a new column in the codebase
         5. Deploy
         6. Remove the column rename config from step 1
-        7. Remove the VIEW created in step 3:
+        7. Remove the VIEW created in step 3 and finally rename the column:
 
           class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent_string}
             def change
