@@ -107,19 +107,26 @@ module OnlineMigrations
       transaction do
         columns_and_types.each do |(column_name, new_type)|
           old_col = __column_for(table_name, column_name)
+          old_col_options = __options_from_column(old_col, [:collation, :comment])
           column_options = options[column_name] || {}
           tmp_column_name = conversions[column_name]
 
-          if raw_connection.server_version >= 11_00_00 &&
-             primary_key(table_name) == column_name.to_s && old_col.type == :integer
-            # If the column to be converted is a Primary Key, set it to
-            # `NOT NULL DEFAULT 0` and we'll copy the correct values when backfilling.
-            # That way, we skip the expensive validation step required to add
-            #  a `NOT NULL` constraint at the end of the process.
-            add_column(table_name, tmp_column_name, new_type,
-              **column_options.merge(default: old_col.default || 0, null: false))
+          if raw_connection.server_version >= 11_00_00
+            if primary_key(table_name) == column_name.to_s && old_col.type == :integer
+              # If the column to be converted is a Primary Key, set it to
+              # `NOT NULL DEFAULT 0` and we'll copy the correct values when backfilling.
+              # That way, we skip the expensive validation step required to add
+              #  a `NOT NULL` constraint at the end of the process.
+              add_column(table_name, tmp_column_name, new_type,
+                **old_col_options.merge(column_options).merge(default: old_col.default || 0, null: false))
+            else
+              unless old_col.default.nil?
+                old_col_options = old_col_options.merge(default: old_col.default, null: old_col.null)
+              end
+              add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
+            end
           else
-            add_column(table_name, tmp_column_name, new_type, **column_options)
+            add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
             change_column_default(table_name, tmp_column_name, old_col.default) unless old_col.default.nil?
           end
         end
@@ -375,6 +382,17 @@ module OnlineMigrations
     private
       def __change_type_column(column_name)
         "#{column_name}_for_type_change"
+      end
+
+      def __options_from_column(column, options)
+        result = {}
+        options.each do |option|
+          if column.respond_to?(option)
+            value = column.public_send(option)
+            result[option] = value unless value.nil?
+          end
+        end
+        result
       end
 
       def __copy_triggers_name(table_name, from_column, to_column)

@@ -1,5 +1,8 @@
 ## master (unreleased)
 
+- Fix preserving old column options (`:comment` and `:collation`) when changing column type
+- Set `NOT NULL` during new column creation when changing column type for PostgreSQL >= 11
+
 ## 0.5.4 (2022-01-03)
 
 - Support ruby 3.2.0

@@ -17,7 +17,13 @@ module SchemaStatements
       @connection.create_table(:users, id: :serial, force: :cascade)
 
       @connection.create_table(:projects, id: :serial, force: :cascade) do |t|
-        t.text :name, default: "My project"
+        # Database comments were added in Active Record 5.0
+        # (see https://github.com/rails/rails/pull/22911).
+        if ar_version >= 5
+          t.text :name, default: "My project", null: false, comment: "Project's name"
+        else
+          t.text :name, default: "My project", null: false
+        end
         t.string :description, null: false
         t.text :settings
         t.bigint :star_count
@@ -39,28 +45,52 @@ module SchemaStatements
       @connection.drop_table(:users) rescue nil
     end
 
-    def test_initialize_column_type_change_creates_new_column
-      @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
+    def test_initialize_column_type_change_creates_new_column_before_11
+      with_postgres(10) do
+        @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
 
-      column = column_for(:projects, :name_for_type_change)
-      assert_equal :string, column.type
-      assert_equal 100, column.limit
-      assert column.null
-      assert_equal "My project", column.default
+        column = column_for(:projects, :name_for_type_change)
+        assert_equal :string, column.type
+        assert_equal 100, column.limit
+        assert column.null
+        assert_equal "My project", column.default
+
+        if ar_version >= 5.0
+          assert_equal "Project's name", column.comment
+        end
+      end
     end
 
-    def test_initialize_columns_type_change_creates_new_columns
-      @connection.initialize_columns_type_change(:projects, [[:name, :string], [:user_id, :bigint]], name: { limit: 100 })
+    def test_initialize_column_type_change_creates_new_column_after_11
+      with_postgres(11) do
+        @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
 
-      name_column = column_for(:projects, :name_for_type_change)
-      assert_equal :string, name_column.type
-      assert_equal 100, name_column.limit
-      assert name_column.null
-      assert_equal "My project", name_column.default
+        column = column_for(:projects, :name_for_type_change)
+        assert_equal :string, column.type
+        assert_equal 100, column.limit
+        assert_not column.null
+        assert_equal "My project", column.default
 
-      user_id_column = column_for(:projects, :user_id_for_type_change)
-      assert user_id_column.null
-      assert_equal "bigint", user_id_column.sql_type
+        if ar_version >= 5.0
+          assert_equal "Project's name", column.comment
+        end
+      end
+    end
+
+    def test_initialize_columns_type_change_creates_new_columns_before_11
+      with_postgres(10) do
+        @connection.initialize_columns_type_change(:projects, [[:name, :string], [:user_id, :bigint]], name: { limit: 100 })
+
+        name_column = column_for(:projects, :name_for_type_change)
+        assert_equal :string, name_column.type
+        assert_equal 100, name_column.limit
+        assert name_column.null
+        assert_equal "My project", name_column.default
+
+        user_id_column = column_for(:projects, :user_id_for_type_change)
+        assert user_id_column.null
+        assert_equal "bigint", user_id_column.sql_type
+      end
     end
 
     def test_initialize_columns_type_change_raises_for_incorrect_column_and_type_format
