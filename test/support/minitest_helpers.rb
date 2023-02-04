@@ -27,7 +27,6 @@ module MinitestHelpers
 
     args =
       if OnlineMigrations::Utils.ar_version >= 7.1
-        # [ActiveRecord::SchemaMigration, ActiveRecord::InternalMetadata]
         [ActiveRecord::SchemaMigration.new(connection), ActiveRecord::InternalMetadata.new(connection)]
       elsif OnlineMigrations::Utils.ar_version >= 6
         [ActiveRecord::SchemaMigration]

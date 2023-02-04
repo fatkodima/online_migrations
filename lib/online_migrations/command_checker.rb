@@ -229,6 +229,10 @@ module OnlineMigrations
 
         type = type.to_sym
 
+        # Ignore internal Active Record migrations compatibility related
+        # options, like `_uses_legacy_table_name` etc. They all are starting with "_".
+        options = options.reject { |key, _| key.to_s.start_with?("_") }
+
         existing_column = column_for(table_name, column_name)
         if existing_column
           existing_type = existing_column.type.to_sym
