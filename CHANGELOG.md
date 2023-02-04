@@ -1,11 +1,13 @@
 ## master (unreleased)
 
+## 0.6.0 (2023-02-04)
+
 - Ignore internal Active Record migrations compatibility related options when suggesting a safe column type change
 - Added check for `add_exclusion_constraint`
 - Fix preserving old column options (`:comment` and `:collation`) when changing column type
 - Set `NOT NULL` during new column creation when changing column type for PostgreSQL >= 11
 
-## 0.5.4 (2022-01-03)
+## 0.5.4 (2023-01-03)
 
 - Support ruby 3.2.0
 
