@@ -6,7 +6,9 @@ module CommandChecker
   class MiscTest < MiniTest::Test
     def setup
       @connection = ActiveRecord::Base.connection
-      @connection.create_table(:users, force: :cascade)
+      @connection.create_table(:users, force: :cascade) do |t|
+        t.decimal :credit_score, precision: 10, scale: 5
+      end
 
       @connection.create_table(:projects, force: :cascade) do |t|
         t.bigint :user_id
@@ -401,6 +403,34 @@ module CommandChecker
 
     def test_validate_text_limit_constraint_no_transaction
       assert_safe ValidateTextLimitConstraintNoTransaction
+    end
+
+    class AddExclusionConstraint < TestMigration
+      def change
+        add_exclusion_constraint :users, "credit_score WITH =", using: :gist
+      end
+    end
+
+    def test_add_exclusion_constraint
+      skip if ar_version < 7.1
+
+      assert_unsafe AddExclusionConstraint, "Adding an exclusion constraint blocks reads and writes while every row is checked."
+    end
+
+    class AddExclusionConstraintNewTable < TestMigration
+      def change
+        create_table :new_users do |t|
+          t.decimal :credit_score, precision: 10, scale: 5
+        end
+
+        add_exclusion_constraint :new_users, "credit_score WITH =", using: :gist
+      end
+    end
+
+    def test_add_exclusion_constraint_to_new_table
+      skip if ar_version < 7.1
+
+      assert_safe AddExclusionConstraintNewTable
     end
 
     private

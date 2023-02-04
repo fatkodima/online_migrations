@@ -142,6 +142,7 @@ Potentially dangerous operations:
 - [replacing an index](#replacing-an-index)
 - [adding a reference](#adding-a-reference)
 - [adding a foreign key](#adding-a-foreign-key)
+- [adding an exclusion constraint](#adding-an-exclusion-constraint)
 - [adding a json column](#adding-a-json-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 - [hash indexes](#hash-indexes)
@@ -814,6 +815,24 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+
+### Adding an exclusion constraint
+
+:x: **Bad**
+
+Adding an exclusion constraint blocks reads and writes while every row is checked.
+
+```ruby
+class AddExclusionContraint < ActiveRecord::Migration[7.1]
+  def change
+    add_exclusion_constraint :users, "number WITH =", using: :gist
+  end
+end
+```
+
+:white_check_mark: **Good**
+
+[Let us know](https://github.com/fatkodima/online_migrations/issues/new) if you have a safe way to do this (exclusion constraints cannot be marked `NOT VALID`).
 
 ### Adding a json column
 

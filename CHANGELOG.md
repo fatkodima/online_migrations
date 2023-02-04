@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Added check for `add_exclusion_constraint`
 - Fix preserving old column options (`:comment` and `:collation`) when changing column type
 - Set `NOT NULL` during new column creation when changing column type for PostgreSQL >= 11
 
