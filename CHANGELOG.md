@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Reset attempts of failing jobs before executing background migration inline
+
 ## 0.6.0 (2023-02-04)
 
 - Ignore internal Active Record migrations compatibility related options when suggesting a safe column type change

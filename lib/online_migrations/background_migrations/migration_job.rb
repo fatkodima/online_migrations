@@ -36,6 +36,7 @@ module OnlineMigrations
       end
 
       scope :except_succeeded, -> { where("status != ?", statuses[:succeeded]) }
+      scope :attempts_exceeded, -> { where("attempts >= max_attempts") }
 
       enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
 

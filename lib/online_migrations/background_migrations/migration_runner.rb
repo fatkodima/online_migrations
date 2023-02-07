@@ -67,6 +67,7 @@ module OnlineMigrations
         # Mark is as finishing to avoid being picked up
         # by the background migrations scheduler.
         migration.finishing!
+        migration.reset_failed_jobs_attempts
 
         while migration.finishing?
           run_migration_job

@@ -124,6 +124,14 @@ module OnlineMigrations
       end
 
       # @private
+      def reset_failed_jobs_attempts
+        iterator = BatchIterator.new(migration_jobs.failed.attempts_exceeded)
+        iterator.each_batch(of: 100) do |relation|
+          relation.update_all(attempts: 0)
+        end
+      end
+
+      # @private
       def next_batch_range
         iterator = BatchIterator.new(migration_relation)
         batch_range = nil
