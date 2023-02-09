@@ -4,6 +4,9 @@ require "online_migrations"
 
 require "minitest/autorun"
 
+# Required to be able to run single tests via command line.
+require "active_support/core_ext/string/strip"
+
 # Needed for `developer_env?`
 module Rails
   def self.env

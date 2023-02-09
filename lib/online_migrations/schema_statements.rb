@@ -746,6 +746,10 @@ module OnlineMigrations
         query << "#{__action_sql('DELETE', options[:on_delete])}\n" if options[:on_delete].present?
         query << "#{__action_sql('UPDATE', options[:on_update])}\n" if options[:on_update].present?
         query << "NOT VALID\n" if !validate
+        if Utils.ar_version >= 7.0 && options[:deferrable]
+          query << " DEFERRABLE"
+          query << " INITIALLY #{options[:deferrable].to_s.upcase}\n" if options[:deferrable] != true
+        end
 
         execute(query.squish)
       end

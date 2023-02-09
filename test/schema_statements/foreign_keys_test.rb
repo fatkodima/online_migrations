@@ -100,6 +100,25 @@ module SchemaStatements
       end
     end
 
+    def test_add_foreign_key_deferrable
+      skip("Active Record < 7.0 does not support DEFERRABLE foreign keys") if ar_version < 7.0
+
+      connection.add_foreign_key :milestones, :projects
+      fkey = connection.foreign_keys(:milestones).first
+      assert_equal false, fkey.deferrable
+      connection.remove_foreign_key :milestones, :projects
+
+      connection.add_foreign_key :milestones, :projects, deferrable: true
+      fkey = connection.foreign_keys(:milestones).first
+      assert_equal true, fkey.deferrable # rubocop:disable Minitest/AssertTruthy
+      connection.remove_foreign_key :milestones, :projects
+
+      connection.add_foreign_key :milestones, :projects, deferrable: :deferred
+      fkey = connection.foreign_keys(:milestones).first
+      assert_equal :deferred, fkey.deferrable
+      connection.remove_foreign_key :milestones, :projects
+    end
+
     def test_validate_foreign_key
       connection.add_foreign_key :milestones, :projects, validate: false
       assert_sql("ALTER TABLE milestones VALIDATE CONSTRAINT") do
