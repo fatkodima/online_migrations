@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix quoting table/column names across the library
 - Fix deffered foreign keys support in `add_foreign_key` (Active Record >= 7)
 - Reset attempts of failing jobs before executing background migration inline
 

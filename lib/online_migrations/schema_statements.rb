@@ -181,7 +181,11 @@ module OnlineMigrations
 
       transaction do
         rename_table(table_name, tmp_table)
-        execute("CREATE VIEW #{table_name} AS SELECT *, #{column_name} AS #{new_column_name} FROM #{tmp_table}")
+        execute(<<-SQL.squish)
+          CREATE VIEW #{quote_table_name(table_name)} AS
+            SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
+            FROM #{quote_table_name(tmp_table)}
+        SQL
       end
     end
 
@@ -200,7 +204,7 @@ module OnlineMigrations
     #
     def revert_initialize_column_rename(table_name, _column_name = nil, _new_column_name = nil)
       transaction do
-        execute("DROP VIEW #{table_name}")
+        execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
       end
     end
@@ -215,7 +219,7 @@ module OnlineMigrations
     #
     def finalize_column_rename(table_name, column_name, new_column_name)
       transaction do
-        execute("DROP VIEW #{table_name}")
+        execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
         rename_column(table_name, column_name, new_column_name)
       end
@@ -235,7 +239,11 @@ module OnlineMigrations
       transaction do
         rename_column(table_name, new_column_name, column_name)
         rename_table(table_name, tmp_table)
-        execute("CREATE VIEW #{table_name} AS SELECT *, #{column_name} AS #{new_column_name} FROM #{tmp_table}")
+        execute(<<-SQL.squish)
+          CREATE VIEW #{quote_table_name(table_name)} AS
+          SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
+          FROM #{quote_table_name(tmp_table)}
+        SQL
       end
     end
 
@@ -286,7 +294,7 @@ module OnlineMigrations
     def initialize_table_rename(table_name, new_name)
       transaction do
         rename_table(table_name, new_name)
-        execute("CREATE VIEW #{table_name} AS SELECT * FROM #{new_name}")
+        execute("CREATE VIEW #{quote_table_name(table_name)} AS SELECT * FROM #{quote_table_name(new_name)}")
       end
     end
 
@@ -300,7 +308,7 @@ module OnlineMigrations
     #
     def revert_initialize_table_rename(table_name, new_name)
       transaction do
-        execute("DROP VIEW IF EXISTS #{table_name}")
+        execute("DROP VIEW IF EXISTS #{quote_table_name(table_name)}")
         rename_table(new_name, table_name)
       end
     end
@@ -316,7 +324,7 @@ module OnlineMigrations
     #   finalize_table_rename(:users, :clients)
     #
     def finalize_table_rename(table_name, _new_name = nil)
-      execute("DROP VIEW IF EXISTS #{table_name}")
+      execute("DROP VIEW IF EXISTS #{quote_table_name(table_name)}")
     end
 
     # Reverts operations performed by finalize_table_rename
@@ -329,7 +337,7 @@ module OnlineMigrations
     #   revert_finalize_table_rename(:users, :clients)
     #
     def revert_finalize_table_rename(table_name, new_name)
-      execute("CREATE VIEW #{table_name} AS SELECT * FROM #{new_name}")
+      execute("CREATE VIEW #{quote_table_name(table_name)} AS SELECT * FROM #{quote_table_name(new_name)}")
     end
 
     # Swaps two column names in a table
@@ -738,10 +746,10 @@ module OnlineMigrations
         options[:name] ||= __foreign_key_name(to_table, options[:column])
 
         query = <<-SQL.strip_heredoc.dup
-          ALTER TABLE #{from_table}
-          ADD CONSTRAINT #{options[:name]}
-          FOREIGN KEY (#{options[:column]})
-          REFERENCES #{to_table} (#{options[:primary_key]})
+          ALTER TABLE #{quote_table_name(from_table)}
+          ADD CONSTRAINT #{quote_column_name(options[:name])}
+          FOREIGN KEY (#{quote_column_name(options[:column])})
+          REFERENCES #{quote_table_name(to_table)} (#{quote_column_name(options[:primary_key])})
         SQL
         query << "#{__action_sql('DELETE', options[:on_delete])}\n" if options[:on_delete].present?
         query << "#{__action_sql('UPDATE', options[:on_update])}\n" if options[:on_update].present?
@@ -770,7 +778,7 @@ module OnlineMigrations
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        execute("ALTER TABLE #{from_table} VALIDATE CONSTRAINT #{fk_name_to_validate}")
+        execute("ALTER TABLE #{quote_table_name(from_table)} VALIDATE CONSTRAINT #{quote_column_name(fk_name_to_validate)}")
       end
     end
 
@@ -790,7 +798,10 @@ module OnlineMigrations
         Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration " \
                   "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
       else
-        query = "ALTER TABLE #{table_name} ADD CONSTRAINT #{constraint_name} CHECK (#{expression})"
+        query = <<-SQL.squish
+          ALTER TABLE #{quote_table_name(table_name)}
+            ADD CONSTRAINT #{quote_column_name(constraint_name)} CHECK (#{expression})
+        SQL
         query += " NOT VALID" if !validate
 
         execute(query)
@@ -812,7 +823,10 @@ module OnlineMigrations
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        execute("ALTER TABLE #{table_name} VALIDATE CONSTRAINT #{constraint_name}")
+        execute(<<-SQL.squish)
+          ALTER TABLE #{quote_table_name(table_name)}
+            VALIDATE CONSTRAINT #{quote_column_name(constraint_name)}
+        SQL
       end
     end
 
@@ -822,7 +836,10 @@ module OnlineMigrations
       #
       def remove_check_constraint(table_name, expression = nil, **options)
         constraint_name = __check_constraint_name!(table_name, expression: expression, **options)
-        execute("ALTER TABLE #{table_name} DROP CONSTRAINT #{constraint_name}")
+        execute(<<-SQL.squish)
+          ALTER TABLE #{quote_table_name(table_name)}
+            DROP CONSTRAINT #{quote_column_name(constraint_name)}
+        SQL
       end
     end
 

@@ -121,7 +121,7 @@ module SchemaStatements
 
     def test_validate_foreign_key
       connection.add_foreign_key :milestones, :projects, validate: false
-      assert_sql("ALTER TABLE milestones VALIDATE CONSTRAINT") do
+      assert_sql('ALTER TABLE "milestones" VALIDATE CONSTRAINT') do
         connection.validate_foreign_key :milestones, :projects
       end
     end

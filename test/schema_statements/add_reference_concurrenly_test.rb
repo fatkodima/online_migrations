@@ -68,8 +68,8 @@ module SchemaStatements
 
     def test_add_reference_concurrently_with_foreign_key
       assert_sql(
-        "REFERENCES projects (id) NOT VALID",
-        "ALTER TABLE milestones VALIDATE CONSTRAINT"
+        'REFERENCES "projects" ("id") NOT VALID',
+        'ALTER TABLE "milestones" VALIDATE CONSTRAINT'
       ) do
         connection.add_reference_concurrently :milestones, :project, foreign_key: true
       end

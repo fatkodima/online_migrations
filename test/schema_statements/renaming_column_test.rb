@@ -116,7 +116,7 @@ module SchemaStatements
       @connection.initialize_column_rename(:projects, :name, :name_new)
 
       assert_sql(
-        "DROP VIEW projects",
+        'DROP VIEW "projects"',
         'ALTER TABLE "projects_column_rename" RENAME TO "projects"'
       ) do
         @connection.revert_initialize_column_rename(:projects)
@@ -127,7 +127,7 @@ module SchemaStatements
       @connection.initialize_column_rename(:projects, :name, :name_new)
 
       assert_sql(
-        "DROP VIEW projects",
+        'DROP VIEW "projects"',
         'ALTER TABLE "projects_column_rename" RENAME TO "projects"',
         'ALTER TABLE "projects" RENAME COLUMN "name" TO "name_new"'
       ) do
@@ -142,7 +142,7 @@ module SchemaStatements
       assert_sql(
         'ALTER TABLE "projects" RENAME COLUMN "name_new" TO "name"',
         'ALTER TABLE "projects" RENAME TO "projects_column_rename"',
-        "CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename"
+        'CREATE VIEW "projects" AS SELECT *, "name" AS "name_new" FROM "projects_column_rename"'
       ) do
         @connection.revert_finalize_column_rename(:projects, :name, :name_new)
       end

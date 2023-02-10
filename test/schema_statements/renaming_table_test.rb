@@ -94,7 +94,7 @@ module SchemaStatements
       @connection.initialize_table_rename(:projects, :projects_new)
 
       assert_sql(
-        "DROP VIEW IF EXISTS projects",
+        'DROP VIEW IF EXISTS "projects"',
         'ALTER TABLE "projects_new" RENAME TO "projects"'
       ) do
         @connection.revert_initialize_table_rename(:projects, :projects_new)
@@ -104,7 +104,7 @@ module SchemaStatements
     def test_finalize_table_rename
       @connection.initialize_table_rename(:projects, :projects_new)
 
-      assert_sql("DROP VIEW IF EXISTS projects") do
+      assert_sql('DROP VIEW IF EXISTS "projects"') do
         @connection.finalize_table_rename(:projects)
       end
     end
@@ -113,7 +113,7 @@ module SchemaStatements
       @connection.initialize_table_rename(:projects, :projects_new)
       @connection.finalize_table_rename(:projects)
 
-      assert_sql("CREATE VIEW projects AS SELECT * FROM projects_new") do
+      assert_sql('CREATE VIEW "projects" AS SELECT * FROM "projects_new"') do
         @connection.revert_finalize_table_rename(:projects, :projects_new)
       end
     end

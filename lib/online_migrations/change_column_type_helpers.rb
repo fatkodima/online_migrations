@@ -570,7 +570,7 @@ module OnlineMigrations
               transaction do
                 # We'll need ACCESS EXCLUSIVE lock on the related tables,
                 # lets make sure it can be acquired from the start.
-                execute("LOCK TABLE #{table_name}, #{referencing_table_name} IN ACCESS EXCLUSIVE MODE")
+                execute("LOCK TABLE #{quote_table_name(table_name)}, #{quote_table_name(referencing_table_name)} IN ACCESS EXCLUSIVE MODE")
 
                 remove_foreign_key(referencing_table_name, name: existing_name)
                 __rename_constraint(referencing_table_name, tmp_name, existing_name)
