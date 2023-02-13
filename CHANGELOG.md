@@ -3,6 +3,7 @@
 - Fix quoting table/column names across the library
 - Fix deffered foreign keys support in `add_foreign_key` (Active Record >= 7)
 - Reset attempts of failing jobs before executing background migration inline
+- Add support for renaming multiple columns in the same table
 
 ## 0.6.0 (2023-02-04)
 
