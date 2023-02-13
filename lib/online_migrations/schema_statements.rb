@@ -177,15 +177,40 @@ module OnlineMigrations
     #   until `finalize_column_rename` is run
     #
     def initialize_column_rename(table_name, column_name, new_column_name)
-      tmp_table = "#{table_name}_column_rename"
+      initialize_columns_rename(table_name, { column_name => new_column_name })
+    end
 
+    # Same as `initialize_column_rename` but for multiple columns.
+    #
+    # The technique is built on top of database views, using the following steps:
+    #   1. Rename the table to some temporary name
+    #   2. Create a VIEW using the old table name with addition of the new columns as an aliases of the old ones
+    #   3. Add a workaround for ActiveRecord's schema cache
+    #
+    # @param table_name [String, Symbol] table name
+    # @param old_new_column_hash [Hash] the hash of old and new columns
+    #
+    # @return [void]
+    #
+    # @example
+    #   initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+    #
+    # @note
+    #   Prior to using this method, you need to register the database table so that
+    #   it instructs ActiveRecord to fetch the database table information (for SchemaCache)
+    #   using the original table name (if it's present). Otherwise, fall back to the old table name:
+    #
+    #   ```OnlineMigrations.config.column_renames[table_name] = { old_column_name => new_column_name }```
+    #
+    #   Deploy this change before proceeding with this helper.
+    #   This is necessary to avoid errors during a zero-downtime deployment.
+    #
+    # @note None of the DDL operations involving original table name can be performed
+    #   until `finalize_column_rename` is run
+    #
+    def initialize_columns_rename(table_name, old_new_column_hash)
       transaction do
-        rename_table(table_name, tmp_table)
-        execute(<<-SQL.squish)
-          CREATE VIEW #{quote_table_name(table_name)} AS
-            SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
-            FROM #{quote_table_name(tmp_table)}
-        SQL
+        rename_table_create_view(table_name, old_new_column_hash)
       end
     end
 
@@ -203,6 +228,21 @@ module OnlineMigrations
     #   revert_initialize_column_rename(:users, :name, :first_name)
     #
     def revert_initialize_column_rename(table_name, _column_name = nil, _new_column_name = nil)
+      revert_initialize_columns_rename(table_name, { _column_name => _new_column_name })
+    end
+
+    # Same as `revert_initialize_column_rename` but for multiple columns.
+    #
+    # @param table_name [String, Symbol] table name
+    # @param _old_new_column_hash [Hash] the hash of old and new columns
+    #     Passing this argument will make this change reversible in migration
+    #
+    # @return [void]
+    #
+    # @example
+    #   revert_initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+    #
+    def revert_initialize_columns_rename(table_name, _old_new_column_hash = nil)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
@@ -218,10 +258,24 @@ module OnlineMigrations
     #   finalize_column_rename(:users, :name, :first_name)
     #
     def finalize_column_rename(table_name, column_name, new_column_name)
+      finalize_columns_rename(table_name, { column_name => new_column_name })
+    end
+
+    # Same as `finalize_column_rename` but for multiple columns.
+    #
+    # @param (see #initialize_columns_rename)
+    # @return [void]
+    #
+    # @example
+    #   finalize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+    #
+    def finalize_columns_rename(table_name, old_new_column_hash)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
-        rename_column(table_name, column_name, new_column_name)
+        old_new_column_hash.each_key do |old|
+          rename_column(table_name, old, old_new_column_hash[old])
+        end
       end
     end
 
@@ -234,16 +288,23 @@ module OnlineMigrations
     #   revert_finalize_column_rename(:users, :name, :first_name)
     #
     def revert_finalize_column_rename(table_name, column_name, new_column_name)
-      tmp_table = "#{table_name}_column_rename"
+      revert_finalize_columns_rename(table_name, { column_name => new_column_name })
+    end
 
+    # Same as `revert_finalize_column_rename` but for multiple columns.
+    #
+    # @param (see #initialize_columns_rename)
+    # @return [void]
+    #
+    # @example
+    #   revert_finalize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+    #
+    def revert_finalize_columns_rename(table_name, old_new_column_hash)
       transaction do
-        rename_column(table_name, new_column_name, column_name)
-        rename_table(table_name, tmp_table)
-        execute(<<-SQL.squish)
-          CREATE VIEW #{quote_table_name(table_name)} AS
-          SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
-          FROM #{quote_table_name(tmp_table)}
-        SQL
+        old_new_column_hash.each_key do |old|
+          rename_column(table_name, old_new_column_hash[old], old)
+        end
+        rename_table_create_view(table_name, old_new_column_hash)
       end
     end
 
@@ -1104,6 +1165,19 @@ module OnlineMigrations
       def __schema_for_table(table_name)
         _, schema = table_name.to_s.split(".").reverse
         schema ? quote(schema) : "current_schema()"
+      end
+
+      def rename_table_create_view(table_name, old_new_column_hash)
+        tmp_table = "#{table_name}_column_rename"
+        rename_table(table_name, tmp_table)
+        column_mapping = old_new_column_hash.keys.map do |old|
+          "#{quote_column_name(old)} AS #{quote_column_name(old_new_column_hash[old])}"
+        end.join(", ")
+        execute(<<-SQL.squish)
+          CREATE VIEW #{quote_table_name(table_name)} AS
+            SELECT *, #{column_mapping}
+            FROM #{quote_table_name(tmp_table)}
+        SQL
       end
   end
 end

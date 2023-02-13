@@ -4,16 +4,16 @@ require "test_helper"
 
 module SchemaStatements
   class RenamingColumnTest < MiniTest::Test
-    class Project < ActiveRecord::Base
+    class User < ActiveRecord::Base
     end
 
     def setup
-      OnlineMigrations.config.column_renames["projects"] = { "name" => "name_new" }
+      OnlineMigrations.config.column_renames["users"] = { "name" => "first_name" }
 
       @connection = ActiveRecord::Base.connection
       @schema_cache = @connection.schema_cache
 
-      @connection.create_table(:projects, force: true) do |t|
+      @connection.create_table(:users, force: true) do |t|
         t.string :name, index: true
       end
     end
@@ -23,128 +23,128 @@ module SchemaStatements
       OnlineMigrations.config.column_renames.clear
       @schema_cache.clear!
 
-      @connection.execute("DROP VIEW projects") rescue nil
-      @connection.drop_table(:projects) rescue nil
+      @connection.execute("DROP VIEW users") rescue nil
+      @connection.drop_table(:users) rescue nil
 
       # For ActiveRecord 5.0+ we can use if_exists: true for drop_table
-      @connection.drop_table(:projects_column_rename) rescue nil
+      @connection.drop_table(:users_column_rename) rescue nil
     end
 
     def test_column_is_not_renamed
-      Project.reset_column_information
+      User.reset_column_information
       @schema_cache.clear!
 
-      assert_equal :string, Project.columns_hash["name"].type
+      assert_equal :string, User.columns_hash["name"].type
     end
 
     def test_rename_column_while_old_code_is_running
       @schema_cache.clear!
-      Project.reset_column_information
+      User.reset_column_information
 
       # Fill the SchemaCache
-      Project.columns_hash
-      Project.primary_key
+      User.columns_hash
+      User.primary_key
 
       # Need to run SQL directly, because rename_table
       # used in initialize_column_rename clears SchemaCache
-      @connection.execute("ALTER TABLE projects RENAME TO projects_column_rename")
-      @connection.execute("CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename")
+      @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, name AS first_name FROM users_column_rename")
 
-      project = Project.create!(name: "Name")
-      assert project.persisted?
-      assert_equal "Name", project.name
+      user = User.create!(name: "Name")
+      assert user.persisted?
+      assert_equal "Name", user.name
     end
 
     def test_old_code_reloads_after_rename_column
       # Need to run SQL directly, because rename_table
       # used in initialize_column_rename clears SchemaCache
-      @connection.execute("ALTER TABLE projects RENAME TO projects_column_rename")
-      @connection.execute("CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename")
+      @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, name AS first_name FROM users_column_rename")
 
       @schema_cache.clear!
-      Project.reset_column_information
+      User.reset_column_information
 
-      project = Project.create!(name: "Name")
-      assert project.persisted?
-      assert_equal "Name", project.name
+      user = User.create!(name: "Name")
+      assert user.persisted?
+      assert_equal "Name", user.name
     end
 
     def test_old_code_uses_original_table_for_metadata
-      @connection.initialize_column_rename(:projects, :name, :name_new)
-      Project.reset_column_information
+      @connection.initialize_column_rename(:users, :name, :first_name)
+      User.reset_column_information
       @schema_cache.clear!
 
-      assert_equal "id", Project.primary_key
+      assert_equal "id", User.primary_key
 
-      refute_empty Project.columns
-      refute_empty Project.columns_hash
+      refute_empty User.columns
+      refute_empty User.columns_hash
 
       if ar_version >= 6.0
-        refute_empty @schema_cache.indexes("projects")
+        refute_empty @schema_cache.indexes("users")
       end
     end
 
     def test_old_code_accepts_crud_operations
-      Project.reset_column_information
+      User.reset_column_information
       @schema_cache.clear!
 
       # Fill the SchemaCache
-      Project.columns_hash
-      Project.primary_key
+      User.columns_hash
+      User.primary_key
 
       # Need to run SQL directly, because rename_table
       # used in initialize_column_rename clears SchemaCache
-      @connection.execute("ALTER TABLE projects RENAME TO projects_column_rename")
-      @connection.execute("CREATE VIEW projects AS SELECT *, name AS name_new FROM projects_column_rename")
+      @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, name AS first_name FROM users_column_rename")
 
-      project_old = Project.create!(name: "Name")
-      assert_equal Project.last.id, project_old.id
-      assert_equal "Name", project_old.name
+      user_old = User.create!(name: "Name")
+      assert_equal User.last.id, user_old.id
+      assert_equal "Name", user_old.name
     end
 
     def test_new_code_accepts_crud_operations
-      @connection.initialize_column_rename(:projects, :name, :name_new)
-      Project.reset_column_information
+      @connection.initialize_column_rename(:users, :name, :first_name)
+      User.reset_column_information
       @schema_cache.clear!
 
-      project = Project.create!(name_new: "Name")
-      assert_equal Project.last.id, project.id
-      assert_equal "Name", project.name_new
+      user = User.create!(first_name: "Name")
+      assert_equal User.last.id, user.id
+      assert_equal "Name", user.first_name
     end
 
     def test_revert_initialize_column_rename
-      @connection.initialize_column_rename(:projects, :name, :name_new)
+      @connection.initialize_column_rename(:users, :name, :first_name)
 
       assert_sql(
-        'DROP VIEW "projects"',
-        'ALTER TABLE "projects_column_rename" RENAME TO "projects"'
+        'DROP VIEW "users"',
+        'ALTER TABLE "users_column_rename" RENAME TO "users"'
       ) do
-        @connection.revert_initialize_column_rename(:projects)
+        @connection.revert_initialize_column_rename(:users)
       end
     end
 
     def test_finalize_column_rename
-      @connection.initialize_column_rename(:projects, :name, :name_new)
+      @connection.initialize_column_rename(:users, :name, :first_name)
 
       assert_sql(
-        'DROP VIEW "projects"',
-        'ALTER TABLE "projects_column_rename" RENAME TO "projects"',
-        'ALTER TABLE "projects" RENAME COLUMN "name" TO "name_new"'
+        'DROP VIEW "users"',
+        'ALTER TABLE "users_column_rename" RENAME TO "users"',
+        'ALTER TABLE "users" RENAME COLUMN "name" TO "first_name"'
       ) do
-        @connection.finalize_column_rename(:projects, :name, :name_new)
+        @connection.finalize_column_rename(:users, :name, :first_name)
       end
     end
 
     def test_revert_finalize_column_rename
-      @connection.initialize_column_rename(:projects, :name, :name_new)
-      @connection.finalize_column_rename(:projects, :name, :name_new)
+      @connection.initialize_column_rename(:users, :name, :first_name)
+      @connection.finalize_column_rename(:users, :name, :first_name)
 
       assert_sql(
-        'ALTER TABLE "projects" RENAME COLUMN "name_new" TO "name"',
-        'ALTER TABLE "projects" RENAME TO "projects_column_rename"',
-        'CREATE VIEW "projects" AS SELECT *, "name" AS "name_new" FROM "projects_column_rename"'
+        'ALTER TABLE "users" RENAME COLUMN "first_name" TO "name"',
+        'ALTER TABLE "users" RENAME TO "users_column_rename"',
+        'CREATE VIEW "users" AS SELECT *, "name" AS "first_name" FROM "users_column_rename"'
       ) do
-        @connection.revert_finalize_column_rename(:projects, :name, :name_new)
+        @connection.revert_finalize_column_rename(:users, :name, :first_name)
       end
     end
 
@@ -152,15 +152,15 @@ module SchemaStatements
     def test_initialize_column_rename_and_resetting_sequence
       skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
 
-      @connection.initialize_column_rename(:projects, :name, :name_new)
+      @connection.initialize_column_rename(:users, :name, :first_name)
 
       @schema_cache.clear!
-      Project.reset_column_information
+      User.reset_column_information
 
-      _project1 = Project.create!(id: 100_000, name: "Old")
-      @connection.reset_pk_sequence!("projects")
-      project2 = Project.create!(name: "New")
-      assert_equal project2, Project.last
+      _user1 = User.create!(id: 100_000, name: "Old")
+      @connection.reset_pk_sequence!("users")
+      user2 = User.create!(name: "New")
+      assert_equal user2, User.last
     end
   end
 end
