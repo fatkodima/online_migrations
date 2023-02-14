@@ -18,17 +18,10 @@ module OnlineMigrations
         super(renamed_tables[table_name])
       elsif renamed_columns.key?(table_name)
         columns = super(column_rename_table(table_name))
-
-        old_column_name, new_column_name = renamed_columns[table_name].first.to_a
-
-        old_column = columns.find { |column| column.name == old_column_name }
-        new_column = old_column.dup
-
-        # ActiveRecord defines only reader for :name
-        new_column.instance_variable_set(:@name, new_column_name)
-
-        # Correspond to the ActiveRecord freezing of each column
-        columns << new_column.freeze
+        renamed_columns[table_name].each do |old_column_name, new_column_name|
+          duplicate_column(old_column_name, new_column_name, columns)
+        end
+        columns
       else
         super.reject { |column| column.name.end_with?("_for_type_change") }
       end
@@ -93,6 +86,15 @@ module OnlineMigrations
       def clear_renames_cache!
         @renamed_columns = nil
         @renamed_tables = nil
+      end
+
+      def duplicate_column(old_column_name, new_column_name, columns)
+        old_column = columns.find { |column| column.name == old_column_name }
+        new_column = old_column.dup
+        # ActiveRecord defines only reader for :name
+        new_column.instance_variable_set(:@name, new_column_name)
+        # Correspond to the ActiveRecord freezing of each column
+        columns << new_column.freeze
       end
   end
 end

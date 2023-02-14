@@ -177,24 +177,34 @@ module OnlineMigrations
     #   until `finalize_column_rename` is run
     #
     def initialize_column_rename(table_name, column_name, new_column_name)
-      tmp_table = "#{table_name}_column_rename"
+      initialize_columns_rename(table_name, { column_name => new_column_name })
+    end
 
+    # Same as `initialize_column_rename` but for multiple columns.
+    #
+    # This is useful to avoid multiple iterations of the safe column rename steps
+    # when renaming multiple columns.
+    #
+    # @param table_name [String, Symbol] table name
+    # @param old_new_column_hash [Hash] the hash of old and new columns
+    #
+    # @example
+    #   initialize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+    #
+    # @see #initialize_column_rename
+    #
+    def initialize_columns_rename(table_name, old_new_column_hash)
       transaction do
-        rename_table(table_name, tmp_table)
-        execute(<<-SQL.squish)
-          CREATE VIEW #{quote_table_name(table_name)} AS
-            SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
-            FROM #{quote_table_name(tmp_table)}
-        SQL
+        rename_table_create_view(table_name, old_new_column_hash)
       end
     end
 
     # Reverts operations performed by initialize_column_rename
     #
     # @param table_name [String, Symbol] table name
-    # @param _column_name [String, Symbol] the name of the column to be renamed.
+    # @param column_name [String, Symbol] the name of the column to be renamed.
     #     Passing this argument will make this change reversible in migration
-    # @param _new_column_name [String, Symbol] new new name of the column.
+    # @param new_column_name [String, Symbol] new new name of the column.
     #     Passing this argument will make this change reversible in migration
     #
     # @return [void]
@@ -202,7 +212,22 @@ module OnlineMigrations
     # @example
     #   revert_initialize_column_rename(:users, :name, :first_name)
     #
-    def revert_initialize_column_rename(table_name, _column_name = nil, _new_column_name = nil)
+    def revert_initialize_column_rename(table_name, column_name = nil, new_column_name = nil)
+      revert_initialize_columns_rename(table_name, { column_name => new_column_name })
+    end
+
+    # Same as `revert_initialize_column_rename` but for multiple columns.
+    #
+    # @param table_name [String, Symbol] table name
+    # @param _old_new_column_hash [Hash] the hash of old and new columns
+    #     Passing this argument will make this change reversible in migration
+    #
+    # @return [void]
+    #
+    # @example
+    #   revert_initialize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+    #
+    def revert_initialize_columns_rename(table_name, _old_new_column_hash = nil)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
@@ -218,10 +243,24 @@ module OnlineMigrations
     #   finalize_column_rename(:users, :name, :first_name)
     #
     def finalize_column_rename(table_name, column_name, new_column_name)
+      finalize_columns_rename(table_name, { column_name => new_column_name })
+    end
+
+    # Same as `finalize_column_rename` but for multiple columns.
+    #
+    # @param (see #initialize_columns_rename)
+    # @return [void]
+    #
+    # @example
+    #   finalize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+    #
+    def finalize_columns_rename(table_name, old_new_column_hash)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
         rename_table("#{table_name}_column_rename", table_name)
-        rename_column(table_name, column_name, new_column_name)
+        old_new_column_hash.each do |column_name, new_column_name|
+          rename_column(table_name, column_name, new_column_name)
+        end
       end
     end
 
@@ -234,16 +273,23 @@ module OnlineMigrations
     #   revert_finalize_column_rename(:users, :name, :first_name)
     #
     def revert_finalize_column_rename(table_name, column_name, new_column_name)
-      tmp_table = "#{table_name}_column_rename"
+      revert_finalize_columns_rename(table_name, { column_name => new_column_name })
+    end
 
+    # Same as `revert_finalize_column_rename` but for multiple columns.
+    #
+    # @param (see #initialize_columns_rename)
+    # @return [void]
+    #
+    # @example
+    #   revert_finalize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+    #
+    def revert_finalize_columns_rename(table_name, old_new_column_hash)
       transaction do
-        rename_column(table_name, new_column_name, column_name)
-        rename_table(table_name, tmp_table)
-        execute(<<-SQL.squish)
-          CREATE VIEW #{quote_table_name(table_name)} AS
-          SELECT *, #{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}
-          FROM #{quote_table_name(tmp_table)}
-        SQL
+        old_new_column_hash.each do |column_name, new_column_name|
+          rename_column(table_name, new_column_name, column_name)
+        end
+        rename_table_create_view(table_name, old_new_column_hash)
       end
     end
 
@@ -1104,6 +1150,20 @@ module OnlineMigrations
       def __schema_for_table(table_name)
         _, schema = table_name.to_s.split(".").reverse
         schema ? quote(schema) : "current_schema()"
+      end
+
+      def rename_table_create_view(table_name, old_new_column_hash)
+        tmp_table = "#{table_name}_column_rename"
+        rename_table(table_name, tmp_table)
+        column_mapping = old_new_column_hash.map do |column_name, new_column_name|
+          "#{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}"
+        end.join(", ")
+
+        execute(<<-SQL.squish)
+          CREATE VIEW #{quote_table_name(table_name)} AS
+            SELECT *, #{column_mapping}
+            FROM #{quote_table_name(tmp_table)}
+        SQL
       end
   end
 end

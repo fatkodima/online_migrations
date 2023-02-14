@@ -6,9 +6,13 @@ module OnlineMigrations
     REVERSIBLE_AND_IRREVERSIBLE_METHODS = [
       :update_column_in_batches,
       :initialize_column_rename,
+      :initialize_columns_rename,
       :revert_initialize_column_rename,
+      :revert_initialize_columns_rename,
       :finalize_column_rename,
+      :finalize_columns_rename,
       :revert_finalize_column_rename,
+      :revert_finalize_columns_rename,
       :initialize_table_rename,
       :revert_initialize_table_rename,
       :finalize_table_rename,
@@ -49,7 +53,9 @@ module OnlineMigrations
       module StraightReversions
         {
           initialize_column_rename:           :revert_initialize_column_rename,
+          initialize_columns_rename:          :revert_initialize_columns_rename,
           finalize_column_rename:             :revert_finalize_column_rename,
+          finalize_columns_rename:            :revert_finalize_columns_rename,
           initialize_table_rename:            :revert_initialize_table_rename,
           finalize_table_rename:              :revert_finalize_table_rename,
           add_not_null_constraint:            :remove_not_null_constraint,
@@ -84,9 +90,18 @@ module OnlineMigrations
         _table, column, new_column = args
         if !column || !new_column
           raise ActiveRecord::IrreversibleMigration,
-            "invert_revert_initialize_column_rename is only reversible if given a column and new_column."
+            "revert_initialize_column_rename is only reversible if given a column and new_column."
         end
         [:initialize_column_rename, args]
+      end
+
+      def invert_revert_initialize_columns_rename(args)
+        _table, old_new_column_hash = args
+        unless old_new_column_hash
+          raise ActiveRecord::IrreversibleMigration,
+            "revert_initialize_columns_rename is only reversible if given a hash of old and new columns."
+        end
+        [:initialize_columns_rename, args]
       end
 
       def invert_finalize_table_rename(args)
