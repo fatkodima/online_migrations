@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.7.0 (2023-02-14)
+
 - Add support for renaming multiple columns at once in the same table
 - Fix quoting table/column names across the library
 - Fix deffered foreign keys support in `add_foreign_key` (Active Record >= 7)
