@@ -74,4 +74,4 @@ end
 
 require_relative "support/schema"
 require_relative "support/minitest_helpers"
-require_relative "background_migrations/migrations"
+require_relative "background_migrations/background_migrations"

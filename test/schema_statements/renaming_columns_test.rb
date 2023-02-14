@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class RenamingColumnTest < MiniTest::Test
+  class RenamingColumnsTest < MiniTest::Test
     class User < ActiveRecord::Base
     end
 

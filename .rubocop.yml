@@ -103,6 +103,15 @@ Layout/MultilineMethodCallIndentation:
 Layout/HashAlignment:
   Enabled: false
 
+Naming/FileName:
+  ExpectMatchingDefinition: true
+  CheckDefinitionPathHierarchy: false
+  Exclude:
+    - lib/online_migrations/version.rb
+    - test/support/schema.rb
+    - test/test_helper.rb
+    - gemfiles/**.gemfile
+
 Naming/VariableNumber:
   Exclude:
     - test/**/*
