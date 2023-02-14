@@ -18,8 +18,7 @@ module OnlineMigrations
         super(renamed_tables[table_name])
       elsif renamed_columns.key?(table_name)
         columns = super(column_rename_table(table_name))
-        renamed_columns[table_name].each_key do |old_column_name|
-          new_column_name = renamed_columns[table_name][old_column_name]
+        renamed_columns[table_name].each do |old_column_name, new_column_name|
           duplicate_column(old_column_name, new_column_name, columns)
         end
         columns

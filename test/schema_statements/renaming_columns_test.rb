@@ -3,13 +3,11 @@
 require "test_helper"
 
 module SchemaStatements
-  class RenamingColumnsTest < MiniTest::Test
+  class RenamingColumnTest < MiniTest::Test
     class User < ActiveRecord::Base
     end
 
     def setup
-      OnlineMigrations.config.column_renames["users"] = { "fname" => "first_name", "lname" => "last_name" }
-
       @connection = ActiveRecord::Base.connection
       @schema_cache = @connection.schema_cache
 
@@ -32,14 +30,17 @@ module SchemaStatements
     end
 
     def test_column_is_not_renamed
+      column_renames("fname" => "first_name")
+
       User.reset_column_information
       @schema_cache.clear!
 
       assert_equal :string, User.columns_hash["fname"].type
-      assert_equal :string, User.columns_hash["lname"].type
     end
 
     def test_rename_column_while_old_code_is_running
+      column_renames("fname" => "first_name")
+
       @schema_cache.clear!
       User.reset_column_information
 
@@ -48,33 +49,35 @@ module SchemaStatements
       User.primary_key
 
       # Need to run SQL directly, because rename_table
-      # used in initialize_columns_rename clears SchemaCache
+      # used in initialize_column_rename clears SchemaCache
       @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
-      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name, lname AS last_name FROM users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name FROM users_column_rename")
 
-      user = User.create!(fname: "First Name", lname: "Last Name")
+      user = User.create!(fname: "John")
       assert user.persisted?
-      assert_equal "First Name", user.fname
-      assert_equal "Last Name", user.lname
+      assert_equal "John", user.fname
     end
 
     def test_old_code_reloads_after_rename_column
+      column_renames("fname" => "first_name")
+
       # Need to run SQL directly, because rename_table
-      # used in initialize_columns_rename clears SchemaCache
+      # used in initialize_column_rename clears SchemaCache
       @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
-      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name, lname AS last_name FROM users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name FROM users_column_rename")
 
       @schema_cache.clear!
       User.reset_column_information
 
-      user = User.create!(fname: "First Name", lname: "Last Name")
+      user = User.create!(fname: "John")
       assert user.persisted?
-      assert_equal "First Name", user.fname
-      assert_equal "Last Name", user.lname
+      assert_equal "John", user.fname
     end
 
     def test_old_code_uses_original_table_for_metadata
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name")
+
+      @connection.initialize_column_rename(:users, :fname, :first_name)
       User.reset_column_information
       @schema_cache.clear!
 
@@ -89,6 +92,8 @@ module SchemaStatements
     end
 
     def test_old_code_accepts_crud_operations
+      column_renames("fname" => "first_name")
+
       User.reset_column_information
       @schema_cache.clear!
 
@@ -97,29 +102,44 @@ module SchemaStatements
       User.primary_key
 
       # Need to run SQL directly, because rename_table
-      # used in initialize_columns_rename clears SchemaCache
+      # used in initialize_column_rename clears SchemaCache
       @connection.execute("ALTER TABLE users RENAME TO users_column_rename")
-      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name, lname AS last_name FROM users_column_rename")
+      @connection.execute("CREATE VIEW users AS SELECT *, fname AS first_name FROM users_column_rename")
 
-      user_old = User.create!(fname: "First Name", lname: "Last Name")
+      user_old = User.create!(fname: "John")
       assert_equal User.last.id, user_old.id
-      assert_equal "First Name", user_old.fname
-      assert_equal "Last Name", user_old.lname
+      assert_equal "John", user_old.fname
     end
 
     def test_new_code_accepts_crud_operations
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name")
+
+      @connection.initialize_column_rename(:users, :fname, :first_name)
       User.reset_column_information
       @schema_cache.clear!
 
-      user = User.create!(first_name: "First Name", last_name: "Last Name")
+      user = User.create!(first_name: "John")
       assert_equal User.last.id, user.id
-      assert_equal "First Name", user.first_name
-      assert_equal "Last Name", user.last_name
+      assert_equal "John", user.first_name
+    end
+
+    def test_revert_initialize_column_rename
+      column_renames("fname" => "first_name")
+
+      @connection.initialize_column_rename(:users, :fname, :first_name)
+
+      assert_sql(
+        'DROP VIEW "users"',
+        'ALTER TABLE "users_column_rename" RENAME TO "users"'
+      ) do
+        @connection.revert_initialize_column_rename(:users)
+      end
     end
 
     def test_revert_initialize_columns_rename
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name", "lname" => "last_name")
+
+      @connection.initialize_columns_rename(:users, { fname: :first_name, lname: :last_name })
 
       assert_sql(
         'DROP VIEW "users"',
@@ -129,8 +149,24 @@ module SchemaStatements
       end
     end
 
+    def test_finalize_column_rename
+      column_renames("fname" => "first_name")
+
+      @connection.initialize_column_rename(:users, :fname, :first_name)
+
+      assert_sql(
+        'DROP VIEW "users"',
+        'ALTER TABLE "users_column_rename" RENAME TO "users"',
+        'ALTER TABLE "users" RENAME COLUMN "fname" TO "first_name"'
+      ) do
+        @connection.finalize_column_rename(:users, :fname, :first_name)
+      end
+    end
+
     def test_finalize_columns_rename
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name", "lname" => "last_name")
+
+      @connection.initialize_columns_rename(:users, { fname: :first_name, lname: :last_name })
 
       assert_sql(
         'DROP VIEW "users"',
@@ -138,13 +174,30 @@ module SchemaStatements
         'ALTER TABLE "users" RENAME COLUMN "fname" TO "first_name"',
         'ALTER TABLE "users" RENAME COLUMN "lname" TO "last_name"'
       ) do
-        @connection.finalize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+        @connection.finalize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+      end
+    end
+
+    def test_revert_finalize_column_rename
+      column_renames("fname" => "first_name")
+
+      @connection.initialize_column_rename(:users, :fname, :first_name)
+      @connection.finalize_column_rename(:users, :fname, :first_name)
+
+      assert_sql(
+        'ALTER TABLE "users" RENAME COLUMN "first_name" TO "fname"',
+        'ALTER TABLE "users" RENAME TO "users_column_rename"',
+        'CREATE VIEW "users" AS SELECT *, "fname" AS "first_name" FROM "users_column_rename"'
+      ) do
+        @connection.revert_finalize_column_rename(:users, :fname, :first_name)
       end
     end
 
     def test_revert_finalize_columns_rename
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
-      @connection.finalize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name", "lname" => "last_name")
+
+      @connection.initialize_columns_rename(:users, { fname: :first_name, lname: :last_name })
+      @connection.finalize_columns_rename(:users, { fname: :first_name, lname: :last_name })
 
       assert_sql(
         'ALTER TABLE "users" RENAME COLUMN "first_name" TO "fname"',
@@ -152,23 +205,29 @@ module SchemaStatements
         'ALTER TABLE "users" RENAME TO "users_column_rename"',
         'CREATE VIEW "users" AS SELECT *, "fname" AS "first_name", "lname" AS "last_name" FROM "users_column_rename"'
       ) do
-        @connection.revert_finalize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+        @connection.revert_finalize_columns_rename(:users, { fname: :first_name, lname: :last_name })
       end
     end
 
     # Test that it is properly reset in rails tests using fixtures.
-    def test_initialize_columns_rename_and_resetting_sequence
+    def test_initialize_column_rename_and_resetting_sequence
       skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
 
-      @connection.initialize_columns_rename(:users, {fname: :first_name, lname: :last_name})
+      column_renames("fname" => "first_name")
+      @connection.initialize_column_rename(:users, :fname, :first_name)
 
       @schema_cache.clear!
       User.reset_column_information
 
-      _user1 = User.create!(id: 100_000, first_name: "Old First", last_name: "Old Last")
+      _user1 = User.create!(id: 100_000, fname: "Old")
       @connection.reset_pk_sequence!("users")
-      user2 = User.create!(fname: "New First", lname: "New Last")
+      user2 = User.create!(fname: "New")
       assert_equal user2, User.last
     end
+
+    private
+      def column_renames(renames)
+        OnlineMigrations.config.column_renames["users"] = renames
+      end
   end
 end
