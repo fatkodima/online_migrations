@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix Schema Cache to correctly retrieve metadata from renamed tables
+
 ## 0.7.0 (2023-02-14)
 
 - Add support for renaming multiple columns at once in the same table
