@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.7.1 (2023-02-22)
+
 - Fix Schema Cache to correctly retrieve metadata from renamed tables
 
 ## 0.7.0 (2023-02-14)
