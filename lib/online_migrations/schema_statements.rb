@@ -507,7 +507,7 @@ module OnlineMigrations
          __not_null_constraint_exists?(table_name, column_name, name: name)
         Utils.say("NOT NULL constraint was not created: column #{table_name}.#{column_name} is already defined as `NOT NULL`")
       else
-        expression = "#{column_name} IS NOT NULL"
+        expression = "#{quote_column_name(column_name)} IS NOT NULL"
         name ||= __not_null_constraint_name(table_name, column_name)
         add_check_constraint(table_name, expression, name: name, validate: false)
 

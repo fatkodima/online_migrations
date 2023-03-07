@@ -15,6 +15,7 @@ module SchemaStatements
       @connection.create_table(:milestones, force: true) do |t|
         t.string :name
         t.text :description
+        t.string :group
         t.integer :points
       end
 
@@ -150,6 +151,14 @@ module SchemaStatements
     def test_add_not_null_constraint_to_non_existent_table_raises
       assert_raises_with_message(ActiveRecord::StatementInvalid, "does not exist") do
         connection.add_not_null_constraint :non_existent, :name
+      end
+    end
+
+    def test_add_not_null_constraint_to_column_named_like_keyword
+      connection.add_not_null_constraint :milestones, :group
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(group: nil)
       end
     end
 

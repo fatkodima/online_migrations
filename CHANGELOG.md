@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix column quoting in `add_not_null_constraint`
+
 ## 0.7.1 (2023-02-22)
 
 - Fix Schema Cache to correctly retrieve metadata from renamed tables
