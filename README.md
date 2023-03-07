@@ -37,7 +37,7 @@ $ bundle install
 $ bin/rails generate online_migrations:install
 ```
 
-**Note**: If you do not have plans on using [background migrations](BACKGROUND_MIGRATIONS.md) feature, then you can delete the generated migration and regenerate it later, if needed.
+**Note**: If you do not have plans on using [background migrations](docs/background_migrations.md) feature, then you can delete the generated migration and regenerate it later, if needed.
 
 ## Motivation
 
@@ -1296,7 +1296,7 @@ This feature is enabled by default in a production Rails environment. You can ov
 
 ## Background Migrations
 
-Read [BACKGROUND_MIGRATIONS.md](BACKGROUND_MIGRATIONS.md) on how to perform data migrations on large tables.
+Read [background_migrations.md](docs/background_migrations.md) on how to perform data migrations on large tables.
 
 ## Credits
 
@@ -1361,7 +1361,7 @@ It has migrations helpers for:
 * adding different types of constraints
 * and others
 
-2. This gem has a [powerful internal framework](https://github.com/fatkodima/online_migrations/blob/master/BACKGROUND_MIGRATIONS.md) for running data migrations on very large tables using background migrations.
+2. This gem has a [powerful internal framework](https://github.com/fatkodima/online_migrations/blob/master/docs/background_migrations.md) for running data migrations on very large tables using background migrations.
 
 For example, you can use background migrations to migrate data that’s stored in a single JSON column to a separate table instead; backfill values from one column to another (as one of the steps when changing column type); or backfill some column’s value from an API.
 
