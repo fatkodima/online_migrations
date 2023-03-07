@@ -80,5 +80,14 @@ module SchemaStatements
         connection.add_reference_concurrently :milestones, :project, foreign_key: { validate: false }
       end
     end
+
+    def test_add_reference_concurrently_when_already_references_target_table_via_foreign_key
+      assert_empty connection.foreign_keys(:milestones)
+
+      connection.add_reference_concurrently :milestones, :project, foreign_key: true
+      connection.add_reference_concurrently :milestones, :root_project, foreign_key: { to_table: :projects }
+
+      assert_equal 2, connection.foreign_keys(:milestones).size
+    end
   end
 end

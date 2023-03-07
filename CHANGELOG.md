@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `add_reference_concurrently` to correctly check for existence of foreign keys
 - Fix column quoting in `add_not_null_constraint`
 
 ## 0.7.1 (2023-02-22)

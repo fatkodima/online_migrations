@@ -687,7 +687,7 @@ module OnlineMigrations
         foreign_key = {} if foreign_key == true
 
         foreign_table_name = Utils.foreign_table_name(ref_name, foreign_key)
-        add_foreign_key(table_name, foreign_table_name, **foreign_key.merge(validate: false))
+        add_foreign_key(table_name, foreign_table_name, **foreign_key.merge(column: column_name, validate: false))
 
         if foreign_key[:validate] != false
           validate_foreign_key(table_name, foreign_table_name, **foreign_key)
