@@ -388,6 +388,17 @@ end
 
 :white_check_mark: **Good**
 
+#### "Classic" approach (abstract)
+
+1. Create a new column
+2. Write to both columns
+3. Backfill data from the old column to the new column
+4. Move reads from the old column to the new column
+5. Stop writing to the old column
+6. Drop the old column
+
+#### :bullettrain_side: Enhanced approach (with concrete steps for Active Record)
+
 The "classic" approach suggests creating a new column and copy data/indexes/etc to it from the old column. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
 
 The technique is built on top of database views, using the following steps:
@@ -474,6 +485,17 @@ end
 ```
 
 :white_check_mark: **Good**
+
+#### "Classic" approach (abstract)
+
+1. Create a new table
+2. Write to both tables
+3. Backfill data from the old table to new table
+4. Move reads from the old table to the new table
+5. Stop writing to the old table
+6. Drop the old table
+
+#### :bullettrain_side: Enhanced approach (with concrete steps for Active Record)
 
 The "classic" approach suggests creating a new table and copy data/indexes/etc to it from the old table. This can be costly for very large tables. There is a trick that helps to avoid such heavy operations.
 
