@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.7.2 (2023-03-08)
+
 - Suggest additional steps for safely renaming a column if Active Record `enumerate_columns_in_select_statements`
   setting is enabled (implemented in Active Record 7+, disabled by default)
 - Fix `add_reference_concurrently` to correctly check for existence of foreign keys
