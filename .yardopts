@@ -2,4 +2,4 @@
 --fail-on-warning
 --markup markdown
 lib/**/**.rb
-- README.md BACKGROUND_MIGRATIONS.md
+- README.md docs/background_migrations.md docs/configuring.md

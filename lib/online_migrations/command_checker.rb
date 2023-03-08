@@ -220,7 +220,8 @@ module OnlineMigrations
             new_column: new_column,
             model: table_name.to_s.classify,
             partial_writes: Utils.ar_partial_writes?,
-            partial_writes_setting: Utils.ar_partial_writes_setting
+            partial_writes_setting: Utils.ar_partial_writes_setting,
+            enumerate_columns_in_select_statements: Utils.ar_enumerate_columns_in_select_statements
         end
       end
 

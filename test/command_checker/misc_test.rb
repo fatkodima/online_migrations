@@ -205,6 +205,46 @@ module CommandChecker
       end
     end
 
+    def test_rename_column_with_enumerate_columns_in_select_statements
+      skip if ar_version < 7
+
+      begin
+        previous = ActiveRecord::Base.enumerate_columns_in_select_statements
+        ActiveRecord::Base.enumerate_columns_in_select_statements = true
+
+        if ar_version >= 5
+          assert_unsafe RenameColumn, <<-MSG.strip_heredoc
+            5. Ignore old column
+
+              self.ignored_columns = [:name]
+          MSG
+        else
+          assert_unsafe RenameColumn, <<-MSG.strip_heredoc
+            5. Ignore old column
+
+              super.reject { |c| c.name == "name" }
+          MSG
+        end
+
+        assert_unsafe RenameColumn, <<-MSG.strip_heredoc
+          6. Deploy
+          7. Remove the column rename config from step 1
+          8. Remove the column ignore from step 5
+          9. Remove the VIEW created in step 3 and finally rename the column:
+
+            class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent_string}
+              def change
+                finalize_column_rename :users, :name, :first_name
+              end
+            end
+
+          10. Deploy
+        MSG
+      ensure
+        ActiveRecord::Base.enumerate_columns_in_select_statements = previous
+      end
+    end
+
     class RenameColumnNewTable < TestMigration
       def change
         create_table :users_new do |t|

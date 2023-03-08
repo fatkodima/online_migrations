@@ -90,6 +90,14 @@ module OnlineMigrations
         end
       end
 
+      def ar_enumerate_columns_in_select_statements
+        if ar_version >= 7
+          ActiveRecord::Base.enumerate_columns_in_select_statements
+        else
+          false
+        end
+      end
+
       # Returns estimated rows count for a table.
       # https://www.citusdata.com/blog/2016/10/12/count-performance/
       def estimated_count(connection, table_name)

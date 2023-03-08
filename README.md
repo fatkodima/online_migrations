@@ -456,9 +456,27 @@ end
 ```
 
 4. Replace usages of the old column with a new column in the codebase
-5. Deploy
-6. Remove the column rename config from step 1
-7. Remove the VIEW created in step 3 and finally rename the column:
+5. If you enabled Active Record `enumerate_columns_in_select_statements` setting in your application
+  (is disabled by default in Active Record >= 7), then you need to ignore old column:
+
+  ```ruby
+  # For ActiveRecord 5+
+  class User < ApplicationRecord
+    self.ignored_columns = ["name"]
+  end
+
+  # For ActiveRecord < 5
+  class User < ActiveRecord::Base
+    def self.columns
+      super.reject { |c| c.name == "name" }
+    end
+  end
+  ```
+
+6. Deploy
+7. Remove the column rename config from step 1
+8. Remove the column ignore from step 5, if added
+9. Remove the VIEW created in step 3 and finally rename the column:
 
 ```ruby
 class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
@@ -468,7 +486,7 @@ class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.0]
 end
 ```
 
-8. Deploy
+10. Deploy
 
 ### Renaming a table
 

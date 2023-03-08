@@ -41,6 +41,11 @@ end
 # partial writes are enabled by default, no action from users will be needed.
 ActiveRecord::Base.public_send("#{OnlineMigrations::Utils.ar_partial_writes_setting}=", true)
 
+# Was added in https://github.com/rails/rails/pull/41718.
+if OnlineMigrations::Utils.ar_version >= 7
+  ActiveRecord::Base.enumerate_columns_in_select_statements = false # default in 7.0
+end
+
 def prepare_database
   connection = ActiveRecord::Base.connection
   connection.tables.each do |table_name|
