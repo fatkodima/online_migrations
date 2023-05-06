@@ -110,7 +110,11 @@ module SchemaStatements
 
       connection.add_foreign_key :milestones, :projects, deferrable: true
       fkey = connection.foreign_keys(:milestones).first
-      assert_equal true, fkey.deferrable # rubocop:disable Minitest/AssertTruthy
+      if ar_version >= 7.1
+        assert_equal :immediate, fkey.deferrable
+      else
+        assert_equal true, fkey.deferrable # rubocop:disable Minitest/AssertTruthy
+      end
       connection.remove_foreign_key :milestones, :projects
 
       connection.add_foreign_key :milestones, :projects, deferrable: :deferred

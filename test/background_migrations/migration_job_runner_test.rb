@@ -65,7 +65,7 @@ module BackgroundMigrations
 
       run_migration_job(job)
 
-      assert_equal RuntimeError, handled_error.class
+      assert_instance_of RuntimeError, handled_error
       assert_equal job, handled_job
     ensure
       OnlineMigrations.config.background_migrations.error_handler = previous_error_handler

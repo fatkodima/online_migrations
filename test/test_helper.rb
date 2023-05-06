@@ -26,8 +26,10 @@ else
 end
 
 # disallowed_warnings was added in ActiveRecord 6.1
-if OnlineMigrations::Utils.ar_version >= 6.1
-  # Disallow ActiveSupport deprecations sprouting from this gem
+# Disallow ActiveSupport deprecations sprouting from this gem
+if OnlineMigrations::Utils.ar_version >= 7.1
+  ActiveSupport::Deprecation._instance.disallowed_warnings = :all
+elsif OnlineMigrations::Utils.ar_version >= 6.1
   ActiveSupport::Deprecation.disallowed_warnings = :all
 end
 
