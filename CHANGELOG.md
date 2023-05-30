@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.7.3 (2023-05-30)
+
 - Fix removing columns having expression indexes on them
 
 ## 0.7.2 (2023-03-08)
