@@ -386,7 +386,13 @@ module OnlineMigrations
 
         if !new_table?(table_name)
           indexes = connection.indexes(table_name).select do |index|
-            (index.columns & columns).any?
+            case index.columns
+            when String
+              # Expression index
+              columns.any? { |column| index.columns.include?(column) }
+            else
+              (index.columns & columns).any?
+            end
           end
 
           raise_error :remove_column,

@@ -117,6 +117,23 @@ module CommandChecker
         "remove_index :users, name: :index_users_on_name_and_email, algorithm: :concurrently"
     end
 
+    class RemoveColumnWithExpressionIndex < TestMigration
+      def change
+        safety_assured do
+          add_index :users, "lower(email)", name: :index_users_on_lower_email
+        end
+
+        remove_column :users, :email
+      end
+    end
+
+    def test_remove_column_with_expression_index
+      skip("ActiveRecord < 5 does not support expression indexes") if ar_version < 5
+
+      assert_unsafe RemoveColumnWithExpressionIndex,
+        "remove_index :users, name: :index_users_on_lower_email, algorithm: :concurrently"
+    end
+
     def test_remove_column_with_index_small_table
       OnlineMigrations.config.small_tables = [:users]
 

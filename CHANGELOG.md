@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix removing columns having expression indexes on them
+
 ## 0.7.2 (2023-03-08)
 
 - Suggest additional steps for safely renaming a column if Active Record `enumerate_columns_in_select_statements`
