@@ -177,17 +177,23 @@ module OnlineMigrations
         default = options[:default]
         volatile_default = false
 
-        if !new_or_small_table?(table_name) && options.key?(:default) &&
-           (postgresql_version < Gem::Version.new("11") || (!default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))))
+        if !new_or_small_table?(table_name)
+          if options.key?(:default) &&
+             (postgresql_version < Gem::Version.new("11") || (!default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))))
 
-          if default.nil?
-            raise_error :add_column_with_default_null,
-              code: command_str(:add_column, table_name, column_name, type, options.except(:default))
-          else
-            raise_error :add_column_with_default,
-              code: command_str(:add_column_with_default, table_name, column_name, type, options),
-              not_null: options[:null] == false,
-              volatile_default: volatile_default
+            if default.nil?
+              raise_error :add_column_with_default_null,
+                code: command_str(:add_column, table_name, column_name, type, options.except(:default))
+            else
+              raise_error :add_column_with_default,
+                code: command_str(:add_column_with_default, table_name, column_name, type, options),
+                not_null: options[:null] == false,
+                volatile_default: volatile_default
+            end
+          end
+
+          if type == :virtual && options[:stored]
+            raise_error :add_column_generated_stored
           end
         end
 

@@ -6,7 +6,9 @@ module CommandChecker
   class AddColumnTest < MiniTest::Test
     def setup
       @connection = ActiveRecord::Base.connection
-      @connection.create_table(:users, force: :cascade)
+      @connection.create_table(:users, force: :cascade) do |t|
+        t.string :email
+      end
     end
 
     def teardown
@@ -237,6 +239,19 @@ module CommandChecker
 
     def test_add_column_with_default_jsonb
       assert_safe AddColumnWithDefaultJsonb
+    end
+
+    class AddColumnGeneratedStored < TestMigration
+      def change
+        add_column :users, :lower_email, :virtual, type: :string, as: "LOWER(email)", stored: true
+      end
+    end
+
+    def test_generated_stored
+      assert_unsafe AddColumnGeneratedStored, <<-MSG.strip_heredoc
+        Adding a stored generated column blocks reads and writes while the entire table is rewritten.
+        Add a non-generated column and use callbacks or triggers instead.
+      MSG
     end
   end
 end

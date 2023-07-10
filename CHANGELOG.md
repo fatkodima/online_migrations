@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add check for `add_column` with stored generated columns
+
 ## 0.7.3 (2023-05-30)
 
 - Fix removing columns having expression indexes on them

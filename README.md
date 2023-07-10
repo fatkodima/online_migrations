@@ -144,6 +144,7 @@ Potentially dangerous operations:
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding an exclusion constraint](#adding-an-exclusion-constraint)
 - [adding a json column](#adding-a-json-column)
+- [adding a stored generated column](#adding-a-stored-generated-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
 - [hash indexes](#hash-indexes)
 - [adding multiple foreign keys](#adding-multiple-foreign-keys)
@@ -899,6 +900,24 @@ class AddSettingsToProjects < ActiveRecord::Migration[7.0]
   end
 end
 ```
+
+### Adding a stored generated column
+
+:x: **Bad**
+
+Adding a stored generated column causes the entire table to be rewritten. During this time, reads and writes are blocked.
+
+```ruby
+class AddLowerEmailToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :lower_email, :virtual, type: :string, as: "LOWER(email)", stored: true
+  end
+end
+```
+
+:white_check_mark: **Good**
+
+Add a non-generated column and use callbacks or triggers instead.
 
 ### Using primary key with short integer type
 
