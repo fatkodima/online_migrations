@@ -173,8 +173,10 @@ module OnlineMigrations
       end
 
       def add_column(table_name, column_name, type, **options)
+        type = type.to_sym
         default = options[:default]
         volatile_default = false
+
         if !new_or_small_table?(table_name) && options.key?(:default) &&
            (postgresql_version < Gem::Version.new("11") || (!default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))))
 
@@ -201,6 +203,8 @@ module OnlineMigrations
       end
 
       def add_column_with_default(table_name, column_name, type, **options)
+        type = type.to_sym
+
         if type == :json
           raise_error :add_column_json,
             code: command_str(:add_column_with_default, table_name, column_name, :jsonb, options)
@@ -448,7 +452,7 @@ module OnlineMigrations
         end
 
         unless options[:polymorphic]
-          type = options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)
+          type = (options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)).to_sym
           column_name = "#{ref_name}_id"
 
           foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
