@@ -84,7 +84,7 @@ end
 # ...
 ```
 
-`enqueue_background_migration` accepts additional configuration options which controls how the background migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/online_migrations.rb) for the list of all available configuration options.
+`enqueue_background_migration` accepts additional configuration options which controls how the background migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/migration_helpers.rb) for the list of all available configuration options.
 
 ## Custom Background Migration Arguments
 
