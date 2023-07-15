@@ -430,6 +430,28 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
+      add_unique_key:
+"Adding a unique key blocks reads and writes while the underlying index is being built.
+A safer approach is to create a unique index first, and then create a unique key using that index.
+
+class <%= migration_name %>AddIndex < <%= migration_parent %>
+  disable_ddl_transaction!
+
+  def change
+    <%= add_index_code %>
+  end
+end
+
+class <%= migration_name %> < <%= migration_parent %>
+  def up
+    <%= add_code %>
+  end
+
+  def down
+    <%= remove_code %>
+  end
+end",
+
       validate_constraint:
 "Validating a constraint while holding heavy locks on tables is dangerous.
 Use disable_ddl_transaction! or a separate migration.",

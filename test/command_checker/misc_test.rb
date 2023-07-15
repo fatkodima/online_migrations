@@ -7,6 +7,7 @@ module CommandChecker
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade) do |t|
+        t.string :email
         t.decimal :credit_score, precision: 10, scale: 5
       end
 
@@ -317,6 +318,56 @@ module CommandChecker
 
     def test_execute_query_safety_assured
       assert_safe ExecuteQuerySafetyAssured
+    end
+
+    class AddUniqueKey < TestMigration
+      def change
+        add_unique_key :users, :email, name: "unique_email"
+      end
+    end
+
+    def test_add_unique_key
+      skip if ar_version < 7.1
+
+      assert_unsafe AddUniqueKey, <<-MSG.strip_heredoc
+        Adding a unique key blocks reads and writes while the underlying index is being built.
+        A safer approach is to create a unique index first, and then create a unique key using that index.
+
+        class CommandChecker::MiscTest::AddUniqueKeyAddIndex < #{migration_parent_string}
+          disable_ddl_transaction!
+
+          def change
+            add_index :users, :email, unique: true, name: "index_users_on_email", algorithm: :concurrently
+          end
+        end
+
+        class CommandChecker::MiscTest::AddUniqueKey < #{migration_parent_string}
+          def up
+            add_unique_key :users, name: "unique_email", using_index: "index_users_on_email"
+          end
+
+          def down
+            remove_unique_key :users, :email
+          end
+        end
+      MSG
+    end
+
+    class AddUniqueKeyUsingIndex < TestMigration
+      def up
+        add_unique_key :users, using_index: "index_users_on_email"
+      end
+
+      def down
+        remove_unique_key :users, :email
+      end
+    end
+
+    def test_add_unique_key_using_index
+      skip if ar_version < 7.1
+
+      @connection.add_index(:users, :email, unique: true, name: "index_users_on_email")
+      assert_safe AddUniqueKeyUsingIndex
     end
 
     class AddNotNullConstraint < TestMigration

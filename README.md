@@ -143,6 +143,7 @@ Potentially dangerous operations:
 - [adding a reference](#adding-a-reference)
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding an exclusion constraint](#adding-an-exclusion-constraint)
+- [adding a unique key](#adding-a-unique-key)
 - [adding a json column](#adding-a-json-column)
 - [adding a stored generated column](#adding-a-stored-generated-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
@@ -874,6 +875,46 @@ end
 :white_check_mark: **Good**
 
 [Let us know](https://github.com/fatkodima/online_migrations/issues/new) if you have a safe way to do this (exclusion constraints cannot be marked `NOT VALID`).
+
+### Adding a unique key
+
+:x: **Bad**
+
+Adding a unique key blocks reads and writes while the underlying index is being built.
+
+```ruby
+class AddUniqueKey < ActiveRecord::Migration[7.1]
+  def change
+    add_unique_key :sections, :position, deferrable: :deferred
+  end
+end
+```
+
+:white_check_mark: **Good**
+
+A safer approach is to create a unique index first, and then create a unique key using that index.
+
+```ruby
+class AddUniqueKeyAddIndex < ActiveRecord::Migration[7.1]
+  disable_ddl_transaction!
+
+  def change
+    add_index :sections, :position, unique: true, name: "index_sections_on_position", algorithm: :concurrently
+  end
+end
+```
+
+```ruby
+class AddUniqueKey < ActiveRecord::Migration[7.1]
+  def up
+    add_unique_key :sections, :position, deferrable: :deferred, using_index: "index_sections_on_position"
+  end
+
+  def down
+    remove_unique_key :sections, :position
+  end
+end
+```
 
 ### Adding a json column
 
