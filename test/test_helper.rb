@@ -25,7 +25,7 @@ else
   ActiveRecord::Migration.verbose = false
 end
 
-# disallowed_warnings was added in ActiveRecord 6.1
+# disallowed_warnings was added in Active Record 6.1
 # Disallow ActiveSupport deprecations sprouting from this gem
 if OnlineMigrations::Utils.ar_version >= 7.1
   ActiveSupport::Deprecation._instance.disallowed_warnings = :all
@@ -73,7 +73,7 @@ OnlineMigrations.configure do |config|
   config.background_migrations.batch_pause = 0.seconds
   config.background_migrations.sub_batch_pause_ms = 0
 
-  # ActiveRecord 5.1 changed the default primary and foreign key type to bigint.
+  # Active Record 5.1 changed the default primary and foreign key type to bigint.
   # In order to avoid specifying explicitly primary key types in migrations in tests,
   # disable this check and enable only where necessary.
   config.disable_check(:short_primary_key_type)

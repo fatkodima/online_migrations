@@ -102,7 +102,7 @@ module OnlineMigrations
           if Utils.ar_version <= 5.2
             columns_and_values.map do |(column_name, value)|
               rhs =
-                # ActiveRecord <= 5.2 can't quote these - we need to handle these cases manually
+                # Active Record <= 5.2 can't quote these - we need to handle these cases manually
                 case value
                 when Arel::Attributes::Attribute
                   quote_column_name(value.name)
@@ -138,7 +138,7 @@ module OnlineMigrations
     # The technique is built on top of database views, using the following steps:
     #   1. Rename the table to some temporary name
     #   2. Create a VIEW using the old table name with addition of a new column as an alias of the old one
-    #   3. Add a workaround for ActiveRecord's schema cache
+    #   3. Add a workaround for Active Record's schema cache
     #
     # For example, to rename `name` column to `first_name` of the `users` table, we can run:
     #
@@ -149,9 +149,9 @@ module OnlineMigrations
     #
     # As database views do not expose the underlying table schema (default values, not null constraints,
     # indexes, etc), further steps are needed to update the application to use the new table name.
-    # ActiveRecord heavily relies on this data, for example, to initialize new models.
+    # Active Record heavily relies on this data, for example, to initialize new models.
     #
-    # To work around this limitation, we need to tell ActiveRecord to acquire this information
+    # To work around this limitation, we need to tell Active Record to acquire this information
     # from original table using the new table name (see notes).
     #
     # @param table_name [String, Symbol] table name
@@ -165,7 +165,7 @@ module OnlineMigrations
     #
     # @note
     #   Prior to using this method, you need to register the database table so that
-    #   it instructs ActiveRecord to fetch the database table information (for SchemaCache)
+    #   it instructs Active Record to fetch the database table information (for SchemaCache)
     #   using the original table name (if it's present). Otherwise, fall back to the old table name:
     #
     #   ```OnlineMigrations.config.column_renames[table_name] = { old_column_name => new_column_name }```
@@ -298,7 +298,7 @@ module OnlineMigrations
     # The technique is built on top of database views, using the following steps:
     #   1. Rename the database table
     #   2. Create a database view using the old table name by pointing to the new table name
-    #   3. Add a workaround for ActiveRecord's schema cache
+    #   3. Add a workaround for Active Record's schema cache
     #
     # For example, to rename `clients` table name to `users`, we can run:
     #
@@ -309,9 +309,9 @@ module OnlineMigrations
     #
     # As database views do not expose the underlying table schema (default values, not null constraints,
     # indexes, etc), further steps are needed to update the application to use the new table name.
-    # ActiveRecord heavily relies on this data, for example, to initialize new models.
+    # Active Record heavily relies on this data, for example, to initialize new models.
     #
-    # To work around this limitation, we need to tell ActiveRecord to acquire this information
+    # To work around this limitation, we need to tell Active Record to acquire this information
     # from original table using the new table name (see notes).
     #
     # @param table_name [String, Symbol]
@@ -324,7 +324,7 @@ module OnlineMigrations
     #
     # @note
     #   Prior to using this method, you need to register the database table so that
-    #   it instructs ActiveRecord to fetch the database table information (for SchemaCache)
+    #   it instructs Active Record to fetch the database table information (for SchemaCache)
     #   using the new table name (if it's present). Otherwise, fall back to the old table name:
     #
     #   ```
@@ -638,7 +638,7 @@ module OnlineMigrations
 
     # Adds a reference to the table with minimal locking
     #
-    # ActiveRecord adds an index non-`CONCURRENTLY` to references by default, which blocks writes.
+    # Active Record adds an index non-`CONCURRENTLY` to references by default, which blocks writes.
     # It also adds a validated foreign key by default, which blocks writes on both tables while
     # validating existing rows.
     #
@@ -730,7 +730,7 @@ module OnlineMigrations
       end
     end
 
-    # Extends default method to be idempotent and accept `:algorithm` option for ActiveRecord <= 4.2.
+    # Extends default method to be idempotent and accept `:algorithm` option for Active Record <= 4.2.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_index
     #
@@ -760,7 +760,7 @@ module OnlineMigrations
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
 
-          # ActiveRecord <= 4.2 does not support removing indexes concurrently
+          # Active Record <= 4.2 does not support removing indexes concurrently
           if Utils.ar_version <= 4.2 && algorithm == :concurrently
             execute("DROP INDEX CONCURRENTLY #{quote_table_name(index_name)}")
           else
@@ -773,7 +773,7 @@ module OnlineMigrations
       end
     end
 
-    # Extends default method to be idempotent and accept `:validate` option for ActiveRecord < 5.2.
+    # Extends default method to be idempotent and accept `:validate` option for Active Record < 5.2.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key
     #
@@ -785,7 +785,7 @@ module OnlineMigrations
 
         Utils.say(message)
       else
-        # ActiveRecord >= 5.2 supports adding non-validated foreign keys natively
+        # Active Record >= 5.2 supports adding non-validated foreign keys natively
         options = options.dup
         options[:column] ||= "#{to_table.to_s.singularize}_id"
         options[:primary_key] ||= "id"
@@ -812,7 +812,7 @@ module OnlineMigrations
     # Extends default method with disabled statement timeout while validation is run
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_foreign_key
-    # @note This method was added in ActiveRecord 5.2
+    # @note This method was added in Active Record 5.2
     #
     def validate_foreign_key(from_table, to_table = nil, **options)
       fk_name_to_validate = __foreign_key_for!(from_table, to_table: to_table, **options).name
@@ -835,7 +835,7 @@ module OnlineMigrations
     # Extends default method to be idempotent
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
-    # @note This method was added in ActiveRecord 6.1
+    # @note This method was added in Active Record 6.1
     #
     def add_check_constraint(table_name, expression, validate: true, **options)
       constraint_name = __check_constraint_name(table_name, expression: expression, **options)
@@ -857,7 +857,7 @@ module OnlineMigrations
     # Extends default method with disabled statement timeout while validation is run
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_check_constraint
-    # @note This method was added in ActiveRecord 6.1
+    # @note This method was added in Active Record 6.1
     #
     def validate_check_constraint(table_name, **options)
       constraint_name = __check_constraint_name!(table_name, **options)
@@ -878,7 +878,7 @@ module OnlineMigrations
 
     if Utils.ar_version < 6.1
       # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
-      # @note This method was added in ActiveRecord 6.1
+      # @note This method was added in Active Record 6.1
       #
       def remove_check_constraint(table_name, expression = nil, **options)
         constraint_name = __check_constraint_name!(table_name, expression: expression, **options)
@@ -963,7 +963,7 @@ module OnlineMigrations
 
     private
       # Private methods are prefixed with `__` to avoid clashes with existing or future
-      # ActiveRecord methods
+      # Active Record methods
       def __ensure_not_in_transaction!(method_name = caller[0])
         if transaction_open?
           raise <<-MSG.strip_heredoc
@@ -1016,7 +1016,7 @@ module OnlineMigrations
       end
 
       def __index_valid?(index_name, schema:)
-        # ActiveRecord <= 4.2 returns a string, instead of automatically casting to boolean
+        # Active Record <= 4.2 returns a string, instead of automatically casting to boolean
         valid = select_value <<-SQL.strip_heredoc
           SELECT indisvalid
           FROM pg_index i

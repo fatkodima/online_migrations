@@ -74,7 +74,7 @@ module CommandChecker
     end
 
     def test_drop_table_self_referencing_foreign_key
-      # This is not working in ActiveRecord 4.2 - add_reference ignores :to_table option
+      # This is not working in Active Record 4.2 - add_reference ignores :to_table option
       # @connection.add_reference :repositories, :forked_repository, foreign_key: { to_table: :repositories }
 
       @connection.add_column :repositories, :forked_repository_id, :integer

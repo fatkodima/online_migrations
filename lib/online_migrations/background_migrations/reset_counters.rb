@@ -41,7 +41,7 @@ module OnlineMigrations
           names = Array.wrap(names)
           options = names.extract_options!
           touch_updates = touch_attributes_with_time(*names, **options)
-          # In ActiveRecord 4.2 sanitize_sql_for_assignment is protected
+          # In Active Record 4.2 sanitize_sql_for_assignment is protected
           updates << model.send(:sanitize_sql_for_assignment, touch_updates)
         end
 
@@ -65,7 +65,7 @@ module OnlineMigrations
             has_many_association = has_many.find do |association|
               counter_cache_column = association.counter_cache_column
 
-              # ActiveRecord <= 4.2 is able to return only explicitly provided `counter_cache` column.
+              # Active Record <= 4.2 is able to return only explicitly provided `counter_cache` column.
               if !counter_cache_column && Utils.ar_version <= 4.2
                 counter_cache_column = "#{association.name}_count"
               end

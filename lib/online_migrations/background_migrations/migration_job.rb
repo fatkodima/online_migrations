@@ -12,7 +12,7 @@ module OnlineMigrations
 
       self.table_name = :background_migration_jobs
 
-      # For ActiveRecord <= 4.2 needs to fully specify enum values
+      # For Active Record <= 4.2 needs to fully specify enum values
       scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
       scope :completed, -> { where(status: [statuses[:failed], statuses[:succeeded]]) }
       scope :stuck, -> do
@@ -45,7 +45,7 @@ module OnlineMigrations
 
       belongs_to :migration
 
-      # For ActiveRecord 5.0+ this is validated by default from belongs_to
+      # For Active Record 5.0+ this is validated by default from belongs_to
       validates :migration, presence: true
 
       validates :min_value, :max_value, presence: true, numericality: { greater_than: 0 }

@@ -33,7 +33,7 @@ module CommandChecker
     def test_remove_column
       if ar_version >= 5
         assert_unsafe RemoveColumn, <<-MSG.strip_heredoc
-          ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
+          Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
           A safer approach is to:
 
           1. Ignore the column(s):
@@ -128,7 +128,7 @@ module CommandChecker
     end
 
     def test_remove_column_with_expression_index
-      skip("ActiveRecord < 5 does not support expression indexes") if ar_version < 5
+      skip("Active Record < 5 does not support expression indexes") if ar_version < 5
 
       assert_unsafe RemoveColumnWithExpressionIndex,
         "remove_index :users, name: :index_users_on_lower_email, algorithm: :concurrently"
@@ -137,7 +137,7 @@ module CommandChecker
     def test_remove_column_with_index_small_table
       OnlineMigrations.config.small_tables = [:users]
 
-      assert_unsafe RemoveColumnWithIndex, "ActiveRecord caches database columns at runtime"
+      assert_unsafe RemoveColumnWithIndex, "Active Record caches database columns at runtime"
     ensure
       OnlineMigrations.config.small_tables.clear
     end

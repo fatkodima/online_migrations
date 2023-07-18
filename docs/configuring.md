@@ -114,7 +114,7 @@ To mark migrations as safe that were created before installing this gem, configu
 
 config.start_after = 20220101000000
 
-# or if you use multiple databases (ActiveRecord 6+)
+# or if you use multiple databases (Active Record 6+)
 config.start_after = { primary: 20211112000000, animals: 20220101000000 }
 ```
 
@@ -129,7 +129,7 @@ If your development database version is different from production, you can speci
 
 config.target_version = 10 # or "12.9" etc
 
-# or if you use multiple databases (ActiveRecord 6+)
+# or if you use multiple databases (Active Record 6+)
 config.target_version = { primary: 10, animals: 14.1 }
 ```
 

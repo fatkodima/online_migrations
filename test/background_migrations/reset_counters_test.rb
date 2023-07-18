@@ -141,7 +141,7 @@ module BackgroundMigrations
 
       @user1.reload
 
-      # For ActiveRecord 4.2 need to call to_i for correct comparison
+      # For Active Record 4.2 need to call to_i for correct comparison
       assert_equal time.to_i, @user1.updated_at.to_i
     end
 

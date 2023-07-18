@@ -139,7 +139,7 @@ module OnlineMigrations
         # rubocop:disable Lint/UnreachableLoop
         iterator.each_batch(of: batch_size, column: batch_column_name, start: next_min_value) do |relation|
           if Utils.ar_version <= 4.2
-            # ActiveRecord <= 4.2 does not support pluck with Arel nodes
+            # Active Record <= 4.2 does not support pluck with Arel nodes
             quoted_column = self.class.connection.quote_column_name(batch_column_name)
             batch_range = relation.pluck("MIN(#{quoted_column}), MAX(#{quoted_column})").first
           else

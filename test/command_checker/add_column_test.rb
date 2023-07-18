@@ -79,7 +79,7 @@ module CommandChecker
 
     class AddColumnVolatileUuidDefault < TestMigration
       def change
-        # NOTE: ActiveRecord accepts non-block (string) version for uuid
+        # NOTE: Active Record accepts non-block (string) version for uuid
         add_column :users, :uuid_column, :uuid, default: "gen_random_uuid()"
       end
     end
@@ -158,7 +158,7 @@ module CommandChecker
     class AddColumnDefaultSafe < TestMigration
       def up
         add_column :users, :admin, :boolean
-        # ActiveRecord <= 4.2 does not support reversible change_column_default,
+        # Active Record <= 4.2 does not support reversible change_column_default,
         # so needs to split to up/down methods
         change_column_default :users, :admin, false
       end

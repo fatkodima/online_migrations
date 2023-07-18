@@ -43,7 +43,7 @@ module OnlineMigrations
           old_value = arel_table[from_column]
           if (type_cast_function = type_cast_functions[from_column])
             if Utils.ar_version <= 5.2
-              # ActiveRecord <= 5.2 does not support quoting of Arel::Nodes::NamedFunction
+              # Active Record <= 5.2 does not support quoting of Arel::Nodes::NamedFunction
               old_value = Arel.sql("#{type_cast_function}(#{connection.quote_column_name(from_column)})")
             else
               old_value = Arel::Nodes::NamedFunction.new(type_cast_function, [old_value])

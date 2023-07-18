@@ -191,7 +191,7 @@ module OnlineMigrations
       # @see https://api.rubyonrails.org/classes/ActiveRecord/CounterCache/ClassMethods.html#method-i-reset_counters
       #
       # @note This method is better suited for large tables (10/100s of millions of records).
-      #     For smaller tables it is probably better and easier to use `reset_counters` from the ActiveRecord.
+      #     For smaller tables it is probably better and easier to use `reset_counters` from the Active Record.
       #
       def reset_counters_in_background(model_name, *counters, touch: nil, **options)
         model_name = model_name.name if model_name.is_a?(Class)
@@ -224,7 +224,7 @@ module OnlineMigrations
       #
       def delete_orphaned_records_in_background(model_name, *associations, **options)
         if Utils.ar_version <= 4.2
-          raise "#{__method__} does not support ActiveRecord <= 4.2 yet"
+          raise "#{__method__} does not support Active Record <= 4.2 yet"
         end
 
         model_name = model_name.name if model_name.is_a?(Class)

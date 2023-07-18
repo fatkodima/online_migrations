@@ -73,16 +73,16 @@ module OnlineMigrations
       def duplicate_column(old_column_name, new_column_name, columns)
         old_column = columns.find { |column| column.name == old_column_name }
         new_column = old_column.dup
-        # ActiveRecord defines only reader for :name
+        # Active Record defines only reader for :name
         new_column.instance_variable_set(:@name, new_column_name)
-        # Correspond to the ActiveRecord freezing of each column
+        # Correspond to the Active Record freezing of each column
         columns << new_column.freeze
       end
   end
 
   # @private
   module SchemaCache7
-    # ActiveRecord >= 7.1 changed signature of the methods,
+    # Active Record >= 7.1 changed signature of the methods,
     # see https://github.com/rails/rails/pull/48716.
     def primary_keys(connection, table_name)
       if (renamed_table = renamed_table?(connection, table_name))
@@ -154,9 +154,9 @@ module OnlineMigrations
       def duplicate_column(old_column_name, new_column_name, columns)
         old_column = columns.find { |column| column.name == old_column_name }
         new_column = old_column.dup
-        # ActiveRecord defines only reader for :name
+        # Active Record defines only reader for :name
         new_column.instance_variable_set(:@name, new_column_name)
-        # Correspond to the ActiveRecord freezing of each column
+        # Correspond to the Active Record freezing of each column
         columns << new_column.freeze
       end
   end

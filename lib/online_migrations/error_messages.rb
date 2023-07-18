@@ -291,7 +291,7 @@ class <%= migration_name %>RemoveIndexes < <%= migration_parent %>
   end
 end
 <% else %>
-ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
+Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
 A safer approach is to:
 
 1. Ignore the column(s):

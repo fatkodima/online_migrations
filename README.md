@@ -159,7 +159,7 @@ You can also add [custom checks](#custom-checks) or [disable specific checks](#d
 
 :x: **Bad**
 
-ActiveRecord caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
+Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
 
 ```ruby
 class RemoveNameFromUsers < ActiveRecord::Migration[7.0]
@@ -174,12 +174,12 @@ end
 1. Ignore the column:
 
   ```ruby
-  # For ActiveRecord 5+
+  # For Active Record 5+
   class User < ApplicationRecord
     self.ignored_columns = ["name"]
   end
 
-  # For ActiveRecord < 5
+  # For Active Record < 5
   class User < ActiveRecord::Base
     def self.columns
       super.reject { |c| c.name == "name" }
@@ -243,7 +243,7 @@ end
 
 :x: **Bad**
 
-ActiveRecord wraps each migration in a transaction, and backfilling in the same transaction that alters a table keeps the table locked for the [duration of the backfill](https://wework.github.io/data/2015/11/05/add-columns-with-default-values-to-large-tables-in-rails-postgres/).
+Active Record wraps each migration in a transaction, and backfilling in the same transaction that alters a table keeps the table locked for the [duration of the backfill](https://wework.github.io/data/2015/11/05/add-columns-with-default-values-to-large-tables-in-rails-postgres/).
 
 ```ruby
 class AddAdminToUsers < ActiveRecord::Migration[7.0]
@@ -407,7 +407,7 @@ The technique is built on top of database views, using the following steps:
 
 1. Rename the table to some temporary name
 2. Create a VIEW using the old table name with addition of a new column as an alias of the old one
-3. Add a workaround for ActiveRecord's schema cache
+3. Add a workaround for Active Record's schema cache
 
 For the previous example, to rename `name` column to `first_name` of the `users` table, we can run:
 
@@ -418,9 +418,9 @@ CREATE VIEW users AS SELECT *, first_name AS name FROM users_column_rename;
 COMMIT;
 ```
 
-As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. ActiveRecord heavily relies on this data, for example, to initialize new models.
+As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. Active Record heavily relies on this data, for example, to initialize new models.
 
-To work around this limitation, we need to tell ActiveRecord to acquire this information from original table using the new table name.
+To work around this limitation, we need to tell Active Record to acquire this information from original table using the new table name.
 
 **Online Migrations** provides several helpers to implement column renaming:
 
@@ -462,12 +462,12 @@ end
   (is disabled by default in Active Record >= 7), then you need to ignore old column:
 
   ```ruby
-  # For ActiveRecord 5+
+  # For Active Record 5+
   class User < ApplicationRecord
     self.ignored_columns = ["name"]
   end
 
-  # For ActiveRecord < 5
+  # For Active Record < 5
   class User < ActiveRecord::Base
     def self.columns
       super.reject { |c| c.name == "name" }
@@ -523,7 +523,7 @@ The technique is built on top of database views, using the following steps:
 
 1. Rename the database table
 2. Create a VIEW using the old table name by pointing to the new table name
-3. Add a workaround for ActiveRecord's schema cache
+3. Add a workaround for Active Record's schema cache
 
 For the previous example, to rename `name` column to `first_name` of the `users` table, we can run:
 
@@ -534,9 +534,9 @@ CREATE VIEW clients AS SELECT * FROM users;
 COMMIT;
 ```
 
-As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. ActiveRecord heavily relies on this data, for example, to initialize new models.
+As database views do not expose the underlying table schema (default values, not null constraints, indexes, etc), further steps are needed to update the application to use the new table name. Active Record heavily relies on this data, for example, to initialize new models.
 
-To work around this limitation, we need to tell ActiveRecord to acquire this information from original table using the new table name.
+To work around this limitation, we need to tell Active Record to acquire this information from original table using the new table name.
 
 **Online Migrations** provides several helpers to implement table renaming:
 
@@ -964,7 +964,7 @@ Add a non-generated column and use callbacks or triggers instead.
 
 :x: **Bad**
 
-When using short integer types as primary key types, [there is a risk](https://m.signalvnoise.com/update-on-basecamp-3-being-stuck-in-read-only-as-of-nov-8-922am-cst/) of running out of IDs on inserts. The default type in ActiveRecord < 5.1 for primary and foreign keys is `INTEGER`, which allows a little over of 2 billion records. Active Record 5.1 changed the default type to `BIGINT`.
+When using short integer types as primary key types, [there is a risk](https://m.signalvnoise.com/update-on-basecamp-3-being-stuck-in-read-only-as-of-nov-8-922am-cst/) of running out of IDs on inserts. The default type in Active Record < 5.1 for primary and foreign keys is `INTEGER`, which allows a little over of 2 billion records. Active Record 5.1 changed the default type to `BIGINT`.
 
 ```ruby
 class CreateUsers < ActiveRecord::Migration[7.0]
@@ -1154,12 +1154,12 @@ A safer approach is to:
 1. ignore the column:
 
   ```ruby
-  # For ActiveRecord 5+
+  # For Active Record 5+
   class User < ApplicationRecord
     self.ignored_columns = ["type"]
   end
 
-  # For ActiveRecord < 5
+  # For Active Record < 5
   class User < ActiveRecord::Base
     def self.columns
       super.reject { |c| c.name == "type" }
@@ -1203,7 +1203,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/fatkod
 
 ## Development
 
-After checking out the repo, run `bundle install` to install dependencies. Run `createdb online_migrations_test` to create a test database. Then, run `bundle exec rake test` to run the tests. This project uses multiple Gemfiles to test against multiple versions of ActiveRecord; you can run the tests against the specific version with `BUNDLE_GEMFILE=gemfiles/activerecord_61.gemfile bundle exec rake test`.
+After checking out the repo, run `bundle install` to install dependencies. Run `createdb online_migrations_test` to create a test database. Then, run `bundle exec rake test` to run the tests. This project uses multiple Gemfiles to test against multiple versions of Active Record; you can run the tests against the specific version with `BUNDLE_GEMFILE=gemfiles/activerecord_61.gemfile bundle exec rake test`.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 

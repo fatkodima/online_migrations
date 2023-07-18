@@ -502,7 +502,7 @@ module CommandChecker
         if OnlineMigrations::Utils.ar_version >= 6.1
           add_column :files, :delete_after, :interval, precision: 0
         else
-          # precision is ignored for add_column and interval in ActiveRecord < 6.1
+          # precision is ignored for add_column and interval in Active Record < 6.1
           safety_assured { execute('ALTER TABLE "files" ADD COLUMN "delete_after" interval(0)') }
         end
 

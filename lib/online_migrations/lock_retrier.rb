@@ -96,7 +96,7 @@ module OnlineMigrations
         else
           yield
         end
-      # ActiveRecord::LockWaitTimeout can be used for ActiveRecord 5.2+
+      # ActiveRecord::LockWaitTimeout can be used for Active Record 5.2+
       rescue ActiveRecord::StatementInvalid => e
         if lock_timeout_error?(e) && current_attempt <= attempts
           current_delay = delay(current_attempt)

@@ -566,7 +566,7 @@ module OnlineMigrations
           remove_code: command_str(:remove_unique_key, table_name, column_name)
       end
 
-      # Implementation is from ActiveRecord
+      # Implementation is from Active Record
       def index_name(table_name, column_name)
         max_index_name_size = 62
         name = "index_#{table_name}_on_#{Array(column_name) * '_and_'}"
@@ -805,7 +805,7 @@ module OnlineMigrations
         connection.columns(table_name).find { |column| column.name == column_name.to_s }
       end
 
-      # From ActiveRecord
+      # From Active Record
       def derive_join_table_name(table1, table2)
         [table1.to_s, table2.to_s].sort.join("\0").gsub(/^(.*_)(.+)\0\1(.+)/, '\1\2_\3').tr("\0", "_")
       end
