@@ -13,6 +13,7 @@ module OnlineMigrations
       @migration = migration
       @safe = false
       @new_tables = []
+      @new_columns = []
       @lock_timeout_checked = false
       @foreign_key_tables = Set.new
       @removed_indexes = []
@@ -116,7 +117,13 @@ module OnlineMigrations
           check_columns_removal(command, *args, **options)
         else
           if respond_to?(command, true)
-            send(command, *args, **options, &block)
+            if options.any?
+              # Workaround for Active Record < 5 change_column_default
+              # not accepting options.
+              send(command, *args, **options, &block)
+            else
+              send(command, *args, &block)
+            end
           else
             # assume it is safe
             true
@@ -176,6 +183,9 @@ module OnlineMigrations
         type = type.to_sym
         default = options[:default]
         volatile_default = false
+
+        # Keep track of new columns for change_column_default check.
+        @new_columns << [table_name.to_s, column_name.to_s]
 
         if !new_or_small_table?(table_name)
           if options.key?(:default) &&
@@ -343,6 +353,13 @@ module OnlineMigrations
         end
       end
 
+      def change_column_default(table_name, column_name, _default_or_changes)
+        if Utils.ar_partial_writes? && !new_column?(table_name, column_name)
+          raise_error :change_column_default,
+            config: Utils.ar_partial_writes_setting
+        end
+      end
+
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
         if !allow_null && !new_or_small_table?(table_name)
           safe = false
@@ -416,6 +433,9 @@ module OnlineMigrations
       end
 
       def add_timestamps(table_name, **options)
+        @new_columns << [table_name.to_s, "created_at"]
+        @new_columns << [table_name.to_s, "updated_at"]
+
         volatile_default = false
         if !new_or_small_table?(table_name) && !options[:default].nil? &&
            (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, :datetime, options[:default])))
@@ -654,6 +674,10 @@ module OnlineMigrations
 
       def new_table?(table_name)
         @new_tables.include?(table_name.to_s)
+      end
+
+      def new_column?(table_name, column_name)
+        new_table?(table_name) || @new_columns.include?([table_name.to_s, column_name.to_s])
       end
 
       def small_table?(table_name)

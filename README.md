@@ -153,6 +153,10 @@ Potentially dangerous operations:
 - [mismatched reference column types](#mismatched-reference-column-types)
 - [adding a single table inheritance column](#adding-a-single-table-inheritance-column)
 
+Config-specific checks:
+
+- [changing the default value of a column](#changing-the-default-value-of-a-column)
+
 You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
 
 ### Removing a column
@@ -1170,6 +1174,36 @@ A safer approach is to:
 2. deploy
 3. remove the column ignoring from step 1 and apply initial code changes
 4. deploy
+
+### Changing the default value of a column
+
+:x: **Bad**
+
+Active Record < 7 enables partial writes by default, which can cause incorrect values to be inserted when changing the default value of a column.
+
+```ruby
+class ChangeSomeColumnDefault < ActiveRecord::Migration[7.0]
+  def change
+    change_column_default :users, :some_column, from: "old", to: "new"
+  end
+end
+
+User.create!(some_column: "old") # can insert "new"
+```
+
+:white_check_mark: **Good**
+
+Disable partial writes in `config/application.rb`. For Active Record < 7, use:
+
+```ruby
+config.active_record.partial_writes = false
+```
+
+For Active Record 7, use:
+
+```ruby
+config.active_record.partial_inserts = false
+```
 
 ## Assuring Safety
 

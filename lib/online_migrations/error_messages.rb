@@ -248,6 +248,13 @@ which will be passed to `add_column` when creating a new column, so you can over
 
 6. Deploy",
 
+      change_column_default:
+"Partial writes are enabled, which can cause incorrect values
+to be inserted when changing the default value of a column.
+Disable partial writes in config/application.rb:
+
+config.active_record.<%= config %> = false",
+
       change_column_null:
 "Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
 A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
