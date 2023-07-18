@@ -100,6 +100,11 @@ module MinitestHelpers
     OnlineMigrations.config.target_version = prev
   end
 
+  def with_partial_writes(value, &block)
+    setting = OnlineMigrations::Utils.ar_partial_writes_setting
+    ActiveRecord::Base.stub(setting, value, &block)
+  end
+
   def with_postgres(major_version, &block)
     pg_connection = ActiveRecord::Base.connection.raw_connection
     pg_connection.stub(:server_version, major_version * 1_00_00, &block)

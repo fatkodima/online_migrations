@@ -197,11 +197,20 @@ module CommandChecker
     end
 
     def test_rename_column_without_partial_writes
-      without_partial_writes do
+      with_partial_writes(false) do
         assert_unsafe RenameColumn, <<-MSG.strip_heredoc
-          NOTE: You also need to temporarily enable partial writes until the process of column rename is fully done.
-          # config/application.rb
-          config.active_record.#{OnlineMigrations::Utils.ar_partial_writes_setting} = true
+          1. Instruct Rails that you are going to rename a column:
+
+            OnlineMigrations.config.column_renames = {
+              "users" => {
+                "name" => "first_name"
+              }
+            }
+
+            NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
+            until the process of column rename is fully done.
+            # config/application.rb
+            config.active_record.#{OnlineMigrations::Utils.ar_partial_writes_setting} = true
         MSG
       end
     end
@@ -523,13 +532,5 @@ module CommandChecker
 
       assert_safe AddExclusionConstraintNewTable
     end
-
-    private
-      def without_partial_writes
-        setting = OnlineMigrations::Utils.ar_partial_writes_setting
-        ActiveRecord::Base.public_send("#{setting}=", false)
-      ensure
-        ActiveRecord::Base.public_send("#{setting}=", true)
-      end
   end
 end

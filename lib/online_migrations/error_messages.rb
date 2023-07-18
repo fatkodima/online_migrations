@@ -135,6 +135,7 @@ migration_helpers provides a safer approach to do this:
     }
   }
 <% unless partial_writes %>
+
   NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
   until the process of column rename is fully done.
   # config/application.rb
