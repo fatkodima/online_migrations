@@ -22,8 +22,12 @@ module OnlineMigrations
   autoload :IndexDefinition
   autoload :IndexesCollector
   autoload :CommandChecker
-  autoload :SchemaCache
   autoload :BackgroundMigration
+
+  autoload_at "online_migrations/schema_cache" do
+    autoload :SchemaCache
+    autoload :SchemaCache7
+  end
 
   autoload_at "online_migrations/lock_retrier" do
     autoload :LockRetrier
@@ -79,8 +83,13 @@ module OnlineMigrations
       ActiveRecord::Migrator.prepend(OnlineMigrations::Migrator)
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
-      ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
       ActiveRecord::Migration::CommandRecorder.include(OnlineMigrations::CommandRecorder)
+
+      if OnlineMigrations::Utils.ar_version >= 7.1
+        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache7)
+      else
+        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
+      end
 
       if OnlineMigrations::Utils.ar_version <= 5.1
         ActiveRecord::ConnectionAdapters::ForeignKeyDefinition.prepend(OnlineMigrations::ForeignKeyDefinition)
