@@ -47,6 +47,7 @@ module OnlineMigrations
           record(:"#{method}", args, &block)  #   record(:create_table, args, &block)
         end                                   # end
       RUBY
+      ruby2_keywords(method) if respond_to?(:ruby2_keywords, true)
     end
 
     private
@@ -130,28 +131,21 @@ module OnlineMigrations
       end
 
       def invert_add_not_null_constraint(args)
-        options = args.extract_options!
-        table_name, column = args
-        options.delete(:validate)
-        [:remove_not_null_constraint, [table_name, column, **options]]
+        args.last.delete(:validate) if args.last.is_a?(Hash)
+        [:remove_not_null_constraint, args]
       end
 
       def invert_add_text_limit_constraint(args)
-        options = args.extract_options!
-        table_name, column, _limit = args
-        options.delete(:validate)
-        [:remove_text_limit_constraint, [table_name, column, **options]]
+        args.last.delete(:validate) if args.last.is_a?(Hash)
+        [:remove_text_limit_constraint, args]
       end
 
       def invert_remove_text_limit_constraint(args)
-        options = args.extract_options!
-        table_name, column, limit = args
-
-        unless limit
+        unless args[2]
           raise ActiveRecord::IrreversibleMigration, "remove_text_limit_constraint is only reversible if given a limit."
         end
 
-        [:add_text_limit_constraint, [table_name, column, limit, **options]]
+        [:add_text_limit_constraint, args]
       end
   end
 end

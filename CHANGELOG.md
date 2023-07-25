@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix reverting adding/removing not null and text limit constraints
+
 ## 0.8.0 (2023-07-24)
 
 - Add check for `change_column_default`

@@ -192,16 +192,16 @@ class CommandRecorderTest < MiniTest::Test
 
   class AddNotNullConstraint < TestMigration
     def change
-      add_not_null_constraint :users, :name, validate: false
+      add_not_null_constraint :users, :name, name: "name_not_null", validate: false
     end
   end
 
   def test_add_not_null_constraint
     migrate(AddNotNullConstraint, direction: :up)
-    assert @connection.send(:__not_null_constraint_exists?, :users, :name)
+    assert @connection.send(:__not_null_constraint_exists?, :users, :name, name: "name_not_null")
 
     migrate(AddNotNullConstraint, direction: :down)
-    assert_not @connection.send(:__not_null_constraint_exists?, :users, :name)
+    assert_not @connection.send(:__not_null_constraint_exists?, :users, :name, name: "name_not_null")
   end
 
   class RemoveNotNullConstraint < TestMigration
@@ -222,32 +222,32 @@ class CommandRecorderTest < MiniTest::Test
 
   class AddTextLimitConstraint < TestMigration
     def change
-      add_text_limit_constraint :users, :name, 255, validate: false
+      add_text_limit_constraint :users, :name, 255, name: "name_limit", validate: false
     end
   end
 
   def test_add_text_limit_constraint
     migrate(AddTextLimitConstraint, direction: :up)
-    assert @connection.send(:__text_limit_constraint_exists?, :users, :name)
+    assert @connection.send(:__text_limit_constraint_exists?, :users, :name, name: "name_limit")
 
     migrate(AddTextLimitConstraint, direction: :down)
-    assert_not @connection.send(:__text_limit_constraint_exists?, :users, :name)
+    assert_not @connection.send(:__text_limit_constraint_exists?, :users, :name, name: "name_limit")
   end
 
   class RemoveTextLimitConstraint < TestMigration
     def change
-      remove_text_limit_constraint :users, :name, 255
+      remove_text_limit_constraint :users, :name, 255, name: "name_limit"
     end
   end
 
   def test_remove_text_limit_constraint
-    @connection.add_text_limit_constraint :users, :name, 255
+    @connection.add_text_limit_constraint :users, :name, 255, name: "name_limit"
 
     migrate(RemoveTextLimitConstraint, direction: :up)
-    assert_not @connection.send(:__text_limit_constraint_exists?, :users, :name)
+    assert_not @connection.send(:__text_limit_constraint_exists?, :users, :name, name: "name_limit")
 
     migrate(RemoveTextLimitConstraint, direction: :down)
-    assert @connection.send(:__text_limit_constraint_exists?, :users, :name)
+    assert @connection.send(:__text_limit_constraint_exists?, :users, :name, name: "name_limit")
   end
 
   private
