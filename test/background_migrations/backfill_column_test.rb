@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class BackfillColumnTest < MiniTest::Test
+  class BackfillColumnTest < Minitest::Test
     class User < ActiveRecord::Base
       default_scope { where(banned: false) }
     end

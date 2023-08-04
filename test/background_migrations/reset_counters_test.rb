@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class ResetCountersTest < MiniTest::Test
+  class ResetCountersTest < Minitest::Test
     class User < ActiveRecord::Base
       default_scope { where(banned: false) }
 

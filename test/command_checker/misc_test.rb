@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class MiscTest < MiniTest::Test
+  class MiscTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade) do |t|

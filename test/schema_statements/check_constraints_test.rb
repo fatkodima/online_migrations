@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class CheckConstraintsTest < MiniTest::Test
+  class CheckConstraintsTest < Minitest::Test
     class Milestone < ActiveRecord::Base
     end
 

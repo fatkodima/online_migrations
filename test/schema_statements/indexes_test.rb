@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class IndexesTest < MiniTest::Test
+  class IndexesTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
 

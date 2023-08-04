@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class MigrationJobTest < MiniTest::Test
+  class MigrationJobTest < Minitest::Test
     class User < ActiveRecord::Base
     end
 

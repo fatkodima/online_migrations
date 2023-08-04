@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class CommandRecorderTest < MiniTest::Test
+class CommandRecorderTest < Minitest::Test
   def setup
     @connection = ActiveRecord::Base.connection
     @connection.create_table(:users) do |t|

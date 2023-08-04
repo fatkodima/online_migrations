@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class RemovingTablesTest < MiniTest::Test
+  class RemovingTablesTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
 

@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class ConfigTest < MiniTest::Test
+class ConfigTest < Minitest::Test
   def setup
     connection = ActiveRecord::Base.connection
 

@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class SchedulerTest < MiniTest::Test
+  class SchedulerTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users) do |t|

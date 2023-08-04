@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class ForeignKeysTest < MiniTest::Test
+  class ForeignKeysTest < Minitest::Test
     attr_reader :connection
 
     def setup

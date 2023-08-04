@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class MiscTest < MiniTest::Test
+  class MiscTest < Minitest::Test
     class User < ActiveRecord::Base
       has_many :posts, foreign_key: :author_id
     end

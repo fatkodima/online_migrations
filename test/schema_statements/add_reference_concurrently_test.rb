@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class AddReferenceConcurrentlyTest < MiniTest::Test
+  class AddReferenceConcurrentlyTest < Minitest::Test
     class Milestone < ActiveRecord::Base
     end
 

@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class DeleteAssociatedRecordsTest < MiniTest::Test
+  class DeleteAssociatedRecordsTest < Minitest::Test
     class Link < ActiveRecord::Base
       has_many :clicks
     end

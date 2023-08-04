@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class AddColumnWithDefaultTest < MiniTest::Test
+  class AddColumnWithDefaultTest < Minitest::Test
     class Milestone < ActiveRecord::Base
     end
 

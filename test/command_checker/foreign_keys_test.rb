@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class ForeignKeysTest < MiniTest::Test
+  class ForeignKeysTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
 

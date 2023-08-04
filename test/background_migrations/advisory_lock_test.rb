@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class AdvisoryLockTest < MiniTest::Test
+  class AdvisoryLockTest < Minitest::Test
     def setup
       @lock = OnlineMigrations::BackgroundMigrations::AdvisoryLock.new(name: "somename")
     end

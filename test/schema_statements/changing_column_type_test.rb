@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class ChangingColumnTypeTest < MiniTest::Test
+  class ChangingColumnTypeTest < Minitest::Test
     class User < ActiveRecord::Base
     end
 

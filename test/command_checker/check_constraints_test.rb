@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class CheckConstraintsTest < MiniTest::Test
+  class CheckConstraintsTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
 

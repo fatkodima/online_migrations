@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class LockRetrierTest < MiniTest::Test
+class LockRetrierTest < Minitest::Test
   class LockRetriesMigration < TestMigration
     def change
       $migrate_attempts += 1

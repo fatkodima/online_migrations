@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class PerformActionOnRelationTest < MiniTest::Test
+  class PerformActionOnRelationTest < Minitest::Test
     class User < ActiveRecord::Base
       default_scope { where(banned: [nil, false]) }
 

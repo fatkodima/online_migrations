@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class RenamingTableTest < MiniTest::Test
+  class RenamingTableTest < Minitest::Test
     class ProjectOld < ActiveRecord::Base
       self.table_name = "projects"
     end

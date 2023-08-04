@@ -3,7 +3,7 @@
 require "test_helper"
 require_relative "background_migrations/background_migrations"
 
-class BackgroundMigrationTest < MiniTest::Test
+class BackgroundMigrationTest < Minitest::Test
   def test_named_returns_migration_based_on_name
     expected_migration = BackgroundMigrations::MakeAllNonAdmins
     assert_equal expected_migration, OnlineMigrations::BackgroundMigration.named("MakeAllNonAdmins")

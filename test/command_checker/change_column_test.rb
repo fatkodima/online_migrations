@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class ChangeColumnTest < MiniTest::Test
+  class ChangeColumnTest < Minitest::Test
     attr_reader :connection
 
     def setup

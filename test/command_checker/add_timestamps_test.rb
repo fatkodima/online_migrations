@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class AddTimestampsTest < MiniTest::Test
+  class AddTimestampsTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade)

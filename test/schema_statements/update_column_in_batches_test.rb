@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SchemaStatements
-  class UpdateColumnInBatchesTest < MiniTest::Test
+  class UpdateColumnInBatchesTest < Minitest::Test
     class Milestone < ActiveRecord::Base
     end
 

@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class CopyColumnTest < MiniTest::Test
+  class CopyColumnTest < Minitest::Test
     class Project < ActiveRecord::Base
       default_scope { where(archived: false) }
     end

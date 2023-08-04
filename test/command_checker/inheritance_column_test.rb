@@ -3,7 +3,7 @@
 require "test_helper"
 
 module CommandChecker
-  class InheritanceColumnTest < MiniTest::Test
+  class InheritanceColumnTest < Minitest::Test
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: :cascade)

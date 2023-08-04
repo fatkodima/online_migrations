@@ -3,7 +3,7 @@
 require "test_helper"
 
 module BackgroundMigrations
-  class DeleteOrphanedRecordsTest < MiniTest::Test
+  class DeleteOrphanedRecordsTest < Minitest::Test
     class User < ActiveRecord::Base
       has_many :posts
       has_many :comments
