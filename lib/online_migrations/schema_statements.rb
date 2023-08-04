@@ -89,11 +89,15 @@ module OnlineMigrations
         # Ignore subqueries in conditions
         unless value.is_a?(Arel::Nodes::SqlLiteral) && value.to_s =~ /select\s+/i
           arel_column = model.arel_table[column_name]
-          arel_column.not_eq(value).or(arel_column.eq(nil))
+          if value.nil?
+            arel_column.not_eq(nil)
+          else
+            arel_column.not_eq(value).or(arel_column.eq(nil))
+          end
         end
       end.compact
 
-      batch_relation = model.where(conditions.inject(:and))
+      batch_relation = model.where(conditions.inject(:or))
       batch_relation = yield batch_relation if block_given?
 
       iterator = BatchIterator.new(batch_relation)

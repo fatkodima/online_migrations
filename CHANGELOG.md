@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `update_columns_in_batches` when multiple columns are passed
 - Fix reverting adding/removing not null and text limit constraints
 
 ## 0.8.0 (2023-07-24)

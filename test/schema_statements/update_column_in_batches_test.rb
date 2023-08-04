@@ -122,5 +122,13 @@ module SchemaStatements
         connection.update_column_in_batches(:milestones, :points, 0, progress: :not_callable)
       end
     end
+
+    def test_update_columns_in_batches
+      _m1 = Milestone.create!(name: nil, points: nil)
+      _m2 = Milestone.create!(name: nil, points: 0)
+
+      connection.update_columns_in_batches(:milestones, [[:name, "Default"], [:points, 0]])
+      assert_equal 2, Milestone.where(name: "Default", points: 0).count
+    end
   end
 end
