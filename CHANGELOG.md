@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix `safety_assured` with `revert`
+
 ## 0.8.1 (2023-08-04)
 
 - Fix `update_columns_in_batches` when multiple columns are passed

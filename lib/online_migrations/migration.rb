@@ -36,7 +36,7 @@ module OnlineMigrations
     #   safety_assured { remove_column(:users, :some_column) }
     #
     def safety_assured(&block)
-      command_checker.safety_assured(&block)
+      command_checker.class.safety_assured(&block)
     end
 
     # Stop running migrations.

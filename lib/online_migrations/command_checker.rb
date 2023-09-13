@@ -7,24 +7,27 @@ require "set"
 module OnlineMigrations
   # @private
   class CommandChecker
+    class << self
+      attr_accessor :safe
+
+      def safety_assured
+        prev_value = safe
+        self.safe = true
+        yield
+      ensure
+        self.safe = prev_value
+      end
+    end
+
     attr_accessor :direction
 
     def initialize(migration)
       @migration = migration
-      @safe = false
       @new_tables = []
       @new_columns = []
       @lock_timeout_checked = false
       @foreign_key_tables = Set.new
       @removed_indexes = []
-    end
-
-    def safety_assured
-      prev_value = @safe
-      @safe = true
-      yield
-    ensure
-      @safe = prev_value
     end
 
     def check(command, *args, &block)
@@ -101,7 +104,7 @@ module OnlineMigrations
       end
 
       def safe?
-        @safe ||
+        self.class.safe ||
           ENV["SAFETY_ASSURED"] ||
           (direction == :down && !OnlineMigrations.config.check_down) ||
           version <= OnlineMigrations.config.start_after

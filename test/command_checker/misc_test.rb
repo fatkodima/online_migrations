@@ -532,5 +532,29 @@ module CommandChecker
 
       assert_safe AddExclusionConstraintNewTable
     end
+
+    class AddReferenceNoIndex < TestMigration
+      def change
+        add_reference :projects, :company, index: false
+      end
+    end
+
+    class RevertAddReferenceNoIndex < TestMigration
+      def change
+        revert AddReferenceNoIndex
+      end
+    end
+
+    class RevertAddReferenceNoIndexSafetyAssured < TestMigration
+      def change
+        safety_assured { revert AddReferenceNoIndex }
+      end
+    end
+
+    def test_revert
+      migrate AddReferenceNoIndex
+      assert_unsafe RevertAddReferenceNoIndex
+      assert_safe RevertAddReferenceNoIndexSafetyAssured
+    end
   end
 end
