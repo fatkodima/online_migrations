@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Promote check constraint to `NOT NULL` on PostgreSQL >= 12 when changing column type
 - Fix `safety_assured` with `revert`
 
 ## 0.8.1 (2023-08-04)
