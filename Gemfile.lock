@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    online_migrations (0.8.1)
+    online_migrations (0.8.2)
       activerecord (>= 4.2)
 
 GEM
