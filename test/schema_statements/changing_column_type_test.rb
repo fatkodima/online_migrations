@@ -263,16 +263,24 @@ module SchemaStatements
     def test_finalize_column_type_change_preserves_not_null_without_default_before_12
       with_postgres(11) do
         @connection.initialize_column_type_change(:projects, :description, :text)
-        @connection.finalize_column_type_change(:projects, :description)
-        refute column_for(:projects, :description).null
+
+        assert_sql("UPDATE pg_catalog.pg_attribute") do
+          @connection.finalize_column_type_change(:projects, :description)
+        end
+
+        assert_equal false, column_for(:projects, :description).null
       end
     end
 
     def test_finalize_column_type_change_preserves_not_null_without_default_after_12
       with_postgres(12) do
         @connection.initialize_column_type_change(:projects, :description, :text)
-        @connection.finalize_column_type_change(:projects, :description)
-        refute column_for(:projects, :description).null
+
+        refute_sql("UPDATE pg_catalog.pg_attribute") do
+          @connection.finalize_column_type_change(:projects, :description)
+        end
+
+        assert_equal false, column_for(:projects, :description).null
       end
     end
 
