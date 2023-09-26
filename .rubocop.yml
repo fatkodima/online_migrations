@@ -1,4 +1,6 @@
-require: rubocop-minitest
+require:
+  - rubocop-minitest
+  - rubocop-disable_syntax
 
 AllCops:
   TargetRubyVersion: 2.3
@@ -78,6 +80,19 @@ Style/MapToHash:
 Style/FetchEnvVar:
   Enabled: false
 
+Style/DisableSyntax:
+  DisableSyntax:
+    - unless
+    - safe_navigation
+    - endless_methods
+    - arguments_forwarding
+    - numbered_parameters
+    - pattern_matching
+    - shorthand_hash_syntax
+    - and_or_not
+    - until
+    - percent_literals
+
 # we can not use new syntax for older rubies
 Lint/ErbNewArguments:
   Enabled: false
@@ -129,6 +144,9 @@ Gemspec/RequiredRubyVersion:
   Enabled: false
 
 Gemspec/RequireMFA:
+  Enabled: false
+
+Bundler/OrderedGems:
   Enabled: false
 
 Metrics:

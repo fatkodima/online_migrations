@@ -87,7 +87,7 @@ module OnlineMigrations
       end
 
       def throttler=(value)
-        unless value.respond_to?(:call)
+        if !value.respond_to?(:call)
           raise ArgumentError, "background_migrations throttler must be a callable."
         end
 

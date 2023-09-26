@@ -87,7 +87,7 @@ module OnlineMigrations
         value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
 
         # Ignore subqueries in conditions
-        unless value.is_a?(Arel::Nodes::SqlLiteral) && value.to_s =~ /select\s+/i
+        if !value.is_a?(Arel::Nodes::SqlLiteral) || value.to_s !~ /select\s+/i
           arel_column = model.arel_table[column_name]
           if value.nil?
             arel_column.not_eq(nil)
@@ -665,7 +665,7 @@ module OnlineMigrations
       __ensure_not_in_transaction!
 
       column_name = "#{ref_name}_id"
-      unless column_exists?(table_name, column_name)
+      if !column_exists?(table_name, column_name)
         type = options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)
         allow_null = options.fetch(:null, true)
         add_column(table_name, column_name, type, null: allow_null)

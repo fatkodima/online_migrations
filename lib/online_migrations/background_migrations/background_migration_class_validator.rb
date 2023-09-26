@@ -8,7 +8,7 @@ module OnlineMigrations
         relation = record.migration_relation
         migration_name = record.migration_name
 
-        unless relation.is_a?(ActiveRecord::Relation)
+        if !relation.is_a?(ActiveRecord::Relation)
           record.errors.add(
             :migration_name,
             "#{migration_name}#relation must return an ActiveRecord::Relation object"

@@ -14,7 +14,7 @@ module OnlineMigrations
     end
 
     def each_batch(of: 1000, column: relation.primary_key, start: nil, finish: nil, order: :asc)
-      unless [:asc, :desc].include?(order)
+      if ![:asc, :desc].include?(order)
         raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
       end
 
@@ -26,7 +26,7 @@ module OnlineMigrations
 
       start_row = base_relation.uncached { base_relation.first }
 
-      return unless start_row
+      return if !start_row
 
       start_id = start_row[column]
       arel_table = relation.arel_table
@@ -67,7 +67,7 @@ module OnlineMigrations
         # Retaining the results in the query cache would undermine the point of batching.
         batch_relation.uncached { yield batch_relation, index }
 
-        break unless stop_row
+        break if !stop_row
       end
     end
 

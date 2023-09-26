@@ -16,7 +16,7 @@ module OnlineMigrations
         # https://github.com/rails/rails/pull/34727
         associations.inject(model.unscoped) do |relation, association|
           reflection = model.reflect_on_association(association)
-          unless reflection
+          if reflection.nil?
             raise ArgumentError, "'#{model.name}' has no association called '#{association}'"
           end
 

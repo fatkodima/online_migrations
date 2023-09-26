@@ -261,7 +261,7 @@ module OnlineMigrations
 
     private
       def ensure_supports_multiple_dbs
-        unless Utils.supports_multiple_dbs?
+        if !Utils.supports_multiple_dbs?
           raise "OnlineMigrations does not support multiple databases for Active Record < 6.1"
         end
       end

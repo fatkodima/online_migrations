@@ -139,7 +139,7 @@ module OnlineMigrations
       private_constant :FUNCTION_CALL_RE
 
       def volatile_default?(connection, type, value)
-        return false unless value.is_a?(Proc) || (type.to_s == "uuid" && value.is_a?(String))
+        return false if !(value.is_a?(Proc) || (type.to_s == "uuid" && value.is_a?(String)))
 
         value = value.call if value.is_a?(Proc)
         return false if !value.is_a?(String)

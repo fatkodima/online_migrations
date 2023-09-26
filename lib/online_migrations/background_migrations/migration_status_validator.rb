@@ -29,12 +29,12 @@ module OnlineMigrations
       }
 
       def validate(record)
-        return unless record.status_changed?
+        return if !record.status_changed?
 
         previous_status, new_status = record.status_change
         valid_new_statuses = VALID_STATUS_TRANSITIONS.fetch(previous_status, [])
 
-        unless valid_new_statuses.include?(new_status)
+        if !valid_new_statuses.include?(new_status)
           record.errors.add(
             :status,
             "cannot transition background migration from status #{previous_status} to #{new_status}"

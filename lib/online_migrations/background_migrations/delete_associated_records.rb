@@ -13,7 +13,7 @@ module OnlineMigrations
       end
 
       def relation
-        unless @record.respond_to?(association)
+        if !@record.respond_to?(association)
           raise ArgumentError, "'#{@record.class.name}' has no association called '#{association}'"
         end
 

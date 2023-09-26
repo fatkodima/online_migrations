@@ -9,6 +9,11 @@ gem "minitest", "~> 5.0"
 gem "rake", "~> 12.0"
 gem "rubocop", "< 2"
 gem "rubocop-minitest"
+
+if RUBY_VERSION >= "2.7"
+  gem "rubocop-disable_syntax"
+end
+
 gem "yard"
 
 if defined?(@ar_gem_requirement)

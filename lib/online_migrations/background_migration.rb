@@ -21,8 +21,8 @@ module OnlineMigrations
         migration = "#{namespace}::#{name}".safe_constantize ||
                     "#{internal_namespace}::#{name}".safe_constantize
 
-        raise NotFoundError.new("Background Migration #{name} not found", name) unless migration
-        unless migration.is_a?(Class) && migration < self
+        raise NotFoundError.new("Background Migration #{name} not found", name) if migration.nil?
+        if !(migration.is_a?(Class) && migration < self)
           raise NotFoundError.new("#{name} is not a Background Migration", name)
         end
 

@@ -98,7 +98,7 @@ module OnlineMigrations
 
       def invert_revert_initialize_columns_rename(args)
         _table, old_new_column_hash = args
-        unless old_new_column_hash
+        if !old_new_column_hash
           raise ActiveRecord::IrreversibleMigration,
             "revert_initialize_columns_rename is only reversible if given a hash of old and new columns."
         end
@@ -107,7 +107,7 @@ module OnlineMigrations
 
       def invert_finalize_table_rename(args)
         _table_name, new_name = args
-        unless new_name
+        if !new_name
           raise ActiveRecord::IrreversibleMigration,
             "finalize_table_rename is only reversible if given a new_name."
         end
@@ -115,7 +115,7 @@ module OnlineMigrations
       end
 
       def invert_revert_initialize_column_type_change(args)
-        unless args[2]
+        if !args[2]
           raise ActiveRecord::IrreversibleMigration,
             "revert_initialize_column_type_change is only reversible if given a new_type."
         end
@@ -141,7 +141,7 @@ module OnlineMigrations
       end
 
       def invert_remove_text_limit_constraint(args)
-        unless args[2]
+        if !args[2]
           raise ActiveRecord::IrreversibleMigration, "remove_text_limit_constraint is only reversible if given a limit."
         end
 

@@ -120,14 +120,14 @@ module OnlineMigrations
               add_column(table_name, tmp_column_name, new_type,
                 **old_col_options.merge(column_options).merge(default: old_col.default || 0, null: false))
             else
-              unless old_col.default.nil?
+              if !old_col.default.nil?
                 old_col_options = old_col_options.merge(default: old_col.default, null: old_col.null)
               end
               add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
             end
           else
             add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
-            change_column_default(table_name, tmp_column_name, old_col.default) unless old_col.default.nil?
+            change_column_default(table_name, tmp_column_name, old_col.default) if !old_col.default.nil?
           end
         end
 
@@ -389,7 +389,7 @@ module OnlineMigrations
         options.each do |option|
           if column.respond_to?(option)
             value = column.public_send(option)
-            result[option] = value unless value.nil?
+            result[option] = value if !value.nil?
           end
         end
         result
@@ -417,7 +417,7 @@ module OnlineMigrations
           end
 
           # This is necessary as we can't properly rename indexes such as "taggings_idx".
-          unless index.name.include?(from_column)
+          if !index.name.include?(from_column)
             raise "The index #{index.name} can not be copied as it does not " \
                   "mention the old column. You have to rename this index manually first."
           end

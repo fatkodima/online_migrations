@@ -59,7 +59,7 @@ module OnlineMigrations
         def has_many_association(counter_association) # rubocop:disable Naming/PredicateName
           has_many_association = model.reflect_on_association(counter_association)
 
-          unless has_many_association
+          if !has_many_association
             has_many = model.reflect_on_all_associations(:has_many)
 
             has_many_association = has_many.find do |association|
@@ -74,7 +74,7 @@ module OnlineMigrations
 
             counter_association = has_many_association.plural_name if has_many_association
           end
-          raise ArgumentError, "'#{model.name}' has no association called '#{counter_association}'" unless has_many_association
+          raise ArgumentError, "'#{model.name}' has no association called '#{counter_association}'" if !has_many_association
 
           if has_many_association.is_a?(ActiveRecord::Reflection::ThroughReflection)
             has_many_association = has_many_association.through_reflection

@@ -63,7 +63,7 @@ module MinitestHelpers
 
   def track_queries(&block)
     queries = []
-    query_cb = ->(*, payload) { queries << payload[:sql] unless ["TRANSACTION"].include?(payload[:name]) }
+    query_cb = ->(*, payload) { queries << payload[:sql] if !["TRANSACTION"].include?(payload[:name]) }
     ActiveSupport::Notifications.subscribed(query_cb, "sql.active_record", &block)
     queries
   end

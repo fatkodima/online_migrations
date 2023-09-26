@@ -34,7 +34,7 @@ module OnlineMigrations
       check_database_version
       check_lock_timeout
 
-      unless safe?
+      if !safe?
         do_check(command, *args, &block)
 
         run_custom_checks(command, args)
@@ -480,7 +480,7 @@ module OnlineMigrations
             bad_foreign_key: bad_foreign_key
         end
 
-        unless options[:polymorphic]
+        if !options[:polymorphic]
           type = (options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)).to_sym
           column_name = "#{ref_name}_id"
 
@@ -510,9 +510,9 @@ module OnlineMigrations
             existing_indexes = connection.indexes(table_name)
 
             @removed_indexes.each do |removed_index|
-              next unless removed_index.intersect?(index)
+              next if !removed_index.intersect?(index)
 
-              unless existing_indexes.any? { |existing_index| removed_index.covered_by?(existing_index) }
+              if existing_indexes.none? { |existing_index| removed_index.covered_by?(existing_index) }
                 raise_error :replace_index
               end
             end
@@ -563,7 +563,7 @@ module OnlineMigrations
       end
 
       def add_exclusion_constraint(table_name, _expression, **_options)
-        unless new_or_small_table?(table_name)
+        if !new_or_small_table?(table_name)
           raise_error :add_exclusion_constraint
         end
       end
