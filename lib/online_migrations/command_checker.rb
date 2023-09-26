@@ -578,15 +578,15 @@ module OnlineMigrations
         end
       end
 
-      def add_unique_key(table_name, column_name = nil, **options)
+      def add_unique_constraint(table_name, column_name = nil, **options)
         return if new_or_small_table?(table_name) || options[:using_index] || !column_name
 
         index_name = index_name(table_name, column_name)
 
-        raise_error :add_unique_key,
+        raise_error :add_unique_constraint,
           add_index_code: command_str(:add_index, table_name, column_name, unique: true, name: index_name, algorithm: :concurrently),
-          add_code: command_str(:add_unique_key, table_name, **options.merge(using_index: index_name)),
-          remove_code: command_str(:remove_unique_key, table_name, column_name)
+          add_code: command_str(:add_unique_constraint, table_name, **options.merge(using_index: index_name)),
+          remove_code: command_str(:remove_unique_constraint, table_name, column_name)
       end
 
       # Implementation is from Active Record

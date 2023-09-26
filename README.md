@@ -143,7 +143,7 @@ Potentially dangerous operations:
 - [adding a reference](#adding-a-reference)
 - [adding a foreign key](#adding-a-foreign-key)
 - [adding an exclusion constraint](#adding-an-exclusion-constraint)
-- [adding a unique key](#adding-a-unique-key)
+- [adding a unique constraint](#adding-a-unique-constraint)
 - [adding a json column](#adding-a-json-column)
 - [adding a stored generated column](#adding-a-stored-generated-column)
 - [using primary key with short integer type](#using-primary-key-with-short-integer-type)
@@ -880,16 +880,16 @@ end
 
 [Let us know](https://github.com/fatkodima/online_migrations/issues/new) if you have a safe way to do this (exclusion constraints cannot be marked `NOT VALID`).
 
-### Adding a unique key
+### Adding a unique constraint
 
 :x: **Bad**
 
-Adding a unique key blocks reads and writes while the underlying index is being built.
+Adding a unique constraint blocks reads and writes while the underlying index is being built.
 
 ```ruby
-class AddUniqueKey < ActiveRecord::Migration[7.1]
+class AddUniqueConstraint < ActiveRecord::Migration[7.1]
   def change
-    add_unique_key :sections, :position, deferrable: :deferred
+    add_unique_constraint :sections, :position, deferrable: :deferred
   end
 end
 ```
@@ -899,7 +899,7 @@ end
 A safer approach is to create a unique index first, and then create a unique key using that index.
 
 ```ruby
-class AddUniqueKeyAddIndex < ActiveRecord::Migration[7.1]
+class AddUniqueConstraintAddIndex < ActiveRecord::Migration[7.1]
   disable_ddl_transaction!
 
   def change
@@ -909,13 +909,13 @@ end
 ```
 
 ```ruby
-class AddUniqueKey < ActiveRecord::Migration[7.1]
+class AddUniqueConstraint < ActiveRecord::Migration[7.1]
   def up
-    add_unique_key :sections, :position, deferrable: :deferred, using_index: "index_sections_on_position"
+    add_unique_constraint :sections, :position, deferrable: :deferred, using_index: "index_sections_on_position"
   end
 
   def down
-    remove_unique_key :sections, :position
+    remove_unique_constraint :sections, :position
   end
 end
 ```

@@ -438,9 +438,9 @@ class <%= migration_name %> < <%= migration_parent %>
   end
 end",
 
-      add_unique_key:
-"Adding a unique key blocks reads and writes while the underlying index is being built.
-A safer approach is to create a unique index first, and then create a unique key using that index.
+      add_unique_constraint:
+"Adding a unique constraint blocks reads and writes while the underlying index is being built.
+A safer approach is to create a unique index first, and then create a unique constraint using that index.
 
 class <%= migration_name %>AddIndex < <%= migration_parent %>
   disable_ddl_transaction!

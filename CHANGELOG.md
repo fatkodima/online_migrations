@@ -10,7 +10,7 @@
 ## 0.8.0 (2023-07-24)
 
 - Add check for `change_column_default`
-- Add check for `add_unique_key` (Active Record >= 7.1)
+- Add check for `add_unique_constraint` (Active Record >= 7.1)
 - Add check for `add_column` with stored generated columns
 
 ## 0.7.3 (2023-05-30)

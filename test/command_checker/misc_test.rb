@@ -329,20 +329,20 @@ module CommandChecker
       assert_safe ExecuteQuerySafetyAssured
     end
 
-    class AddUniqueKey < TestMigration
+    class AddUniqueConstraint < TestMigration
       def change
-        add_unique_key :users, :email, name: "unique_email"
+        add_unique_constraint :users, :email, name: "unique_email"
       end
     end
 
-    def test_add_unique_key
+    def test_add_unique_constraint
       skip if ar_version < 7.1
 
-      assert_unsafe AddUniqueKey, <<-MSG.strip_heredoc
-        Adding a unique key blocks reads and writes while the underlying index is being built.
-        A safer approach is to create a unique index first, and then create a unique key using that index.
+      assert_unsafe AddUniqueConstraint, <<-MSG.strip_heredoc
+        Adding a unique constraint blocks reads and writes while the underlying index is being built.
+        A safer approach is to create a unique index first, and then create a unique constraint using that index.
 
-        class CommandChecker::MiscTest::AddUniqueKeyAddIndex < #{migration_parent_string}
+        class CommandChecker::MiscTest::AddUniqueConstraintAddIndex < #{migration_parent_string}
           disable_ddl_transaction!
 
           def change
@@ -350,33 +350,33 @@ module CommandChecker
           end
         end
 
-        class CommandChecker::MiscTest::AddUniqueKey < #{migration_parent_string}
+        class CommandChecker::MiscTest::AddUniqueConstraint < #{migration_parent_string}
           def up
-            add_unique_key :users, name: "unique_email", using_index: "index_users_on_email"
+            add_unique_constraint :users, name: "unique_email", using_index: "index_users_on_email"
           end
 
           def down
-            remove_unique_key :users, :email
+            remove_unique_constraint :users, :email
           end
         end
       MSG
     end
 
-    class AddUniqueKeyUsingIndex < TestMigration
+    class AddUniqueConstraintUsingIndex < TestMigration
       def up
-        add_unique_key :users, using_index: "index_users_on_email"
+        add_unique_constraint :users, using_index: "index_users_on_email"
       end
 
       def down
-        remove_unique_key :users, :email
+        remove_unique_constraint :users, :email
       end
     end
 
-    def test_add_unique_key_using_index
+    def test_add_unique_constraint_using_index
       skip if ar_version < 7.1
 
       @connection.add_index(:users, :email, unique: true, name: "index_users_on_email")
-      assert_safe AddUniqueKeyUsingIndex
+      assert_safe AddUniqueConstraintUsingIndex
     end
 
     class AddNotNullConstraint < TestMigration
