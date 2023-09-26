@@ -260,6 +260,22 @@ module SchemaStatements
       end
     end
 
+    def test_finalize_column_type_change_preserves_not_null_without_default_before_12
+      with_postgres(11) do
+        @connection.initialize_column_type_change(:projects, :description, :text)
+        @connection.finalize_column_type_change(:projects, :description)
+        refute column_for(:projects, :description).null
+      end
+    end
+
+    def test_finalize_column_type_change_preserves_not_null_without_default_after_12
+      with_postgres(12) do
+        @connection.initialize_column_type_change(:projects, :description, :text)
+        @connection.finalize_column_type_change(:projects, :description)
+        refute column_for(:projects, :description).null
+      end
+    end
+
     def test_finalize_column_type_change_keeps_columns_in_sync
       @connection.initialize_column_type_change(:projects, :id, :bigint)
       @connection.finalize_column_type_change(:projects, :id)
