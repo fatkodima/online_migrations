@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix version safety with `revert`
+
 ## 0.8.2 (2023-09-26)
 
 - Promote check constraint to `NOT NULL` on PostgreSQL >= 12 when changing column type

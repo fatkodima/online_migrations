@@ -48,6 +48,10 @@ module OnlineMigrations
     end
     ruby2_keywords(:check) if respond_to?(:ruby2_keywords, true)
 
+    def version_safe?
+      version && version <= OnlineMigrations.config.start_after
+    end
+
     private
       def check_database_version
         return if defined?(@database_version_checked)
@@ -107,7 +111,8 @@ module OnlineMigrations
         self.class.safe ||
           ENV["SAFETY_ASSURED"] ||
           (direction == :down && !OnlineMigrations.config.check_down) ||
-          version <= OnlineMigrations.config.start_after
+          version_safe? ||
+          @migration.reverting?
       end
 
       def version

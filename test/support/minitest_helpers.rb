@@ -6,7 +6,7 @@ module MinitestHelpers
     assert_match message, error.message
   end
 
-  def migrate(migration, direction: :up)
+  def migrate(migration, direction: :up, version: 1)
     connection = ActiveRecord::Base.connection
 
     if OnlineMigrations::Utils.ar_version >= 7.1
@@ -15,7 +15,7 @@ module MinitestHelpers
       ActiveRecord::SchemaMigration.delete_all
     end
 
-    migration.version ||= 1
+    migration.version ||= version
 
     if direction == :down
       if OnlineMigrations::Utils.ar_version >= 7.1
@@ -37,12 +37,12 @@ module MinitestHelpers
     true
   end
 
-  def assert_safe(migration, direction: nil)
+  def assert_safe(migration, direction: nil, **options)
     if direction
-      assert migrate(migration, direction: direction)
+      assert migrate(migration, direction: direction, **options)
     else
-      assert migrate(migration, direction: :up)
-      assert migrate(migration, direction: :down)
+      assert migrate(migration, direction: :up, **options)
+      assert migrate(migration, direction: :down, **options)
     end
   end
 
@@ -98,6 +98,10 @@ module MinitestHelpers
     yield
   ensure
     OnlineMigrations.config.target_version = prev
+  end
+
+  def with_safety_assured(&block)
+    OnlineMigrations::CommandChecker.stub(:safe, true, &block)
   end
 
   def with_partial_writes(value, &block)

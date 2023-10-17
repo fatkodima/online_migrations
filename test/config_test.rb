@@ -48,6 +48,35 @@ class ConfigTest < Minitest::Test
     end
   end
 
+  class AddIndex < TestMigration
+    def change
+      add_index :users, :name
+    end
+  end
+
+  class RevertAddIndex < TestMigration
+    def change
+      revert AddIndex
+    end
+  end
+
+  def test_start_after_revert_safe
+    with_safety_assured do
+      migrate AddIndex
+    end
+    with_start_after(20200101000001) do
+      assert_safe RevertAddIndex, version: 20200101000000
+    end
+  ensure
+    migrate AddIndex, direction: :down
+  end
+
+  def test_start_after_revert_unsafe
+    with_start_after(20200101000000) do
+      assert_unsafe RevertAddIndex, version: 20200101000001
+    end
+  end
+
   def test_start_after_multiple_dbs_below_6
     skip if supports_multiple_dbs?
 
