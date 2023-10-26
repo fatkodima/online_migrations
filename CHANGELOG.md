@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.9.0 (2023-10-27)
+
 - Add ability to use custom raw sql for `backfill_column_for_type_change`'s `type_cast_function`
 
     ```ruby
