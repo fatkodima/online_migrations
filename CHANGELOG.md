@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Add ability to use custom raw sql for `backfill_column_for_type_change`'s `type_cast_function`
+
+    ```ruby
+    backfill_column_for_type_change(:users, :company_id, type_cast_function: Arel.sql("company_id::integer"))
+    ```
+
 - Fix version safety with `revert`
 
 ## 0.8.2 (2023-09-26)

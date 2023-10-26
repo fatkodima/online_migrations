@@ -28,6 +28,7 @@ module SchemaStatements
         t.text :settings
         t.bigint :star_count
         t.integer :user_id
+        t.string :company_id
 
         t.index :name
         t.foreign_key :users
@@ -205,6 +206,15 @@ module SchemaStatements
       change_column_type(:projects, :settings, :jsonb, type_cast_function: "jsonb")
       Project.reset_column_information
       assert_equal "value", p.reload.settings["key"]
+    end
+
+    def test_backfill_column_for_type_change_type_cast_function_as_literal
+      clear_caches
+      p = Project.create!(description: "Required description", company_id: "1")
+
+      change_column_type(:projects, :company_id, :integer, type_cast_function: Arel.sql("company_id::integer"))
+      Project.reset_column_information
+      assert_equal 1, p.reload.company_id
     end
 
     def test_backfill_column_for_type_change_in_background

@@ -176,6 +176,7 @@ module OnlineMigrations
     #
     # @example With type casting
     #   backfill_column_for_type_change(:users, :settings, type_cast_function: "jsonb")
+    #   backfill_column_for_type_change(:users, :company_id, type_cast_function: Arel.sql("company_id::integer"))
     #
     # @example Additional batch options
     #   backfill_column_for_type_change(:files, :size, batch_size: 10_000)
@@ -202,7 +203,13 @@ module OnlineMigrations
 
         old_value = Arel::Table.new(table_name)[column_name]
         if (type_cast_function = type_cast_functions.with_indifferent_access[column_name])
-          old_value = Arel::Nodes::NamedFunction.new(type_cast_function.to_s, [old_value])
+          old_value =
+            case type_cast_function
+            when Arel::Nodes::SqlLiteral
+              type_cast_function
+            else
+              Arel::Nodes::NamedFunction.new(type_cast_function.to_s, [old_value])
+            end
         end
 
         [tmp_column, old_value]
