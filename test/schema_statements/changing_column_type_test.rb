@@ -31,6 +31,7 @@ module SchemaStatements
         t.string :company_id
 
         t.index :name
+        t.index "lower(name)" if ar_version >= 5 # Active Record < 5 does not support expression indexes
         t.foreign_key :users
       end
 
@@ -247,7 +248,9 @@ module SchemaStatements
     def test_finalize_column_type_change_copies_indexes
       @connection.initialize_column_type_change(:projects, :name, :string)
       @connection.finalize_column_type_change(:projects, :name)
-      assert_equal(1, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
+
+      indexes_count = (ar_version >= 5 ? 2 : 1)
+      assert_equal(indexes_count, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
     end
 
     def test_finalize_column_type_change_copies_foreign_key
