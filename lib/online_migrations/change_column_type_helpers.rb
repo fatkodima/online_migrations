@@ -405,9 +405,15 @@ module OnlineMigrations
         to_column    = to_column.to_s
 
         __indexes_for(table_name, from_column).each do |index|
-          new_columns = index.columns.map do |column|
-            column == from_column ? to_column : column
-          end
+          new_columns =
+            # Expression index.
+            if index.columns.is_a?(String)
+              index.columns.gsub(from_column, to_column)
+            else
+              index.columns.map do |column|
+                column == from_column ? to_column : column
+              end
+            end
 
           # This is necessary as we can't properly rename indexes such as "taggings_idx".
           if !index.name.include?(from_column)
