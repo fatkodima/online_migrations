@@ -450,7 +450,7 @@ module OnlineMigrations
       def __indexes_for(table_name, column_name)
         column_name = column_name.to_s
 
-        indexes(table_name).select { |index| index.columns.include?(column_name) }
+        indexes(table_name).select { |index| index.columns.is_a?(Array) && index.columns.include?(column_name) }
       end
 
       # While its rare for a column to have multiple foreign keys, PostgreSQL supports this.
