@@ -408,7 +408,7 @@ module OnlineMigrations
           new_columns =
             # Expression index.
             if index.columns.is_a?(String)
-              index.columns.gsub(from_column, to_column)
+              index.columns.gsub(/\b#{from_column}\b/, to_column)
             else
               index.columns.map do |column|
                 column == from_column ? to_column : column
@@ -450,7 +450,13 @@ module OnlineMigrations
       def __indexes_for(table_name, column_name)
         column_name = column_name.to_s
 
-        indexes(table_name).select { |index| index.columns.include?(column_name) }
+        indexes(table_name).select do |index|
+          if index.columns.is_a?(String)
+            index.columns =~ /\b#{column_name}\b/
+          else
+            index.columns.include?(column_name)
+          end
+        end
       end
 
       # While its rare for a column to have multiple foreign keys, PostgreSQL supports this.

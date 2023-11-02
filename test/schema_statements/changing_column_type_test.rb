@@ -24,6 +24,7 @@ module SchemaStatements
         else
           t.text :name, default: "My project", null: false
         end
+        t.string :long_name
         t.string :description, null: false
         t.text :settings
         t.bigint :star_count
@@ -31,7 +32,14 @@ module SchemaStatements
         t.string :company_id
 
         t.index :name
-        t.index "lower(name)" if ar_version >= 5 # Active Record < 5 does not support expression indexes
+        t.index :long_name
+
+        # Active Record < 5 does not support expression indexes
+        if ar_version >= 5
+          t.index "lower(name)"
+          t.index "lower(long_name)"
+        end
+
         t.foreign_key :users
       end
 
