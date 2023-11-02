@@ -408,7 +408,7 @@ module OnlineMigrations
           new_columns =
             # Expression index.
             if index.columns.is_a?(String)
-              index.columns.gsub(from_column, to_column)
+              index.columns.gsub(/\b#{from_column}\b/, to_column)
             else
               index.columns.map do |column|
                 column == from_column ? to_column : column
@@ -451,12 +451,10 @@ module OnlineMigrations
         column_name = column_name.to_s
 
         indexes(table_name).select do |index|
-          if index.columns.is_a?(Array)
-            index.columns.include?(column_name)
-          elsif index.columns.is_a?(String)
+          if index.columns.is_a?(String)
             index.columns =~ /\b#{column_name}\b/
           else
-            raise "Unknown index columns type: #{index.columns.class}"
+            index.columns.include?(column_name)
           end
         end
       end

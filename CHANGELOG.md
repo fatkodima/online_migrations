@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix checking which expression indexes to copy when changing column type
+
 ## 0.9.1 (2023-10-30)
 
 - Fix copying expression indexes when changing column type
