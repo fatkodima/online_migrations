@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Enhance error messages with the link to the detailed description
+
 ## 0.9.2 (2023-11-02)
 
 - Fix checking which expression indexes to copy when changing column type

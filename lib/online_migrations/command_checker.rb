@@ -53,6 +53,36 @@ module OnlineMigrations
     end
 
     private
+      ERROR_MESSAGE_TO_LINK = {
+        multiple_foreign_keys: "adding-multiple-foreign-keys",
+        create_table: "creating-a-table-with-the-force-option",
+        short_primary_key_type: "using-primary-key-with-short-integer-type",
+        drop_table_multiple_foreign_keys: "removing-a-table-with-multiple-foreign-keys",
+        rename_table: "renaming-a-table",
+        add_column_with_default_null: "adding-a-column-with-a-default-value",
+        add_column_with_default: "adding-a-column-with-a-default-value",
+        add_column_generated_stored: "adding-a-stored-generated-column",
+        add_column_json: "adding-a-json-column",
+        rename_column: "renaming-a-column",
+        change_column: "changing-the-type-of-a-column",
+        change_column_default: "changing-the-default-value-of-a-column",
+        change_column_null: "setting-not-null-on-an-existing-column",
+        remove_column: "removing-a-column",
+        add_timestamps_with_default: "adding-a-column-with-a-default-value",
+        add_hash_index: "hash-indexes",
+        add_reference: "adding-a-reference",
+        add_index: "adding-an-index-non-concurrently",
+        replace_index: "replacing-an-index",
+        remove_index: "removing-an-index-non-concurrently",
+        add_foreign_key: "adding-a-foreign-key",
+        add_exclusion_constraint: "adding-an-exclusion-constraint",
+        add_check_constraint: "adding-a-check-constraint",
+        add_unique_constraint: "adding-a-unique-constraint",
+        execute: "executing-SQL-directly",
+        add_inheritance_column: "adding-a-single-table-inheritance-column",
+        mismatched_foreign_key_type: "mismatched-reference-column-types",
+      }
+
       def check_database_version
         return if defined?(@database_version_checked)
 
@@ -733,6 +763,10 @@ module OnlineMigrations
             b.local_variable_set(key, value)
           end
           message = ERB.new(template, nil, "<>").result(b)
+        end
+
+        if (link = ERROR_MESSAGE_TO_LINK[message_key])
+          message += "\nFor more details, see https://github.com/fatkodima/online_migrations##{link}"
         end
 
         @migration.stop!(message, header: header || "Dangerous operation detected")

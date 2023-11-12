@@ -556,5 +556,13 @@ module CommandChecker
       assert_unsafe RevertAddReferenceNoIndex
       assert_safe RevertAddReferenceNoIndexSafetyAssured
     end
+
+    def test_prints_more_details_link
+      assert_unsafe RenameColumn, <<-MSG.strip_heredoc
+        8. Deploy
+
+        For more details, see https://github.com/fatkodima/online_migrations#renaming-a-column
+      MSG
+    end
   end
 end
