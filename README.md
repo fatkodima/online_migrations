@@ -90,7 +90,7 @@ class AddAdminToUsers < ActiveRecord::Migration[7.1]
     execute "SET statement_timeout TO '5s'"
     change_column_null :users, :admin, false
   end
-  
+
   def down
     remove_column :users, :admin
   end
@@ -177,30 +177,30 @@ end
 
 1. Ignore the column:
 
-  ```ruby
-  # For Active Record 5+
-  class User < ApplicationRecord
-    self.ignored_columns = ["name"]
-  end
+   ```ruby
+   # For Active Record 5+
+   class User < ApplicationRecord
+     self.ignored_columns = ["name"]
+   end
 
-  # For Active Record < 5
-  class User < ActiveRecord::Base
-    def self.columns
-      super.reject { |c| c.name == "name" }
-    end
-  end
-  ```
+   # For Active Record < 5
+   class User < ActiveRecord::Base
+     def self.columns
+       super.reject { |c| c.name == "name" }
+     end
+   end
+   ```
 
 2. Deploy
 3. Wrap column removing in a `safety_assured` block:
 
-  ```ruby
-  class RemoveNameFromUsers < ActiveRecord::Migration[7.1]
-    def change
-      safety_assured { remove_column :users, :name }
-    end
-  end
-  ```
+   ```ruby
+   class RemoveNameFromUsers < ActiveRecord::Migration[7.1]
+     def change
+       safety_assured { remove_column :users, :name }
+     end
+   end
+   ```
 
 4. Remove column ignoring from `User` model
 5. Deploy
@@ -322,59 +322,59 @@ A safer approach can be accomplished in several steps:
 
 1. Create a new column and keep column's data in sync:
 
-  ```ruby
-  class InitializeChangeFilesSizeType < ActiveRecord::Migration[7.1]
-    def change
-      initialize_column_type_change :files, :size, :bigint
-    end
-  end
-  ```
+   ```ruby
+   class InitializeChangeFilesSizeType < ActiveRecord::Migration[7.1]
+     def change
+       initialize_column_type_change :files, :size, :bigint
+     end
+   end
+   ```
 
-**Note**: `initialize_column_type_change` accepts additional options (like `:limit`, `:default` etc)
-which will be passed to `add_column` when creating a new column, so you can override previous values.
+   **Note**: `initialize_column_type_change` accepts additional options (like `:limit`, `:default` etc)
+   which will be passed to `add_column` when creating a new column, so you can override previous values.
 
 2. Backfill data from the old column to the new column:
 
-  ```ruby
-  class BackfillChangeFilesSizeType < ActiveRecord::Migration[7.1]
-    disable_ddl_transaction!
+   ```ruby
+   class BackfillChangeFilesSizeType < ActiveRecord::Migration[7.1]
+     disable_ddl_transaction!
 
-    def up
-      backfill_column_for_type_change :files, :size
-    end
+     def up
+       backfill_column_for_type_change :files, :size
+     end
 
-    def down
-      # no op
-    end
-  end
-  ```
+     def down
+       # no op
+     end
+   end
+   ```
 
 3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
 
-  ```ruby
-  class FinalizeChangeFilesSizeType < ActiveRecord::Migration[7.1]
-    disable_ddl_transaction!
+   ```ruby
+   class FinalizeChangeFilesSizeType < ActiveRecord::Migration[7.1]
+     disable_ddl_transaction!
 
-    def change
-      finalize_column_type_change :files, :size
-    end
-  end
-  ```
+     def change
+       finalize_column_type_change :files, :size
+     end
+   end
+   ```
 
 4. Deploy
 5. Finally, if everything is working as expected, remove copy trigger and old column:
 
-  ```ruby
-  class CleanupChangeFilesSizeType < ActiveRecord::Migration[7.1]
-    def up
-      cleanup_column_type_change :files, :size
-    end
+   ```ruby
+   class CleanupChangeFilesSizeType < ActiveRecord::Migration[7.1]
+     def up
+       cleanup_column_type_change :files, :size
+     end
 
-    def down
-      initialize_column_type_change :files, :size, :integer
-    end
-  end
-  ```
+     def down
+       initialize_column_type_change :files, :size, :integer
+     end
+   end
+   ```
 
 6. Deploy
 
@@ -430,67 +430,69 @@ To work around this limitation, we need to tell Active Record to acquire this in
 
 1. Instruct Rails that you are going to rename a column:
 
-```ruby
-OnlineMigrations.config.column_renames = {
-  "users" => {
-    "name" => "first_name"
-  }
-}
-```
-NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
-until the process of column rename is fully done.
-```ruby
-# config/application.rb
-# For Active Record >= 7
-config.active_record.partial_inserts = true
+   ```ruby
+   OnlineMigrations.config.column_renames = {
+     "users" => {
+       "name" => "first_name"
+     }
+   }
+   ```
 
-# Or for Active Record < 7
-config.active_record.partial_writes = true
-```
+   **Note**: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
+   until the process of column rename is fully done.
+
+   ```ruby
+   # config/application.rb
+   # For Active Record >= 7
+   config.active_record.partial_inserts = true
+
+   # Or for Active Record < 7
+   config.active_record.partial_writes = true
+   ```
 
 2. Deploy
 3. Tell the database that you are going to rename a column. This will not actually rename any columns,
 nor any data/indexes/foreign keys copying will be made, so will be instantaneous.
 It will use a combination of a VIEW and column aliasing to work with both column names simultaneously
 
-```ruby
-class InitializeRenameUsersNameToFirstName < ActiveRecord::Migration[7.1]
-  def change
-    initialize_column_rename :users, :name, :first_name
-  end
-end
-```
+   ```ruby
+   class InitializeRenameUsersNameToFirstName < ActiveRecord::Migration[7.1]
+     def change
+       initialize_column_rename :users, :name, :first_name
+     end
+   end
+   ```
 
 4. Replace usages of the old column with a new column in the codebase
 5. If you enabled Active Record `enumerate_columns_in_select_statements` setting in your application
-  (is disabled by default in Active Record >= 7), then you need to ignore old column:
+   (is disabled by default in Active Record >= 7), then you need to ignore old column:
 
-  ```ruby
-  # For Active Record 5+
-  class User < ApplicationRecord
-    self.ignored_columns = ["name"]
-  end
+   ```ruby
+   # For Active Record 5+
+   class User < ApplicationRecord
+     self.ignored_columns = ["name"]
+   end
 
-  # For Active Record < 5
-  class User < ActiveRecord::Base
-    def self.columns
-      super.reject { |c| c.name == "name" }
-    end
-  end
-  ```
+   # For Active Record < 5
+   class User < ActiveRecord::Base
+     def self.columns
+       super.reject { |c| c.name == "name" }
+     end
+   end
+   ```
 
 6. Deploy
 7. Remove the column rename config from step 1
 8. Remove the column ignore from step 5, if added
 9. Remove the VIEW created in step 3 and finally rename the column:
 
-```ruby
-class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.1]
-  def change
-    finalize_column_rename :users, :name, :first_name
-  end
-end
-```
+   ```ruby
+   class FinalizeRenameUsersNameToFirstName < ActiveRecord::Migration[7.1]
+     def change
+       finalize_column_rename :users, :name, :first_name
+     end
+   end
+   ```
 
 10. Deploy
 
@@ -546,35 +548,35 @@ To work around this limitation, we need to tell Active Record to acquire this in
 
 1. Instruct Rails that you are going to rename a table:
 
-```ruby
-OnlineMigrations.config.table_renames = {
-  "clients" => "users"
-}
-```
+   ```ruby
+   OnlineMigrations.config.table_renames = {
+     "clients" => "users"
+   }
+   ```
 
 2. Deploy
 3. Create a VIEW:
 
-```ruby
-class InitializeRenameClientsToUsers < ActiveRecord::Migration[7.1]
-  def change
-    initialize_table_rename :clients, :users
-  end
-end
-```
+   ```ruby
+   class InitializeRenameClientsToUsers < ActiveRecord::Migration[7.1]
+     def change
+       initialize_table_rename :clients, :users
+     end
+   end
+   ```
 
 4. Replace usages of the old table with a new table in the codebase
 5. Remove the table rename config from step 1
 6. Deploy
 7. Remove the VIEW created in step 3:
 
-```ruby
-class FinalizeRenameClientsToUsers < ActiveRecord::Migration[7.1]
-  def change
-    finalize_table_rename :clients, :users
-  end
-end
-```
+   ```ruby
+   class FinalizeRenameClientsToUsers < ActiveRecord::Migration[7.1]
+     def change
+       finalize_table_rename :clients, :users
+     end
+   end
+   ```
 
 8. Deploy
 
@@ -1157,19 +1159,19 @@ A safer approach is to:
 
 1. ignore the column:
 
-  ```ruby
-  # For Active Record 5+
-  class User < ApplicationRecord
-    self.ignored_columns = ["type"]
-  end
+   ```ruby
+   # For Active Record 5+
+   class User < ApplicationRecord
+     self.ignored_columns = ["type"]
+   end
 
-  # For Active Record < 5
-  class User < ActiveRecord::Base
-    def self.columns
-      super.reject { |c| c.name == "type" }
-    end
-  end
-  ```
+   # For Active Record < 5
+   class User < ActiveRecord::Base
+     def self.columns
+       super.reject { |c| c.name == "type" }
+     end
+   end
+   ```
 
 2. deploy
 3. remove the column ignoring from step 1 and apply initial code changes
@@ -1281,18 +1283,18 @@ The main differences are:
 
 1. `strong_migrations` provides you **text guidance** on how to run migrations safer and you should implement them yourself. This new gem has actual [**code helpers**](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/schema_statements.rb) (and suggests them when fails on unsafe migrations) you can use to do what you want. See [example](#example) for an example.
 
-It has migrations helpers for:
+   It has migrations helpers for:
 
-* renaming tables/columns
-* changing columns types (including changing primary/foreign keys from `integer` to `bigint`)
-* adding columns with default values
-* backfilling data
-* adding different types of constraints
-* and others
+     * renaming tables/columns
+     * changing columns types (including changing primary/foreign keys from `integer` to `bigint`)
+     * adding columns with default values
+     * backfilling data
+     * adding different types of constraints
+     * and others
 
 2. This gem has a [powerful internal framework](https://github.com/fatkodima/online_migrations/blob/master/docs/background_migrations.md) for running data migrations on very large tables using background migrations.
 
-For example, you can use background migrations to migrate data that’s stored in a single JSON column to a separate table instead; backfill values from one column to another (as one of the steps when changing column type); or backfill some column’s value from an API.
+   For example, you can use background migrations to migrate data that’s stored in a single JSON column to a separate table instead; backfill values from one column to another (as one of the steps when changing column type); or backfill some column’s value from an API.
 
 3. Yet, it has more checks for unsafe changes (see [checks](#checks)).
 
