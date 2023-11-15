@@ -270,7 +270,7 @@ module SchemaStatements
         t.index long_column_name, name: "index_projects_on_#{long_column_name}"
       end
 
-      @connection.initialize_column_type_change(:projects, long_column_name, :string)
+      @connection.initialize_column_type_change(:projects, long_column_name.to_sym, :string)
       @connection.finalize_column_type_change(:projects, long_column_name)
 
       assert_equal(1, @connection.indexes(:projects).count { |index| index.columns.include?("#{long_column_name}_for_type_change") })
