@@ -777,6 +777,22 @@ module OnlineMigrations
       end
     end
 
+    # @private
+    # From ActiveRecord. Will not be needed for ActiveRecord >= 7.1.
+    def index_name(table_name, options)
+      if options.is_a?(Hash)
+        if options[:column]
+          Utils.index_name(table_name, options[:column])
+        elsif options[:name]
+          options[:name]
+        else
+          raise ArgumentError, "You must specify the index name"
+        end
+      else
+        index_name(table_name, column: options)
+      end
+    end
+
     # Extends default method to be idempotent and accept `:validate` option for Active Record < 5.2.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key

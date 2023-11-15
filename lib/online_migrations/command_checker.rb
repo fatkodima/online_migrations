@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "erb"
-require "openssl"
 require "set"
 
 module OnlineMigrations
@@ -616,28 +615,12 @@ module OnlineMigrations
       def add_unique_constraint(table_name, column_name = nil, **options)
         return if new_or_small_table?(table_name) || options[:using_index] || !column_name
 
-        index_name = index_name(table_name, column_name)
+        index_name = Utils.index_name(table_name, column_name)
 
         raise_error :add_unique_constraint,
           add_index_code: command_str(:add_index, table_name, column_name, unique: true, name: index_name, algorithm: :concurrently),
           add_code: command_str(:add_unique_constraint, table_name, **options.merge(using_index: index_name)),
           remove_code: command_str(:remove_unique_constraint, table_name, column_name)
-      end
-
-      # Implementation is from Active Record
-      def index_name(table_name, column_name)
-        max_index_name_size = 62
-        name = "index_#{table_name}_on_#{Array(column_name) * '_and_'}"
-        return name if name.bytesize <= max_index_name_size
-
-        # Fallback to short version, add hash to ensure uniqueness
-        hashed_identifier = "_#{OpenSSL::Digest::SHA256.hexdigest(name).first(10)}"
-        name = "idx_on_#{Array(column_name) * '_'}"
-
-        short_limit = max_index_name_size - hashed_identifier.bytesize
-        short_name = name[0, short_limit]
-
-        "#{short_name}#{hashed_identifier}"
       end
 
       def validate_constraint(*)

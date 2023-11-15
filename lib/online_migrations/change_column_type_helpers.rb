@@ -423,6 +423,10 @@ module OnlineMigrations
 
           name = index.name.gsub(from_column, to_column)
 
+          # Generate a shorter name if needed.
+          max_identifier_length = 63 # could use just `max_identifier_length` method for ActiveRecord >= 5.0.
+          name = index_name(table_name, new_columns) if name.length > max_identifier_length
+
           options = {
             unique: index.unique,
             name: name,

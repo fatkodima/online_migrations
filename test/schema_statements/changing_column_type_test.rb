@@ -261,6 +261,21 @@ module SchemaStatements
       assert_equal(indexes_count, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
     end
 
+    def test_finalize_column_type_change_copies_indexes_with_long_names
+      max_identifier_length = 63 # could use just `max_identifier_length` method for ActiveRecord >= 5.0.
+      long_column_name = "a" * (max_identifier_length - "index_projects_on_".length)
+
+      @connection.change_table(:projects) do |t|
+        t.text long_column_name
+        t.index long_column_name, name: "index_projects_on_#{long_column_name}"
+      end
+
+      @connection.initialize_column_type_change(:projects, long_column_name, :string)
+      @connection.finalize_column_type_change(:projects, long_column_name)
+
+      assert_equal(1, @connection.indexes(:projects).count { |index| index.columns.include?("#{long_column_name}_for_type_change") })
+    end
+
     def test_finalize_column_type_change_copies_foreign_key
       @connection.initialize_column_type_change(:projects, :user_id, :bigint)
       @connection.finalize_column_type_change(:projects, :user_id)

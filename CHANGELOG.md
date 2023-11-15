@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix copying indexes with long names when changing column type
 - Enhance error messages with the link to the detailed description
 
 ## 0.9.2 (2023-11-02)

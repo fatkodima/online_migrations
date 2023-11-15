@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "openssl"
+
 module OnlineMigrations
   # @private
   module Utils
@@ -76,6 +78,23 @@ module OnlineMigrations
         options.fetch(:to_table) do
           ActiveRecord::Base.pluralize_table_names ? ref_name.to_s.pluralize : ref_name
         end
+      end
+
+      # Implementation is from ActiveRecord.
+      # This is not needed for ActiveRecord < 7.1 (https://github.com/rails/rails/pull/47753).
+      def index_name(table_name, column_name)
+        max_index_name_size = 62
+        name = "index_#{table_name}_on_#{Array(column_name) * '_and_'}"
+        return name if name.bytesize <= max_index_name_size
+
+        # Fallback to short version, add hash to ensure uniqueness
+        hashed_identifier = "_#{OpenSSL::Digest::SHA256.hexdigest(name).first(10)}"
+        name = "idx_on_#{Array(column_name) * '_'}"
+
+        short_limit = max_index_name_size - hashed_identifier.bytesize
+        short_name = name[0, short_limit]
+
+        "#{short_name}#{hashed_identifier}"
       end
 
       def ar_partial_writes?
