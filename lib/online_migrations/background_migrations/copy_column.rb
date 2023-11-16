@@ -42,12 +42,18 @@ module OnlineMigrations
         old_values = copy_from.map do |from_column|
           old_value = arel_table[from_column]
           if (type_cast_function = type_cast_functions[from_column])
-            if Utils.ar_version <= 5.2
-              # Active Record <= 5.2 does not support quoting of Arel::Nodes::NamedFunction
-              old_value = Arel.sql("#{type_cast_function}(#{connection.quote_column_name(from_column)})")
-            else
-              old_value = Arel::Nodes::NamedFunction.new(type_cast_function, [old_value])
-            end
+            old_value =
+              if type_cast_function =~ /\A\w+\z/
+                if Utils.ar_version <= 5.2
+                  # Active Record <= 5.2 does not support quoting of Arel::Nodes::NamedFunction
+                  Arel.sql("#{type_cast_function}(#{connection.quote_column_name(from_column)})")
+                else
+                  Arel::Nodes::NamedFunction.new(type_cast_function, [old_value])
+                end
+              else
+                # We got a cast expression.
+                Arel.sql(type_cast_function)
+              end
           end
           old_value
         end

@@ -52,6 +52,14 @@ module BackgroundMigrations
       assert_equal "value", @project1.settings_for_type_change["key"]
     end
 
+    def test_process_batch_type_cast_expression
+      m = OnlineMigrations::BackgroundMigrations::CopyColumn.new(:projects, ["settings"], ["settings_for_type_change"], nil, { "settings" => "CAST(settings AS jsonb)" })
+      m.process_batch(m.relation)
+
+      @project1.reload
+      assert_equal "value", @project1.settings_for_type_change["key"]
+    end
+
     def test_count
       m = OnlineMigrations::BackgroundMigrations::CopyColumn.new(:projects, ["id"], ["id_for_type_change"])
       assert_kind_of Integer, m.count

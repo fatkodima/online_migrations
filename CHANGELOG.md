@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `backfill_column_for_type_change_in_background` for cast expressions
 - Fix copying indexes with long names when changing column type
 - Enhance error messages with the link to the detailed description
 
