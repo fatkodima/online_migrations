@@ -415,17 +415,13 @@ module OnlineMigrations
               end
             end
 
-          # This is necessary as we can't properly rename indexes such as "taggings_idx".
-          if !index.name.include?(from_column)
-            raise "The index #{index.name} can not be copied as it does not " \
-                  "mention the old column. You have to rename this index manually first."
+          if index.name.include?(from_column)
+            name = index.name.gsub(from_column, to_column)
           end
-
-          name = index.name.gsub(from_column, to_column)
 
           # Generate a shorter name if needed.
           max_identifier_length = 63 # could use just `max_identifier_length` method for ActiveRecord >= 5.0.
-          name = index_name(table_name, new_columns) if name.length > max_identifier_length
+          name = index_name(table_name, new_columns) if !name || name.length > max_identifier_length
 
           options = {
             unique: index.unique,
