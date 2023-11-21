@@ -18,7 +18,6 @@ module OnlineMigrations
   autoload :Migrator
   autoload :SchemaDumper
   autoload :DatabaseTasks
-  autoload :ForeignKeyDefinition
   autoload :ForeignKeysCollector
   autoload :IndexDefinition
   autoload :IndexesCollector
@@ -91,10 +90,6 @@ module OnlineMigrations
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache7)
       else
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
-      end
-
-      if OnlineMigrations::Utils.ar_version <= 5.1
-        ActiveRecord::ConnectionAdapters::ForeignKeyDefinition.prepend(OnlineMigrations::ForeignKeyDefinition)
       end
     end
   end

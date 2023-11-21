@@ -22,22 +22,18 @@ module CommandChecker
     end
 
     def test_add_reference_default
-      if ar_version >= 5.0
-        assert_unsafe AddReferenceDefault, <<-MSG.strip_heredoc
-          Adding an index non-concurrently blocks writes.
-          Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding index.
+      assert_unsafe AddReferenceDefault, <<~MSG
+        Adding an index non-concurrently blocks writes.
+        Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding index.
 
-          class CommandChecker::AddReferenceTest::AddReferenceDefault < #{migration_parent_string}
-            disable_ddl_transaction!
+        class CommandChecker::AddReferenceTest::AddReferenceDefault < #{migration_parent}
+          disable_ddl_transaction!
 
-            def change
-              add_reference_concurrently :projects, :user
-            end
+          def change
+            add_reference_concurrently :projects, :user
           end
-        MSG
-      else
-        assert_safe AddReferenceDefault
-      end
+        end
+      MSG
     end
 
     class AddReferenceIndex < TestMigration
@@ -79,11 +75,11 @@ module CommandChecker
     end
 
     def test_add_reference_foreign_key
-      assert_unsafe AddReferenceForeignKey, <<-MSG.strip_heredoc
+      assert_unsafe AddReferenceForeignKey, <<~MSG
         Adding a foreign key blocks writes on both tables.
         Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding a foreign key.
 
-        class CommandChecker::AddReferenceTest::AddReferenceForeignKey < #{migration_parent_string}
+        class CommandChecker::AddReferenceTest::AddReferenceForeignKey < #{migration_parent}
           disable_ddl_transaction!
 
           def change
@@ -120,7 +116,7 @@ module CommandChecker
     end
 
     def test_add_reference_index_and_foreign_key
-      assert_unsafe AddReferenceIndexAndForeignKey, <<-MSG.strip_heredoc
+      assert_unsafe AddReferenceIndexAndForeignKey, <<~MSG
         Adding a foreign key blocks writes on both tables.
         Adding an index non-concurrently blocks writes.
         Instead, use add_reference_concurrently helper. It will create a reference and take care of safely adding a foreign key and index.

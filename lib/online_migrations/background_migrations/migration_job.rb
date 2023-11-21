@@ -12,9 +12,8 @@ module OnlineMigrations
 
       self.table_name = :background_migration_jobs
 
-      # For Active Record <= 4.2 needs to fully specify enum values
-      scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
-      scope :completed, -> { where(status: [statuses[:failed], statuses[:succeeded]]) }
+      scope :active, -> { where(status: [:enqueued, :running]) }
+      scope :completed, -> { where(status: [:failed, :succeeded]) }
       scope :stuck, -> do
         timeout = ::OnlineMigrations.config.background_migrations.stuck_jobs_timeout
         active.where("updated_at <= ?", timeout.ago)
@@ -26,7 +25,7 @@ module OnlineMigrations
         stuck_sql             = connection.unprepared_statement { stuck.to_sql }
         failed_retriable_sql  = connection.unprepared_statement { failed_retriable.to_sql }
 
-        from(Arel.sql(<<-SQL.strip_heredoc))
+        from(Arel.sql(<<~SQL))
           (
             (#{failed_retriable_sql})
             UNION
@@ -35,18 +34,15 @@ module OnlineMigrations
         SQL
       end
 
-      scope :except_succeeded, -> { where("status != ?", statuses[:succeeded]) }
+      scope :except_succeeded, -> { where.not(status: :succeeded) }
       scope :attempts_exceeded, -> { where("attempts >= max_attempts") }
 
-      enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
+      enum status: STATUSES.index_with(&:to_s)
 
       delegate :migration_class, :migration_object, :migration_relation, :batch_column_name,
         :arguments, :batch_pause, to: :migration
 
       belongs_to :migration
-
-      # For Active Record 5.0+ this is validated by default from belongs_to
-      validates :migration, presence: true
 
       validates :min_value, :max_value, presence: true, numericality: { greater_than: 0 }
       validate :values_in_migration_range, if: :min_value?

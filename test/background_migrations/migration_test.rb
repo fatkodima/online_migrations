@@ -73,7 +73,7 @@ module BackgroundMigrations
       m.valid?
 
       errors = m.errors.full_messages
-      assert(errors.any? { |error| error =~ /relation cannot use ORDER BY or LIMIT/ })
+      assert(errors.any? { |error| error.include?("relation cannot use ORDER BY or LIMIT") })
     end
 
     def test_status_transitions

@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Drop support for Ruby < 2.7 and Rails < 6.1
+
 ## 0.10.0 (2023-12-12)
 
 - Add `auto_analyze` configuration option

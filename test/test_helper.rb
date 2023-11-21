@@ -29,7 +29,7 @@ end
 # Disallow ActiveSupport deprecations sprouting from this gem
 if OnlineMigrations::Utils.ar_version >= 7.1
   ActiveSupport::Deprecation._instance.disallowed_warnings = :all
-elsif OnlineMigrations::Utils.ar_version >= 6.1
+else
   ActiveSupport::Deprecation.disallowed_warnings = :all
 end
 
@@ -63,7 +63,7 @@ end
 
 prepare_database
 
-TestMigration = OnlineMigrations::Utils.migration_parent
+TestMigration = ActiveRecord::Migration::Current
 TestMigration.version = 20200101000001
 
 OnlineMigrations.configure do |config|

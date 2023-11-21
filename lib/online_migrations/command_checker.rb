@@ -154,13 +154,7 @@ module OnlineMigrations
           check_columns_removal(command, *args, **options)
         else
           if respond_to?(command, true)
-            if options.any?
-              # Workaround for Active Record < 5 change_column_default
-              # not accepting options.
-              send(command, *args, **options, &block)
-            else
-              send(command, *args, &block)
-            end
+            send(command, *args, **options, &block)
           else
             # assume it is safe
             true
@@ -362,9 +356,7 @@ module OnlineMigrations
               precision = options[:precision] || options[:limit] || 6
               existing_precision = existing_column.precision || existing_column.limit || 6
 
-              # PostgreSQL interval data type was added in https://github.com/rails/rails/pull/16919
-              (existing_type == :interval || (Utils.ar_version < 6.1 && existing_column.sql_type.start_with?("interval"))) &&
-              precision >= existing_precision
+              existing_type == :interval && precision >= existing_precision
             when :inet
               existing_type == :cidr
             else
@@ -487,7 +479,7 @@ module OnlineMigrations
 
       def add_reference(table_name, ref_name, **options)
         # Always added by default in 5.0+
-        index = options.fetch(:index) { Utils.ar_version >= 5.0 }
+        index = options.fetch(:index, true)
 
         if index.is_a?(Hash) && index[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
           raise_error :add_hash_index
@@ -515,7 +507,7 @@ module OnlineMigrations
         end
 
         if !options[:polymorphic]
-          type = (options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)).to_sym
+          type = (options[:type] || :bigint).to_sym
           column_name = "#{ref_name}_id"
 
           foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
@@ -573,9 +565,9 @@ module OnlineMigrations
         end
 
         if index_def
-          existing_options = [:name, :columns, :unique, :where, :type, :using, :opclasses].map do |option|
+          existing_options = [:name, :columns, :unique, :where, :type, :using, :opclasses].filter_map do |option|
             [option, index_def.public_send(option)] if index_def.respond_to?(option)
-          end.compact.to_h
+          end.to_h
 
           @removed_indexes << IndexDefinition.new(table: table_name, **existing_options)
         end
@@ -738,20 +730,10 @@ module OnlineMigrations
         template = OnlineMigrations.config.error_messages.fetch(message_key)
 
         vars[:migration_name] = @migration.name
-        vars[:migration_parent] = Utils.migration_parent_string
-        vars[:model_parent] = Utils.model_parent_string
+        vars[:migration_parent] = "ActiveRecord::Migration[#{Utils.ar_version}]"
         vars[:ar_version] = Utils.ar_version
 
-        if RUBY_VERSION >= "2.6"
-          message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
-        else
-          # `result_with_hash` was added in ruby 2.5
-          b = TOPLEVEL_BINDING.dup
-          vars.each_pair do |key, value|
-            b.local_variable_set(key, value)
-          end
-          message = ERB.new(template, nil, "<>").result(b)
-        end
+        message = ERB.new(template, trim_mode: "<>").result_with_hash(vars)
 
         if (link = ERROR_MESSAGE_TO_LINK[message_key])
           message += "\nFor more details, see https://github.com/fatkodima/online_migrations##{link}"
@@ -790,7 +772,7 @@ module OnlineMigrations
       end
 
       def crud_blocked?
-        locks_query = <<-SQL.strip_heredoc
+        locks_query = <<~SQL
           SELECT relation::regclass::text
           FROM pg_locks
           WHERE mode IN ('ShareLock', 'ShareRowExclusiveLock', 'ExclusiveLock', 'AccessExclusiveLock')
@@ -808,7 +790,7 @@ module OnlineMigrations
       end
 
       def check_constraints(table_name)
-        constraints_query = <<-SQL.strip_heredoc
+        constraints_query = <<~SQL
           SELECT pg_get_constraintdef(oid) AS def
           FROM pg_constraint
           WHERE contype = 'c'
@@ -829,7 +811,7 @@ module OnlineMigrations
 
       def check_mismatched_foreign_key_type(table_name, column_name, type, **options)
         column_name = column_name.to_s
-        ref_name = column_name.sub(/_id\z/, "")
+        ref_name = column_name.delete_suffix("_id")
 
         if like_foreign_key?(column_name, type)
           foreign_table_name = Utils.foreign_table_name(ref_name, options)

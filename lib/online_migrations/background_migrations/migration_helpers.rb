@@ -223,10 +223,6 @@ module OnlineMigrations
       #     For smaller tables it is probably better and easier to directly find and delete orpahed records.
       #
       def delete_orphaned_records_in_background(model_name, *associations, **options)
-        if Utils.ar_version <= 4.2
-          raise "#{__method__} does not support Active Record <= 4.2 yet"
-        end
-
         model_name = model_name.name if model_name.is_a?(Class)
 
         enqueue_background_migration(

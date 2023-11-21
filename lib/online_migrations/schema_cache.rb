@@ -28,9 +28,6 @@ module OnlineMigrations
     end
 
     def indexes(table_name)
-      # Available only in Active Record 6.0+
-      return if !defined?(super)
-
       if (renamed_table = renamed_table?(table_name))
         super(renamed_table)
       elsif renamed_column?(table_name)
@@ -109,9 +106,6 @@ module OnlineMigrations
     end
 
     def indexes(connection, table_name)
-      # Available only in Active Record 6.0+
-      return if !defined?(super)
-
       if (renamed_table = renamed_table?(connection, table_name))
         super(connection, renamed_table)
       elsif renamed_column?(connection, table_name)

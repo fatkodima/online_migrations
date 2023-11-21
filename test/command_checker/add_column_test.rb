@@ -29,7 +29,7 @@ module CommandChecker
 
     def test_add_column_default_before_11
       with_target_version(10) do
-        assert_unsafe AddColumnDefault, <<-MSG.strip_heredoc
+        assert_unsafe AddColumnDefault, <<~MSG
           Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
 
           A safer approach is to:
@@ -39,7 +39,7 @@ module CommandChecker
 
           add_column_with_default takes care of all this steps:
 
-          class CommandChecker::AddColumnTest::AddColumnDefault < #{migration_parent_string}
+          class CommandChecker::AddColumnTest::AddColumnDefault < #{migration_parent}
             disable_ddl_transaction!
 
             def change
@@ -58,11 +58,11 @@ module CommandChecker
 
     def test_add_column_default_null_before_11
       with_target_version(10) do
-        assert_unsafe AddColumnDefaultNull, <<-MSG.strip_heredoc
+        assert_unsafe AddColumnDefaultNull, <<~MSG
           Adding a column with a null default blocks reads and writes while the entire table is rewritten.
           Instead, add the column without a default value.
 
-          class CommandChecker::AddColumnTest::AddColumnDefaultNull < #{migration_parent_string}
+          class CommandChecker::AddColumnTest::AddColumnDefaultNull < #{migration_parent}
             def change
               add_column :users, :admin, :boolean
             end
@@ -156,15 +156,9 @@ module CommandChecker
     end
 
     class AddColumnDefaultSafe < TestMigration
-      def up
+      def change
         add_column :users, :admin, :boolean
-        # Active Record <= 4.2 does not support reversible change_column_default,
-        # so needs to split to up/down methods
-        change_column_default :users, :admin, false
-      end
-
-      def down
-        remove_column :users, :admin
+        change_column_default :users, :admin, from: nil, to: false
       end
     end
 
@@ -190,11 +184,11 @@ module CommandChecker
     end
 
     def test_add_column_json
-      assert_unsafe AddColumnJson, <<-MSG.strip_heredoc
+      assert_unsafe AddColumnJson, <<~MSG
         There's no equality operator for the json column type, which can cause errors for
         existing SELECT DISTINCT queries in your application. Use jsonb instead.
 
-        class CommandChecker::AddColumnTest::AddColumnJson < #{migration_parent_string}
+        class CommandChecker::AddColumnTest::AddColumnJson < #{migration_parent}
           def change
             add_column :projects, :settings, :jsonb
           end
@@ -219,11 +213,11 @@ module CommandChecker
     end
 
     def test_add_column_with_default_json
-      assert_unsafe AddColumnWithDefaultJson, <<-MSG.strip_heredoc
+      assert_unsafe AddColumnWithDefaultJson, <<~MSG
         There's no equality operator for the json column type, which can cause errors for
         existing SELECT DISTINCT queries in your application. Use jsonb instead.
 
-        class CommandChecker::AddColumnTest::AddColumnWithDefaultJson < #{migration_parent_string}
+        class CommandChecker::AddColumnTest::AddColumnWithDefaultJson < #{migration_parent}
           def change
             add_column_with_default :projects, :settings, :jsonb, default: {}
           end
@@ -248,7 +242,7 @@ module CommandChecker
     end
 
     def test_generated_stored
-      assert_unsafe AddColumnGeneratedStored, <<-MSG.strip_heredoc
+      assert_unsafe AddColumnGeneratedStored, <<~MSG
         Adding a stored generated column blocks reads and writes while the entire table is rewritten.
         Add a non-generated column and use callbacks or triggers instead.
       MSG

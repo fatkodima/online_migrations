@@ -31,40 +31,28 @@ module CommandChecker
     end
 
     def test_remove_column
-      if ar_version >= 5
-        assert_unsafe RemoveColumn, <<-MSG.strip_heredoc
-          Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
-          A safer approach is to:
+      assert_unsafe RemoveColumn, <<~MSG
+        Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
+        A safer approach is to:
 
-          1. Ignore the column(s):
+        1. Ignore the column(s):
 
-            class User < ApplicationRecord
-              self.ignored_columns = ["email"]
+          class User < ApplicationRecord
+            self.ignored_columns = ["email"]
+          end
+
+        2. Deploy
+        3. Wrap column removing in a safety_assured { ... } block
+
+          class CommandChecker::RemovingColumnsTest::RemoveColumn < #{migration_parent}
+            def change
+              safety_assured { remove_column :users, :email, :string, null: false }
             end
+          end
 
-          2. Deploy
-          3. Wrap column removing in a safety_assured { ... } block
-
-            class CommandChecker::RemovingColumnsTest::RemoveColumn < #{migration_parent_string}
-              def change
-                safety_assured { remove_column :users, :email, :string, null: false }
-              end
-            end
-
-          4. Remove columns ignoring
-          5. Deploy
-        MSG
-      else
-        assert_unsafe RemoveColumn, <<-MSG.strip_heredoc
-          1. Ignore the column(s):
-
-            class User < ActiveRecord::Base
-              def self.columns
-                super.reject { |c| ["email"].include?(c.name) }
-              end
-            end
-        MSG
-      end
+        4. Remove columns ignoring
+        5. Deploy
+      MSG
     end
 
     class RemoveColumnNewTable < TestMigration
@@ -88,11 +76,11 @@ module CommandChecker
     end
 
     def test_remove_column_with_index
-      assert_unsafe RemoveColumnWithIndex, <<-MSG.strip_heredoc
+      assert_unsafe RemoveColumnWithIndex, <<~MSG
         Removing a column will automatically remove all of the indexes that involved the removed column.
         But the indexes would be removed non-concurrently, so you need to safely remove the indexes first:
 
-        class CommandChecker::RemovingColumnsTest::RemoveColumnWithIndexRemoveIndexes < #{migration_parent_string}
+        class CommandChecker::RemovingColumnsTest::RemoveColumnWithIndexRemoveIndexes < #{migration_parent}
           disable_ddl_transaction!
 
           def change
@@ -128,8 +116,6 @@ module CommandChecker
     end
 
     def test_remove_column_with_expression_index
-      skip("Active Record < 5 does not support expression indexes") if ar_version < 5
-
       assert_unsafe RemoveColumnWithExpressionIndex,
         "remove_index :users, name: :index_users_on_lower_email, algorithm: :concurrently"
     end
@@ -149,11 +135,7 @@ module CommandChecker
     end
 
     def test_remove_columns
-      if ar_version >= 5
-        assert_unsafe RemoveColumns, 'self.ignored_columns = ["name", "email"]'
-      else
-        assert_unsafe RemoveColumns, 'super.reject { |c| ["name", "email"].include?(c.name) }'
-      end
+      assert_unsafe RemoveColumns, 'self.ignored_columns = ["name", "email"]'
     end
 
     class RemoveColumnsNewTable < TestMigration
@@ -192,11 +174,7 @@ module CommandChecker
     end
 
     def test_remove_timestamps
-      if ar_version >= 5
-        assert_unsafe RemoveTimestamps, 'self.ignored_columns = ["created_at", "updated_at"]'
-      else
-        assert_unsafe RemoveTimestamps, 'super.reject { |c| ["created_at", "updated_at"].include?(c.name) }'
-      end
+      assert_unsafe RemoveTimestamps, 'self.ignored_columns = ["created_at", "updated_at"]'
     end
 
     class RemoveTimestampsNewTable < TestMigration
@@ -231,11 +209,7 @@ module CommandChecker
     end
 
     def test_remove_reference
-      if ar_version >= 5
-        assert_unsafe RemoveReference, 'self.ignored_columns = ["user_id"]'
-      else
-        assert_unsafe RemoveReference, 'super.reject { |c| ["user_id"].include?(c.name) }'
-      end
+      assert_unsafe RemoveReference, 'self.ignored_columns = ["user_id"]'
     end
 
     class RemovePolymorphicReference < TestMigration
@@ -245,11 +219,7 @@ module CommandChecker
     end
 
     def test_remove_polymorphic_reference
-      if ar_version >= 5
-        assert_unsafe RemovePolymorphicReference, 'self.ignored_columns = ["attachable_id", "attachable_type"]'
-      else
-        assert_unsafe RemovePolymorphicReference, 'super.reject { |c| ["attachable_id", "attachable_type"].include?(c.name) }'
-      end
+      assert_unsafe RemovePolymorphicReference, 'self.ignored_columns = ["attachable_id", "attachable_type"]'
     end
 
     class RemoveReferenceNewTable < TestMigration

@@ -31,13 +31,13 @@ module CommandChecker
     end
 
     def test_change_column_type
-      assert_unsafe ChangeColumnType, <<-MSG.strip_heredoc
+      assert_unsafe ChangeColumnType, <<~MSG
         Changing the type of an existing column blocks reads and writes while the entire table is rewritten.
         A safer approach can be accomplished in several steps:
 
         1. Create a new column and keep column's data in sync:
 
-          class InitializeCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
+          class InitializeCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             def change
               initialize_column_type_change :files, :cost_per_gb, :integer
             end
@@ -48,7 +48,7 @@ module CommandChecker
 
         2. Backfill data from the old column to the new column:
 
-          class BackfillCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
+          class BackfillCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             disable_ddl_transaction!
 
             def up
@@ -62,7 +62,7 @@ module CommandChecker
 
         3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
 
-          class FinalizeCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
+          class FinalizeCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             disable_ddl_transaction!
 
             def change
@@ -73,7 +73,7 @@ module CommandChecker
         4. Deploy
         5. Finally, if everything is working as expected, remove copy trigger and old column:
 
-          class CleanupCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent_string}
+          class CleanupCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             def up
               cleanup_column_type_change :files, :cost_per_gb
             end
@@ -499,12 +499,7 @@ module CommandChecker
 
     class IntervalIncreasePrecision < TestMigration
       def up
-        if OnlineMigrations::Utils.ar_version >= 6.1
-          add_column :files, :delete_after, :interval, precision: 0
-        else
-          # precision is ignored for add_column and interval in Active Record < 6.1
-          safety_assured { execute('ALTER TABLE "files" ADD COLUMN "delete_after" interval(0)') }
-        end
+        add_column :files, :delete_after, :interval, precision: 0
 
         change_column :files, :delete_after, :interval, precision: 3
         change_column :files, :delete_after, :interval, precision: 6
@@ -710,7 +705,7 @@ module CommandChecker
     end
 
     def test_add_not_null
-      assert_unsafe AddNotNull, <<-MSG.strip_heredoc
+      assert_unsafe AddNotNull, <<~MSG
         Changing the type is safe, but setting NOT NULL is not.
       MSG
     end

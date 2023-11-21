@@ -120,7 +120,7 @@ class CommandRecorderTest < Minitest::Test
     @connection.initialize_table_rename(:users, :clients)
 
     migrate(CleanupRenameTableConcurrently, direction: :up)
-    refute_includes @connection.views, "users"
+    assert_not_includes @connection.views, "users"
 
     migrate(CleanupRenameTableConcurrently, direction: :down)
     assert_includes @connection.views, "users"

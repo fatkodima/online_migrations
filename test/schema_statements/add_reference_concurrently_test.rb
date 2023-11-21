@@ -34,15 +34,11 @@ module SchemaStatements
       assert_includes Milestone.column_names, "project_id"
     end
 
-    def test_add_reference_concurrently_adds_index_in_ar_5
+    def test_add_reference_concurrently_adds_index
       connection.add_reference_concurrently :milestones, :project
       index = connection.indexes(:milestones).first
 
-      if ar_version >= 5.0
-        assert_equal "index_milestones_on_project_id", index.name
-      else
-        assert_nil index
-      end
+      assert_equal "index_milestones_on_project_id", index.name
     end
 
     def test_add_reference_concurrently_add_index_hash

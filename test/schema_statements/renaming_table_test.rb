@@ -65,16 +65,14 @@ module SchemaStatements
 
       assert_equal ProjectNew.primary_key, ProjectOld.primary_key
 
-      refute_empty ProjectOld.columns
+      assert_not_empty ProjectOld.columns
       assert_equal ProjectNew.columns, ProjectOld.columns
 
-      refute_empty ProjectOld.columns_hash
+      assert_not_empty ProjectOld.columns_hash
       assert_equal ProjectNew.columns_hash, ProjectOld.columns_hash
 
-      if ar_version >= 6.0
-        refute_empty @schema_cache.indexes("projects")
-        assert_equal @schema_cache.indexes("projects_new"), @schema_cache.indexes("projects")
-      end
+      assert_not_empty @schema_cache.indexes("projects")
+      assert_equal @schema_cache.indexes("projects_new"), @schema_cache.indexes("projects")
     end
 
     def test_old_code_and_new_code_accepts_crud_operations
@@ -120,8 +118,6 @@ module SchemaStatements
 
     # Test that it is properly reset in rails tests using fixtures.
     def test_initialize_table_rename_and_resetting_sequence
-      skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
-
       @connection.initialize_table_rename(:projects, :projects_new)
 
       @schema_cache.clear!

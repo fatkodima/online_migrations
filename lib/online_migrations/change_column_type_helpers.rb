@@ -91,13 +91,13 @@ module OnlineMigrations
     # @see #initialize_column_type_change
     #
     def initialize_columns_type_change(table_name, columns_and_types, **options)
-      if !columns_and_types.is_a?(Array) || !columns_and_types.all? { |e| e.is_a?(Array) }
+      if !columns_and_types.is_a?(Array) || !columns_and_types.all?(Array)
         raise ArgumentError, "columns_and_types must be an array of arrays"
       end
 
-      conversions = columns_and_types.map do |(column_name, _new_type)|
+      conversions = columns_and_types.to_h do |(column_name, _new_type)|
         [column_name, __change_type_column(column_name)]
-      end.to_h
+      end
 
       if (extra_keys = (options.keys - conversions.keys)).any?
         raise ArgumentError, "Options has unknown keys: #{extra_keys.map(&:inspect).join(', ')}. " \
@@ -106,7 +106,7 @@ module OnlineMigrations
 
       transaction do
         columns_and_types.each do |(column_name, new_type)|
-          old_col = __column_for(table_name, column_name)
+          old_col = column_for(table_name, column_name)
           old_col_options = __options_from_column(old_col, [:collation, :comment])
           column_options = options[column_name] || {}
           tmp_column_name = conversions[column_name]
@@ -239,13 +239,13 @@ module OnlineMigrations
     def finalize_columns_type_change(table_name, *column_names)
       __ensure_not_in_transaction!
 
-      conversions = column_names.map do |column_name|
+      conversions = column_names.to_h do |column_name|
         [column_name.to_s, __change_type_column(column_name)]
-      end.to_h
+      end
 
       conversions.each do |column_name, tmp_column_name|
-        old_column = __column_for(table_name, column_name)
-        column = __column_for(table_name, tmp_column_name)
+        old_column = column_for(table_name, column_name)
+        column = column_for(table_name, tmp_column_name)
 
         # We already set default and NOT NULL for to-be-PK columns
         # for PG >= 11, so can skip this case
@@ -302,9 +302,9 @@ module OnlineMigrations
     def revert_finalize_columns_type_change(table_name, *column_names)
       __ensure_not_in_transaction!
 
-      conversions = column_names.map do |column_name|
+      conversions = column_names.to_h do |column_name|
         [column_name.to_s, __change_type_column(column_name)]
-      end.to_h
+      end
 
       transaction do
         conversions
@@ -362,9 +362,9 @@ module OnlineMigrations
     # @see #cleanup_column_type_change
     #
     def cleanup_columns_type_change(table_name, *column_names)
-      conversions = column_names.map do |column_name|
-        [column_name, __change_type_column(column_name)]
-      end.to_h
+      conversions = column_names.index_with do |column_name|
+        __change_type_column(column_name)
+      end
 
       transaction do
         __remove_copy_triggers(table_name, conversions.keys, conversions.values)
@@ -419,8 +419,6 @@ module OnlineMigrations
             name = index.name.gsub(from_column, to_column)
           end
 
-          # Generate a shorter name if needed.
-          max_identifier_length = 63 # could use just `max_identifier_length` method for ActiveRecord >= 5.0.
           name = index_name(table_name, new_columns) if !name || name.length > max_identifier_length
 
           options = {
@@ -433,8 +431,7 @@ module OnlineMigrations
           options[:using] = index.using if index.using
           options[:where] = index.where if index.where
 
-          # Opclasses were added in 5.2
-          if Utils.ar_version >= 5.2 && !index.opclasses.blank?
+          if index.opclasses.present?
             opclasses = index.opclasses.dup
 
             # Copy the operator classes for the old column (if any) to the new column.
@@ -491,7 +488,7 @@ module OnlineMigrations
         # For PG >= 12 we can "promote" CHECK constraint to NOT NULL constraint:
         # https://github.com/postgres/postgres/commit/bbb96c3704c041d139181c6601e5bc770e045d26
         if raw_connection.server_version >= 12_00_00
-          execute(<<-SQL.strip_heredoc)
+          execute(<<~SQL)
             ALTER TABLE #{quote_table_name(table_name)}
             ALTER #{quote_column_name(column_name)}
             SET NOT NULL
@@ -501,7 +498,7 @@ module OnlineMigrations
           # through PG internal tables.
           # In-depth analysis of implications of this was made, so this approach
           # is considered safe - https://habr.com/ru/company/haulmont/blog/493954/  (in russian).
-          execute(<<-SQL.strip_heredoc)
+          execute(<<~SQL)
             UPDATE pg_catalog.pg_attribute
             SET attnotnull = true
             WHERE attrelid = #{quote(table_name)}::regclass
@@ -517,7 +514,7 @@ module OnlineMigrations
       def __check_constraints(table_name)
         schema = __schema_for_table(table_name)
 
-        check_sql = <<-SQL.strip_heredoc
+        select_all(<<~SQL)
           SELECT
             ccu.column_name as column_name,
             con.conname as constraint_name,
@@ -535,12 +532,10 @@ module OnlineMigrations
             AND con.contype = 'c'
             AND nsp.nspname = #{schema}
         SQL
-
-        select_all(check_sql)
       end
 
       def __rename_constraint(table_name, old_name, new_name)
-        execute(<<-SQL.strip_heredoc)
+        execute(<<~SQL)
           ALTER TABLE #{quote_table_name(table_name)}
           RENAME CONSTRAINT #{quote_column_name(old_name)} TO #{quote_column_name(new_name)}
         SQL
@@ -612,7 +607,7 @@ module OnlineMigrations
       def __referencing_table_names(table_name)
         schema = __schema_for_table(table_name)
 
-        select_values(<<-SQL.strip_heredoc)
+        select_values(<<~SQL)
           SELECT DISTINCT con.conrelid::regclass::text AS conrelname
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_namespace nsp

@@ -37,7 +37,7 @@ module OnlineMigrations
         objid = lock_key & 0xffffffff
         classid = (lock_key & (0xffffffff << 32)) >> 32
 
-        active = connection.select_value(<<-SQL.strip_heredoc)
+        active = connection.select_value(<<~SQL)
           SELECT granted
           FROM pg_locks
           WHERE locktype = 'advisory'

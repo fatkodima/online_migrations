@@ -31,11 +31,11 @@ module CommandChecker
     end
 
     def test_add_foreign_key
-      assert_unsafe AddForeignKey, <<-MSG.strip_heredoc
+      assert_unsafe AddForeignKey, <<~MSG
         Adding a foreign key blocks writes on both tables. Add the foreign key without validating existing rows,
         and then validate them in a separate transaction.
 
-        class CommandChecker::ForeignKeysTest::AddForeignKey < #{migration_parent_string}
+        class CommandChecker::ForeignKeysTest::AddForeignKey < #{migration_parent}
           disable_ddl_transaction!
 
           def change
@@ -87,7 +87,7 @@ module CommandChecker
     end
 
     def test_add_foreign_key_validate_same_transaction
-      assert_unsafe AddForeignKeyValidateSameTransaction, <<-MSG.strip_heredoc
+      assert_unsafe AddForeignKeyValidateSameTransaction, <<~MSG
         Validating a foreign key while holding heavy locks on tables is dangerous.
         Use disable_ddl_transaction! or a separate migration.
       MSG
@@ -192,14 +192,10 @@ module CommandChecker
     end
 
     def test_add_reference_column
-      if ar_version >= 5.1
-        assert_unsafe AddReferenceColumn, <<-MSG.strip_heredoc
-          projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
-          Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
-        MSG
-      else
-        assert_safe AddReferenceColumn
-      end
+      assert_unsafe AddReferenceColumn, <<~MSG
+        projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
+        Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
+      MSG
     end
 
     class AddReferenceColumnWithDefault < TestMigration
@@ -209,14 +205,10 @@ module CommandChecker
     end
 
     def test_add_reference_column_with_default
-      if ar_version >= 5.1
-        assert_unsafe AddReferenceColumnWithDefault, <<-MSG.strip_heredoc
-          projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
-          Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
-        MSG
-      else
-        assert_safe AddReferenceColumnWithDefault
-      end
+      assert_unsafe AddReferenceColumnWithDefault, <<~MSG
+        projects.repository_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
+        Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
+      MSG
     end
 
     class AddReferenceColumnNonExistentTable < TestMigration
@@ -236,11 +228,7 @@ module CommandChecker
     end
 
     def test_add_reference_column_integer_with_limit
-      if ar_version >= 5.1
-        assert_safe AddReferenceColumnIntegerWithLimit
-      else
-        assert_unsafe AddReferenceColumnIntegerWithLimit
-      end
+      assert_safe AddReferenceColumnIntegerWithLimit
     end
 
     class AddReference < TestMigration
@@ -250,11 +238,7 @@ module CommandChecker
     end
 
     def test_add_reference
-      if ar_version >= 5.1
-        assert_unsafe AddReference, "projects.repository_id references a column of different type"
-      else
-        assert_safe AddReference
-      end
+      assert_unsafe AddReference, "projects.repository_id references a column of different type"
     end
 
     class AddReferencePolymorphic < TestMigration

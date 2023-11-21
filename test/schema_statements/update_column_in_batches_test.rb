@@ -16,7 +16,7 @@ module SchemaStatements
         t.string :name
         t.integer :points
         t.datetime :started_at
-        t.timestamps(null: false) # to please Active Record 4.2 deprecation warning
+        t.timestamps
       end
 
       Milestone.reset_column_information
@@ -75,7 +75,7 @@ module SchemaStatements
 
       connection.update_column_in_batches(:milestones, :started_at, -> { "CURRENT_TIMESTAMP" })
 
-      refute_nil m1.reload.started_at
+      assert_not_nil m1.reload.started_at
       assert_equal m1.started_at, m2.reload.started_at
     end
 

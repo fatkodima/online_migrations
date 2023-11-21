@@ -23,7 +23,7 @@ module OnlineMigrations
       trigger_name = name(from_columns, to_columns)
       assignment_clauses = assignment_clauses_for_columns(from_columns, to_columns)
 
-      connection.execute(<<-SQL.strip_heredoc)
+      connection.execute(<<~SQL)
         CREATE OR REPLACE FUNCTION #{trigger_name}() RETURNS TRIGGER AS $$
         BEGIN
           #{assignment_clauses};
@@ -32,11 +32,11 @@ module OnlineMigrations
         $$ LANGUAGE plpgsql;
       SQL
 
-      connection.execute(<<-SQL.strip_heredoc)
+      connection.execute(<<~SQL)
         DROP TRIGGER IF EXISTS #{trigger_name} ON #{quoted_table_name}
       SQL
 
-      connection.execute(<<-SQL.strip_heredoc)
+      connection.execute(<<~SQL)
         CREATE TRIGGER #{trigger_name}
           BEFORE INSERT OR UPDATE
           ON #{quoted_table_name}

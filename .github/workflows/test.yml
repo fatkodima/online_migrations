@@ -33,17 +33,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - ruby-version: 2.4
-            gemfile: activerecord_42.gemfile
-          - ruby-version: 2.4
-            gemfile: activerecord_50.gemfile
-          - ruby-version: 2.4
-            gemfile: activerecord_51.gemfile
-          - ruby-version: 2.4
-            gemfile: activerecord_52.gemfile
-          - ruby-version: 2.5
-            gemfile: activerecord_60.gemfile
-          - ruby-version: 2.5
+          - ruby-version: 2.7
             gemfile: activerecord_61.gemfile
           - ruby-version: 2.7
             gemfile: activerecord_70.gemfile

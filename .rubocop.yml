@@ -3,7 +3,7 @@ require:
   - rubocop-disable_syntax
 
 AllCops:
-  TargetRubyVersion: 2.3
+  TargetRubyVersion: 2.7
   NewCops: enable
   SuggestExtensions: false
 

@@ -220,7 +220,7 @@ module BackgroundMigrations
       end
 
       def assert_no_admins
-        refute User.exists?(admin: [nil, true])
+        assert_not User.exists?(admin: [nil, true])
       end
   end
 end

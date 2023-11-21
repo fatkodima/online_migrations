@@ -26,7 +26,7 @@ module OnlineMigrations
           counter_name = reflection.counter_cache_column
 
           quoted_association_table = connection.quote_table_name(has_many_association.table_name)
-          count_subquery = <<-SQL.strip_heredoc
+          count_subquery = <<~SQL
             SELECT COUNT(*)
             FROM #{quoted_association_table}
             WHERE #{quoted_association_table}.#{connection.quote_column_name(foreign_key)} =
@@ -41,8 +41,7 @@ module OnlineMigrations
           names = Array.wrap(names)
           options = names.extract_options!
           touch_updates = touch_attributes_with_time(*names, **options)
-          # In Active Record 4.2 sanitize_sql_for_assignment is protected
-          updates << model.send(:sanitize_sql_for_assignment, touch_updates)
+          updates << model.sanitize_sql_for_assignment(touch_updates)
         end
 
         relation.update_all(updates.join(", "))
@@ -64,11 +63,6 @@ module OnlineMigrations
 
             has_many_association = has_many.find do |association|
               counter_cache_column = association.counter_cache_column
-
-              # Active Record <= 4.2 is able to return only explicitly provided `counter_cache` column.
-              if !counter_cache_column && Utils.ar_version <= 4.2
-                counter_cache_column = "#{association.name}_count"
-              end
               counter_cache_column && counter_cache_column.to_sym == counter_association.to_sym
             end
 
@@ -86,7 +80,7 @@ module OnlineMigrations
         def touch_attributes_with_time(*names, time: nil)
           attribute_names = timestamp_attributes_for_update & model.column_names
           attribute_names |= names.map(&:to_s)
-          attribute_names.map { |attribute_name| [attribute_name, time || Time.current] }.to_h
+          attribute_names.index_with(time || Time.current)
         end
 
         def timestamp_attributes_for_update

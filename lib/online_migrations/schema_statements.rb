@@ -69,7 +69,7 @@ module OnlineMigrations
                                   batch_size: 1000, batch_column_name: primary_key(table_name), progress: false, pause_ms: 50)
       __ensure_not_in_transaction!
 
-      if !columns_and_values.is_a?(Array) || !columns_and_values.all? { |e| e.is_a?(Array) }
+      if !columns_and_values.is_a?(Array) || !columns_and_values.all?(Array)
         raise ArgumentError, "columns_and_values must be an array of arrays"
       end
 
@@ -83,11 +83,11 @@ module OnlineMigrations
 
       model = Utils.define_model(table_name, self)
 
-      conditions = columns_and_values.map do |(column_name, value)|
+      conditions = columns_and_values.filter_map do |(column_name, value)|
         value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
 
         # Ignore subqueries in conditions
-        if !value.is_a?(Arel::Nodes::SqlLiteral) || value.to_s !~ /select\s+/i
+        if !value.is_a?(Arel::Nodes::SqlLiteral) || !value.to_s.match?(/select\s+/i)
           arel_column = model.arel_table[column_name]
           if value.nil?
             arel_column.not_eq(nil)
@@ -95,7 +95,7 @@ module OnlineMigrations
             arel_column.not_eq(value).or(arel_column.eq(nil))
           end
         end
-      end.compact
+      end
 
       batch_relation = model.where(conditions.inject(:or))
       batch_relation = yield batch_relation if block_given?
@@ -103,30 +103,9 @@ module OnlineMigrations
       iterator = BatchIterator.new(batch_relation)
       iterator.each_batch(of: batch_size, column: batch_column_name) do |relation|
         updates =
-          if Utils.ar_version <= 5.2
-            columns_and_values.map do |(column_name, value)|
-              rhs =
-                # Active Record <= 5.2 can't quote these - we need to handle these cases manually
-                case value
-                when Arel::Attributes::Attribute
-                  quote_column_name(value.name)
-                when Arel::Nodes::SqlLiteral
-                  value
-                when Arel::Nodes::NamedFunction
-                  "#{value.name}(#{quote_column_name(value.expressions.first.name)})"
-                when Proc
-                  value.call
-                else
-                  quote(value)
-                end
-
-              "#{quote_column_name(column_name)} = #{rhs}"
-            end.join(", ")
-          else
-            columns_and_values.map do |(column, value)|
-              value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
-              [column, value]
-            end.to_h
+          columns_and_values.to_h do |(column, value)|
+            value = Arel.sql(value.call.to_s) if value.is_a?(Proc)
+            [column, value]
           end
 
         relation.update_all(updates)
@@ -454,9 +433,6 @@ module OnlineMigrations
     #
     def add_column_with_default(table_name, column_name, type, **options)
       default = options.fetch(:default)
-      if default.is_a?(Proc) && Utils.ar_version < 5.0 # https://github.com/rails/rails/pull/20005
-        raise ArgumentError, "Expressions as default are not supported"
-      end
 
       if raw_connection.server_version >= 11_00_00 && !Utils.volatile_default?(self, type, default)
         add_column(table_name, column_name, type, **options)
@@ -507,7 +483,8 @@ module OnlineMigrations
     #   add_not_null_constraint(:users, :email, validate: false)
     #
     def add_not_null_constraint(table_name, column_name, name: nil, validate: true)
-      if __column_not_nullable?(table_name, column_name) ||
+      column = column_for(table_name, column_name)
+      if column.null == false ||
          __not_null_constraint_exists?(table_name, column_name, name: name)
         Utils.say("NOT NULL constraint was not created: column #{table_name}.#{column_name} is already defined as `NOT NULL`")
       else
@@ -577,7 +554,7 @@ module OnlineMigrations
     # @note This helper must be used only with text columns
     #
     def add_text_limit_constraint(table_name, column_name, limit, name: nil, validate: true)
-      column = __column_for(table_name, column_name)
+      column = column_for(table_name, column_name)
       if column.type != :text
         raise "add_text_limit_constraint must be used only with :text columns"
       end
@@ -666,13 +643,13 @@ module OnlineMigrations
 
       column_name = "#{ref_name}_id"
       if !column_exists?(table_name, column_name)
-        type = options[:type] || (Utils.ar_version >= 5.1 ? :bigint : :integer)
+        type = options[:type] || :bigint
         allow_null = options.fetch(:null, true)
         add_column(table_name, column_name, type, null: allow_null)
       end
 
       # Always added by default in 5.0+
-      index = options.fetch(:index) { Utils.ar_version >= 5.0 }
+      index = options.fetch(:index, true)
 
       if index
         index = {} if index == true
@@ -708,7 +685,7 @@ module OnlineMigrations
 
       __ensure_not_in_transaction! if algorithm == :concurrently
 
-      column_names = __index_column_names(column_name || options[:column])
+      column_names = index_column_names(column_name || options[:column])
 
       index_name = options[:name]
       index_name ||= index_name(table_name, column_names)
@@ -734,7 +711,7 @@ module OnlineMigrations
       end
     end
 
-    # Extends default method to be idempotent and accept `:algorithm` option for Active Record <= 4.2.
+    # Extends default method to be idempotent.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_index
     #
@@ -743,33 +720,15 @@ module OnlineMigrations
 
       __ensure_not_in_transaction! if algorithm == :concurrently
 
-      column_names = __index_column_names(column_name || options[:column])
-      index_name = options[:name]
-      index_name ||= index_name(table_name, column_names)
+      column_names = index_column_names(column_name || options[:column])
 
-      index_exists =
-        if Utils.ar_version <= 5.0
-          # Older Active Record is unable to handle blank columns correctly in `index_exists?`,
-          # so we need to use `index_name_exists?`.
-          index_name_exists?(table_name, index_name, nil)
-        elsif Utils.ar_version <= 6.0
-          index_name_exists?(table_name, index_name)
-        else
-          index_exists?(table_name, column_names, **options)
-        end
-
-      if index_exists
+      if index_exists?(table_name, column_names, **options)
         disable_statement_timeout do
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
 
-          # Active Record <= 4.2 does not support removing indexes concurrently
-          if Utils.ar_version <= 4.2 && algorithm == :concurrently
-            execute("DROP INDEX CONCURRENTLY #{quote_table_name(index_name)}")
-          else
-            super(table_name, **options.merge(column: column_names))
-          end
+          super(table_name, **options.merge(column: column_names))
         end
       else
         Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration " \
@@ -793,132 +752,70 @@ module OnlineMigrations
       end
     end
 
-    # Extends default method to be idempotent and accept `:validate` option for Active Record < 5.2.
+    # Extends default method to be idempotent.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key
     #
-    def add_foreign_key(from_table, to_table, validate: true, **options)
+    def add_foreign_key(from_table, to_table, **options)
       if foreign_key_exists?(from_table, to_table, **options)
-        message = "Foreign key was not created because it already exists " \
-                  "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}".dup
+        message = +"Foreign key was not created because it already exists " \
+                   "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}"
         message << ", #{options.inspect}" if options.any?
 
         Utils.say(message)
       else
-        # Active Record >= 5.2 supports adding non-validated foreign keys natively
-        options = options.dup
-        options[:column] ||= "#{to_table.to_s.singularize}_id"
-        options[:primary_key] ||= "id"
-        options[:name] ||= __foreign_key_name(to_table, options[:column])
-
-        query = <<-SQL.strip_heredoc.dup
-          ALTER TABLE #{quote_table_name(from_table)}
-          ADD CONSTRAINT #{quote_column_name(options[:name])}
-          FOREIGN KEY (#{quote_column_name(options[:column])})
-          REFERENCES #{quote_table_name(to_table)} (#{quote_column_name(options[:primary_key])})
-        SQL
-        query << "#{__action_sql('DELETE', options[:on_delete])}\n" if options[:on_delete].present?
-        query << "#{__action_sql('UPDATE', options[:on_update])}\n" if options[:on_update].present?
-        query << "NOT VALID\n" if !validate
-        if Utils.ar_version >= 7.0 && options[:deferrable]
-          query << " DEFERRABLE"
-          query << " INITIALLY #{options[:deferrable].to_s.upcase}\n" if options[:deferrable] != true
-        end
-
-        execute(query.squish)
+        super
       end
     end
 
     # Extends default method with disabled statement timeout while validation is run
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_foreign_key
-    # @note This method was added in Active Record 5.2
     #
     def validate_foreign_key(from_table, to_table = nil, **options)
-      fk_name_to_validate = __foreign_key_for!(from_table, to_table: to_table, **options).name
+      foreign_key = foreign_key_for!(from_table, to_table: to_table, **options)
 
       # Skip costly operation if already validated.
-      return if __constraint_validated?(from_table, fk_name_to_validate, type: :foreign_key)
+      return if foreign_key.validated?
 
       disable_statement_timeout do
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        execute("ALTER TABLE #{quote_table_name(from_table)} VALIDATE CONSTRAINT #{quote_column_name(fk_name_to_validate)}")
+        super
       end
-    end
-
-    def foreign_key_exists?(from_table, to_table = nil, **options)
-      foreign_keys(from_table).any? { |fk| fk.defined_for?(to_table: to_table, **options) }
     end
 
     # Extends default method to be idempotent
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
-    # @note This method was added in Active Record 6.1
     #
-    def add_check_constraint(table_name, expression, validate: true, **options)
-      constraint_name = __check_constraint_name(table_name, expression: expression, **options)
+    def add_check_constraint(table_name, expression, **options)
+      constraint_name = check_constraint_name(table_name, expression: expression, **options)
 
       if __check_constraint_exists?(table_name, constraint_name)
         Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration " \
                   "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
       else
-        query = <<-SQL.squish
-          ALTER TABLE #{quote_table_name(table_name)}
-            ADD CONSTRAINT #{quote_column_name(constraint_name)} CHECK (#{expression})
-        SQL
-        query += " NOT VALID" if !validate
-
-        execute(query)
+        super
       end
     end
 
     # Extends default method with disabled statement timeout while validation is run
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_check_constraint
-    # @note This method was added in Active Record 6.1
     #
     def validate_check_constraint(table_name, **options)
-      constraint_name = __check_constraint_name!(table_name, **options)
+      check_constraint = check_constraint_for!(table_name, **options)
 
       # Skip costly operation if already validated.
-      return if __constraint_validated?(table_name, constraint_name, type: :check)
+      return if check_constraint.validated?
 
       disable_statement_timeout do
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        execute(<<-SQL.squish)
-          ALTER TABLE #{quote_table_name(table_name)}
-            VALIDATE CONSTRAINT #{quote_column_name(constraint_name)}
-        SQL
-      end
-    end
-
-    if Utils.ar_version < 6.1
-      # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
-      # @note This method was added in Active Record 6.1
-      #
-      def remove_check_constraint(table_name, expression = nil, **options)
-        constraint_name = __check_constraint_name!(table_name, expression: expression, **options)
-        execute(<<-SQL.squish)
-          ALTER TABLE #{quote_table_name(table_name)}
-            DROP CONSTRAINT #{quote_column_name(constraint_name)}
-        SQL
-      end
-    end
-
-    if Utils.ar_version <= 4.2
-      # @private
-      def views
-        select_values(<<-SQL, "SCHEMA")
-          SELECT c.relname
-          FROM pg_class c
-          LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
-          WHERE c.relkind IN ('v','m') -- (v)iew, (m)aterialized view
-          AND n.nspname = ANY (current_schemas(false))
-        SQL
+        super
       end
     end
 
@@ -986,7 +883,7 @@ module OnlineMigrations
       # Active Record methods
       def __ensure_not_in_transaction!(method_name = caller[0])
         if transaction_open?
-          raise <<-MSG.strip_heredoc
+          raise <<~MSG
             `#{method_name}` cannot run inside a transaction block.
 
             You can remove transaction block by calling `disable_ddl_transaction!` in the body of
@@ -995,31 +892,17 @@ module OnlineMigrations
         end
       end
 
-      def __column_not_nullable?(table_name, column_name)
-        schema = __schema_for_table(table_name)
-
-        query = <<-SQL.strip_heredoc
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_schema = #{schema}
-            AND table_name = #{quote(table_name)}
-            AND column_name = #{quote(column_name)}
-        SQL
-
-        select_value(query) == "NO"
-      end
-
       def __not_null_constraint_exists?(table_name, column_name, name: nil)
         name ||= __not_null_constraint_name(table_name, column_name)
         __check_constraint_exists?(table_name, name)
       end
 
       def __not_null_constraint_name(table_name, column_name)
-        __check_constraint_name(table_name, expression: "#{column_name}_not_null")
+        check_constraint_name(table_name, expression: "#{column_name}_not_null")
       end
 
       def __text_limit_constraint_name(table_name, column_name)
-        __check_constraint_name(table_name, expression: "#{column_name}_max_length")
+        check_constraint_name(table_name, expression: "#{column_name}_max_length")
       end
 
       def __text_limit_constraint_exists?(table_name, column_name, name: nil)
@@ -1027,17 +910,9 @@ module OnlineMigrations
         __check_constraint_exists?(table_name, name)
       end
 
-      def __index_column_names(column_names)
-        if column_names.is_a?(String) && /\W/.match(column_names)
-          column_names
-        elsif column_names.present?
-          Array(column_names)
-        end
-      end
-
+      # Can use index validity attribute for Active Record >= 7.1.
       def __index_valid?(index_name, schema:)
-        # Active Record <= 4.2 returns a string, instead of automatically casting to boolean
-        valid = select_value <<-SQL.strip_heredoc
+        select_value(<<~SQL)
           SELECT indisvalid
           FROM pg_index i
           JOIN pg_class c
@@ -1047,28 +922,6 @@ module OnlineMigrations
           WHERE n.nspname = #{schema}
             AND c.relname = #{quote(index_name)}
         SQL
-
-        Utils.to_bool(valid)
-      end
-
-      def __column_for(table_name, column_name)
-        column_name = column_name.to_s
-
-        columns(table_name).find { |c| c.name == column_name } ||
-          raise("No such column: #{table_name}.#{column_name}")
-      end
-
-      def __action_sql(action, dependency)
-        case dependency
-        when :nullify then "ON #{action} SET NULL"
-        when :cascade  then "ON #{action} CASCADE"
-        when :restrict then "ON #{action} RESTRICT"
-        else
-          raise ArgumentError, <<-MSG.strip_heredoc
-            '#{dependency}' is not supported for :on_update or :on_delete.
-            Supported values are: :nullify, :cascade, :restrict
-          MSG
-        end
       end
 
       def __copy_foreign_key(fk, to_column, **options)
@@ -1087,71 +940,16 @@ module OnlineMigrations
           **fkey_options
         )
 
-        if !fk.respond_to?(:validated?) || fk.validated?
+        if fk.validated?
           validate_foreign_key(fk.from_table, fk.to_table, column: to_column, **options)
         end
       end
 
-      def __foreign_key_name(table_name, column_name)
-        identifier = "#{table_name}_#{column_name}_fk"
-        hashed_identifier = Digest::SHA256.hexdigest(identifier).first(10)
-
-        "fk_rails_#{hashed_identifier}"
-      end
-
-      if Utils.ar_version <= 4.2
-        def foreign_key_for(from_table, **options)
-          foreign_keys(from_table).detect { |fk| fk.defined_for?(**options) }
-        end
-      end
-
-      def __foreign_key_for!(from_table, **options)
-        foreign_key_for(from_table, **options) ||
-          raise(ArgumentError, "Table '#{from_table}' has no foreign key for #{options[:to_table] || options}")
-      end
-
-      def __constraint_validated?(table_name, name, type:)
-        schema = __schema_for_table(table_name)
-        contype = type == :check ? "c" : "f"
-
-        validated = select_value(<<-SQL.strip_heredoc)
-          SELECT convalidated
-          FROM pg_catalog.pg_constraint con
-            INNER JOIN pg_catalog.pg_namespace nsp
-              ON nsp.oid = con.connamespace
-          WHERE con.conrelid = #{quote(table_name)}::regclass
-            AND con.conname = #{quote(name)}
-            AND con.contype = '#{contype}'
-            AND nsp.nspname = #{schema}
-        SQL
-
-        Utils.to_bool(validated)
-      end
-
-      def __check_constraint_name!(table_name, expression: nil, **options)
-        constraint_name = __check_constraint_name(table_name, expression: expression, **options)
-
-        if __check_constraint_exists?(table_name, constraint_name)
-          constraint_name
-        else
-          raise(ArgumentError, "Table '#{table_name}' has no check constraint for #{expression || options}")
-        end
-      end
-
-      def __check_constraint_name(table_name, **options)
-        options.fetch(:name) do
-          expression = options.fetch(:expression)
-          identifier = "#{table_name}_#{expression}_chk"
-          hashed_identifier = Digest::SHA256.hexdigest(identifier).first(10)
-
-          "chk_rails_#{hashed_identifier}"
-        end
-      end
-
+      # Can be replaced by native method in Active Record >= 7.1.
       def __check_constraint_exists?(table_name, constraint_name)
         schema = __schema_for_table(table_name)
 
-        check_sql = <<-SQL.strip_heredoc
+        check_sql = <<~SQL
           SELECT COUNT(*)
           FROM pg_catalog.pg_constraint con
             INNER JOIN pg_catalog.pg_class cl
@@ -1179,7 +977,7 @@ module OnlineMigrations
           "#{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}"
         end.join(", ")
 
-        execute(<<-SQL.squish)
+        execute(<<~SQL.squish)
           CREATE VIEW #{quote_table_name(table_name)} AS
             SELECT *, #{column_mapping}
             FROM #{quote_table_name(tmp_table)}

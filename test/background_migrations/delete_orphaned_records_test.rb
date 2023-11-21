@@ -12,9 +12,7 @@ module BackgroundMigrations
     class Post < ActiveRecord::Base
       default_scope { where(archived: false) }
 
-      optional_setting = OnlineMigrations::Utils.ar_version > 4.2 ? { optional: true } : { required: false }
-
-      belongs_to :author, class_name: User.name, **optional_setting
+      belongs_to :author, class_name: User.name, optional: true
       has_many :comments
     end
 
@@ -53,8 +51,6 @@ module BackgroundMigrations
     end
 
     def test_relation
-      skip if ar_version <= 4.2
-
       migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:author])
 
       assert_kind_of ActiveRecord::Relation, migration.relation
@@ -62,8 +58,6 @@ module BackgroundMigrations
     end
 
     def test_process_batch
-      skip if ar_version <= 4.2
-
       migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:author])
       migration.process_batch(migration.relation)
 
@@ -72,17 +66,7 @@ module BackgroundMigrations
       assert Post.exists?(@post3.id)
     end
 
-    def test_raises_for_unknown_association
-      migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:non_existent])
-
-      assert_raises_with_message(ArgumentError, "'#{Post.name}' has no association called 'non_existent'") do
-        migration.process_batch(migration.relation)
-      end
-    end
-
     def test_multiple_associations
-      skip if ar_version <= 4.2
-
       @post1.comments.create!
 
       migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:author, :comments])
@@ -94,8 +78,6 @@ module BackgroundMigrations
     end
 
     def test_count
-      skip if ar_version <= 4.2
-
       migration = OnlineMigrations::BackgroundMigrations::DeleteOrphanedRecords.new(Post.name, [:author])
       assert_kind_of Integer, migration.count
     end

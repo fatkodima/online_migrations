@@ -20,37 +20,25 @@ module CommandChecker
     end
 
     def test_add_column
-      if ar_version >= 5
-        assert_unsafe AddColumn, <<-MSG.strip_heredoc
-          'type' column is used for single table inheritance. Adding it might cause errors in old instances of your application.
+      assert_unsafe AddColumn, <<~MSG
+        'type' column is used for single table inheritance. Adding it might cause errors in old instances of your application.
 
-          After the migration was ran and the column was added, but before the code is fully deployed to all instances,
-          an old instance may be restarted (due to an error etc). And when it will fetch 'User' records from the database,
-          'User' will look for a 'Member' subclass (from the 'type' column) and fail to locate it unless it is already defined.
+        After the migration was ran and the column was added, but before the code is fully deployed to all instances,
+        an old instance may be restarted (due to an error etc). And when it will fetch 'User' records from the database,
+        'User' will look for a 'Member' subclass (from the 'type' column) and fail to locate it unless it is already defined.
 
-          A safer approach is to:
+        A safer approach is to:
 
-          1. ignore the column:
+        1. ignore the column:
 
-            class User < #{model_parent_string}
-              self.ignored_columns = ["type"]
-            end
+          class User < ApplicationRecord
+            self.ignored_columns = ["type"]
+          end
 
-          2. deploy
-          3. remove the column ignoring from step 1 and apply initial code changes
-          4. deploy
-        MSG
-      else
-        assert_unsafe AddColumn, <<-MSG.strip_heredoc
-          1. ignore the column:
-
-            class User < #{model_parent_string}
-              def self.columns
-                super.reject { |c| c.name == "type" }
-              end
-            end
-        MSG
-      end
+        2. deploy
+        3. remove the column ignoring from step 1 and apply initial code changes
+        4. deploy
+      MSG
     end
 
     class AddColumnWithDefaultHelper < TestMigration
@@ -98,25 +86,13 @@ module CommandChecker
       prev = ActiveRecord::Base.inheritance_column
       ActiveRecord::Base.inheritance_column = "my_type_column"
 
-      if ar_version >= 5
-        assert_unsafe CustomInheritanceColumn, <<-MSG.strip_heredoc
-          1. ignore the column:
+      assert_unsafe CustomInheritanceColumn, <<~MSG
+        1. ignore the column:
 
-            class User < #{model_parent_string}
-              self.ignored_columns = ["my_type_column"]
-            end
-        MSG
-      else
-        assert_unsafe CustomInheritanceColumn, <<-MSG.strip_heredoc
-          1. ignore the column:
-
-            class User < #{model_parent_string}
-              def self.columns
-                super.reject { |c| c.name == "my_type_column" }
-              end
-            end
-        MSG
-      end
+          class User < ApplicationRecord
+            self.ignored_columns = ["my_type_column"]
+          end
+      MSG
     ensure
       ActiveRecord::Base.inheritance_column = prev
     end

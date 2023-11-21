@@ -92,8 +92,6 @@ module SchemaStatements
     end
 
     def test_delete_orphaned_records_in_background
-      skip if ar_version <= 4.2
-
       m = @connection.delete_orphaned_records_in_background(Post.name, :author)
 
       assert_equal "DeleteOrphanedRecords", m.migration_name

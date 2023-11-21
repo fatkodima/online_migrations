@@ -16,9 +16,11 @@ See [comparison to `strong_migrations`](#comparison-to-strong_migrations)
 
 ## Requirements
 
-- Ruby 2.1+
-- Rails 4.2+
+- Ruby 2.7+
+- Rails 6.1+
 - PostgreSQL 9.6+
+
+For older Ruby and Rails versions you can use '< 0.11' version of this gem.
 
 **Note**: Since some migration helpers use database `VIEW`s to implement their logic, it is recommended to use `structure.sql` schema format, or otherwise add some gem (like [scenic](https://github.com/scenic-views/scenic)) to be able to dump them into the `schema.rb`.
 

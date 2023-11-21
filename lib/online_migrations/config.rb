@@ -16,7 +16,6 @@ module OnlineMigrations
     #
     def start_after=(value)
       if value.is_a?(Hash)
-        ensure_supports_multiple_dbs
         @start_after = value.stringify_keys
       else
         @start_after = value
@@ -49,7 +48,6 @@ module OnlineMigrations
     #
     def target_version=(value)
       if value.is_a?(Hash)
-        ensure_supports_multiple_dbs
         @target_version = value.stringify_keys
       else
         @target_version = value
@@ -196,7 +194,7 @@ module OnlineMigrations
       @check_down = false
       @auto_analyze = false
       @alphabetize_schema = false
-      @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
+      @enabled_checks = @error_messages.keys.index_with({})
       @verbose_sql_logs = defined?(Rails.env) && Rails.env.production?
     end
 
@@ -272,12 +270,6 @@ module OnlineMigrations
     end
 
     private
-      def ensure_supports_multiple_dbs
-        if !Utils.supports_multiple_dbs?
-          raise "OnlineMigrations does not support multiple databases for Active Record < 6.1"
-        end
-      end
-
       def db_config_name
         connection = OnlineMigrations.current_migration.connection
         connection.pool.db_config.name

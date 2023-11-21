@@ -77,17 +77,7 @@ class ConfigTest < Minitest::Test
     end
   end
 
-  def test_start_after_multiple_dbs_below_6
-    skip if supports_multiple_dbs?
-
-    assert_raises_with_message(RuntimeError, "OnlineMigrations does not support multiple databases for Active Record < 6.1") do
-      config.start_after = { primary: 20200101000001 }
-    end
-  end
-
   def test_start_after_multiple_dbs
-    skip if !supports_multiple_dbs?
-
     with_multiple_dbs do
       with_start_after({ primary: 20200101000001 }) do
         assert_safe RemoveNameFromUsers
@@ -100,8 +90,6 @@ class ConfigTest < Minitest::Test
   end
 
   def test_start_after_multiple_dbs_unconfigured
-    skip if !supports_multiple_dbs?
-
     with_multiple_dbs(connects_to: :primary) do
       assert_raises_with_message(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
         with_start_after({ animals: 20200101000001 }) do
@@ -129,17 +117,7 @@ class ConfigTest < Minitest::Test
     end
   end
 
-  def test_target_version_multiple_dbs_below_6
-    skip if supports_multiple_dbs?
-
-    assert_raises_with_message(RuntimeError, "OnlineMigrations does not support multiple databases for Active Record < 6.1") do
-      config.target_version = { primary: 10 }
-    end
-  end
-
   def test_target_version_multiple_dbs
-    skip if !supports_multiple_dbs?
-
     with_multiple_dbs do
       with_target_version({ primary: 11 }) do
         assert_safe AddColumnDefault
@@ -152,8 +130,6 @@ class ConfigTest < Minitest::Test
   end
 
   def test_target_version_multiple_dbs_unconfigured
-    skip if !supports_multiple_dbs?
-
     with_multiple_dbs(connects_to: :primary) do
       assert_raises_with_message(StandardError, /OnlineMigrations.config.target_version is not configured for :primary/i) do
         with_target_version({ animals: 10 }) do
@@ -253,7 +229,7 @@ class ConfigTest < Minitest::Test
     out, = capture_io do
       assert_safe AddEmailToUsers
     end
-    refute_match(/SHOW lock_timeout/i, out)
+    assert_no_match(/SHOW lock_timeout/i, out)
   ensure
     OnlineMigrations.config.verbose_sql_logs = previous
   end

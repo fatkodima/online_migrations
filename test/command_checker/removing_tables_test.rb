@@ -57,7 +57,7 @@ module CommandChecker
     end
 
     def test_drop_table_multiple_foreign_keys
-      assert_unsafe DropProjects, <<-MSG.strip_heredoc
+      assert_unsafe DropProjects, <<~MSG
         Dropping a table with multiple foreign keys blocks reads and writes on all involved tables until migration is completed.
         Remove all the foreign keys first.
       MSG
@@ -74,11 +74,7 @@ module CommandChecker
     end
 
     def test_drop_table_self_referencing_foreign_key
-      # This is not working in Active Record 4.2 - add_reference ignores :to_table option
-      # @connection.add_reference :repositories, :forked_repository, foreign_key: { to_table: :repositories }
-
-      @connection.add_column :repositories, :forked_repository_id, :integer
-      @connection.add_foreign_key :repositories, :repositories, column: :forked_repository_id
+      @connection.add_reference :repositories, :forked_repository, foreign_key: { to_table: :repositories }
 
       assert_safe DropRepositories
     end

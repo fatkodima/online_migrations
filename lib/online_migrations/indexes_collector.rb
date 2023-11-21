@@ -12,8 +12,8 @@ module OnlineMigrations
       @indexes = []
     end
 
-    def collect(&table_definition)
-      table_definition.call(self)
+    def collect
+      yield self
     end
 
     def index(_column_name, **options)
@@ -21,7 +21,7 @@ module OnlineMigrations
     end
 
     def references(*_ref_names, **options)
-      index = options.fetch(:index) { Utils.ar_version >= 5.0 }
+      index = options.fetch(:index, true)
 
       if index
         using = index.is_a?(Hash) ? index[:using].to_s : nil

@@ -22,7 +22,7 @@ module OnlineMigrations
           quoted_column = connection.quote_column_name(column)
           model.unscoped.where("#{quoted_column} != ? OR #{quoted_column} IS NULL", value)
         else
-          Utils.ar_where_not_multiple_conditions(model.unscoped, updates)
+          model.unscoped.where.not(updates)
         end
       end
 

@@ -25,14 +25,10 @@ module OnlineMigrations
       end
 
       def relation
-        relation = model
+        model
           .unscoped
-          .where(copy_to.map { |to_column| [to_column, nil] }.to_h)
-
-        Utils.ar_where_not_multiple_conditions(
-          relation,
-          copy_from.map { |from_column| [from_column, nil] }.to_h
-        )
+          .where(copy_to.index_with(nil))
+          .where.not(copy_from.index_with(nil))
       end
 
       def process_batch(relation)
@@ -43,13 +39,8 @@ module OnlineMigrations
           old_value = arel_table[from_column]
           if (type_cast_function = type_cast_functions[from_column])
             old_value =
-              if type_cast_function =~ /\A\w+\z/
-                if Utils.ar_version <= 5.2
-                  # Active Record <= 5.2 does not support quoting of Arel::Nodes::NamedFunction
-                  Arel.sql("#{type_cast_function}(#{connection.quote_column_name(from_column)})")
-                else
-                  Arel::Nodes::NamedFunction.new(type_cast_function, [old_value])
-                end
+              if type_cast_function.match?(/\A\w+\z/)
+                Arel::Nodes::NamedFunction.new(type_cast_function, [old_value])
               else
                 # We got a cast expression.
                 Arel.sql(type_cast_function)
@@ -58,12 +49,7 @@ module OnlineMigrations
           old_value
         end
 
-        if Utils.ar_version <= 4.2
-          stmt = Arel::UpdateManager.new(arel.engine)
-        else
-          stmt = Arel::UpdateManager.new
-        end
-
+        stmt = Arel::UpdateManager.new
         stmt.table(arel_table)
         stmt.wheres = arel.constraints
 

@@ -28,10 +28,8 @@ module MinitestHelpers
     args =
       if OnlineMigrations::Utils.ar_version >= 7.1
         [ActiveRecord::SchemaMigration.new(connection), ActiveRecord::InternalMetadata.new(connection)]
-      elsif OnlineMigrations::Utils.ar_version >= 6
-        [ActiveRecord::SchemaMigration]
       else
-        []
+        [ActiveRecord::SchemaMigration]
       end
     ActiveRecord::Migrator.new(direction, [migration], *args).migrate
     true
@@ -74,7 +72,7 @@ module MinitestHelpers
     failed_patterns = []
     patterns_to_match.each do |pattern|
       pattern = pattern.downcase
-      failed_patterns << pattern if queries.none? { |sql| sql.downcase.include?(pattern) }
+      failed_patterns << pattern if queries.none? { |sql| sql.downcase.squish.include?(pattern) }
     end
     assert_empty failed_patterns,
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} not found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
@@ -118,20 +116,17 @@ module MinitestHelpers
     OnlineMigrations::Utils.ar_version
   end
 
-  def migration_parent_string
-    OnlineMigrations::Utils.migration_parent_string
-  end
-
-  def model_parent_string
-    OnlineMigrations::Utils.model_parent_string
-  end
-
-  def supports_multiple_dbs?
-    OnlineMigrations::Utils.supports_multiple_dbs?
+  def migration_parent
+    "ActiveRecord::Migration[#{OnlineMigrations::Utils.ar_version}]"
   end
 end
 
 Minitest::Test.class_eval do
   include MinitestHelpers
   alias_method :assert_not, :refute
+  alias_method :assert_not_equal, :refute_equal
+  alias_method :assert_not_includes, :refute_includes
+  alias_method :assert_no_match, :refute_match
+  alias_method :assert_not_nil, :refute_nil
+  alias_method :assert_not_empty, :refute_empty
 end

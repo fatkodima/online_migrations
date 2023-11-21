@@ -21,7 +21,7 @@ module OnlineMigrations
         for_migration_name(migration_name).where("arguments = ?", arguments.to_json)
       end
 
-      enum status: STATUSES.map { |status| [status, status.to_s] }.to_h
+      enum status: STATUSES.index_with(&:to_s)
 
       has_many :migration_jobs
 
@@ -138,16 +138,10 @@ module OnlineMigrations
 
         # rubocop:disable Lint/UnreachableLoop
         iterator.each_batch(of: batch_size, column: batch_column_name, start: next_min_value) do |relation|
-          if Utils.ar_version <= 4.2
-            # Active Record <= 4.2 does not support pluck with Arel nodes
-            quoted_column = self.class.connection.quote_column_name(batch_column_name)
-            batch_range = relation.pluck("MIN(#{quoted_column}), MAX(#{quoted_column})").first
-          else
-            min = relation.arel_table[batch_column_name].minimum
-            max = relation.arel_table[batch_column_name].maximum
+          min = relation.arel_table[batch_column_name].minimum
+          max = relation.arel_table[batch_column_name].maximum
+          batch_range = relation.pick(min, max)
 
-            batch_range = relation.pluck(min, max).first
-          end
           break
         end
         # rubocop:enable Lint/UnreachableLoop

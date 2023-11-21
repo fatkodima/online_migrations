@@ -109,14 +109,8 @@ A safer approach is to:
 
 1. ignore the column:
 
-  class <%= model %> < <%= model_parent %>
-<% if ar_version >= 5 %>
+  class <%= model %> < ApplicationRecord
     self.ignored_columns = [\"<%= column_name %>\"]
-<% else %>
-    def self.columns
-      super.reject { |c| c.name == \"<%= column_name %>\" }
-    end
-<% end %>
   end
 
 2. deploy
@@ -157,13 +151,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
 <% if enumerate_columns_in_select_statements %>
 5. Ignore old column
 
-<% if ar_version >= 5 %>
   self.ignored_columns = [:<%= column_name %>]
-<% else %>
-  def self.columns
-    super.reject { |c| c.name == \"<%= column_name %>\" }
-  end
-<% end %>
 
 6. Deploy
 7. Remove the column rename config from step 1
@@ -303,14 +291,8 @@ A safer approach is to:
 
 1. Ignore the column(s):
 
-  class <%= model %> < <%= model_parent %>
-<% if ar_version >= 5 %>
+  class <%= model %> < ApplicationRecord
     self.ignored_columns = <%= columns %>
-<% else %>
-    def self.columns
-      super.reject { |c| <%= columns %>.include?(c.name) }
-    end
-<% end %>
   end
 
 2. Deploy

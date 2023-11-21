@@ -30,10 +30,10 @@ module CommandChecker
     end
 
     def test_add_index_non_concurrently
-      assert_unsafe AddIndexNonConcurrently, <<-MSG.strip_heredoc
+      assert_unsafe AddIndexNonConcurrently, <<~MSG
         Adding an index non-concurrently blocks writes. Instead, use:
 
-        class CommandChecker::IndexesTest::AddIndexNonConcurrently < #{migration_parent_string}
+        class CommandChecker::IndexesTest::AddIndexNonConcurrently < #{migration_parent}
           disable_ddl_transaction!
 
           def change
@@ -188,10 +188,10 @@ module CommandChecker
     end
 
     def test_remove_index_non_concurrently
-      assert_unsafe RemoveIndexNonConcurrently, <<-MSG.strip_heredoc
+      assert_unsafe RemoveIndexNonConcurrently, <<~MSG
         Removing an index non-concurrently blocks writes. Instead, use:
 
-        class CommandChecker::IndexesTest::RemoveIndexNonConcurrently < #{migration_parent_string}
+        class CommandChecker::IndexesTest::RemoveIndexNonConcurrently < #{migration_parent}
           disable_ddl_transaction!
 
           def change
@@ -206,8 +206,7 @@ module CommandChecker
 
       def change
         add_index :users, :email, algorithm: :concurrently
-        # For Active Record <= 4.2 need to specify a :column to be reversible
-        remove_index :users, column: :email, algorithm: :concurrently
+        remove_index :users, :email, algorithm: :concurrently
       end
     end
 
@@ -241,7 +240,7 @@ module CommandChecker
     def test_replace_index
       @connection.add_index(:projects, :creator_id)
 
-      assert_unsafe ReplaceIndex, <<-MSG.strip_heredoc
+      assert_unsafe ReplaceIndex, <<~MSG
         Removing an old index before replacing it with the new one might result in slow queries while building the new index.
         A safer approach is to create the new index and then delete the old one.
       MSG

@@ -27,36 +27,6 @@ module OnlineMigrations
         Kernel.warn("[online_migrations] #{message}")
       end
 
-      def supports_multiple_dbs?
-        # Technically, Active Record 6.0+ supports multiple databases,
-        # but we can not get the database spec name for this version.
-        ar_version >= 6.1
-      end
-
-      def migration_parent
-        if ar_version <= 4.2
-          ActiveRecord::Migration
-        else
-          ActiveRecord::Migration[ar_version]
-        end
-      end
-
-      def migration_parent_string
-        if ar_version <= 4.2
-          "ActiveRecord::Migration"
-        else
-          "ActiveRecord::Migration[#{ar_version}]"
-        end
-      end
-
-      def model_parent_string
-        if ar_version >= 5.0
-          "ApplicationRecord"
-        else
-          "ActiveRecord::Base"
-        end
-      end
-
       def define_model(table_name, connection = ActiveRecord::Base.connection)
         Class.new(ActiveRecord::Base) do
           self.table_name = table_name
@@ -71,7 +41,7 @@ module OnlineMigrations
       end
 
       def to_bool(value)
-        !value.to_s.match(/^(true|t|yes|y|1|on)$/i).nil?
+        value.to_s.match?(/^true|t|yes|y|1|on$/i)
       end
 
       def foreign_table_name(ref_name, options)
@@ -81,7 +51,7 @@ module OnlineMigrations
       end
 
       # Implementation is from ActiveRecord.
-      # This is not needed for ActiveRecord < 7.1 (https://github.com/rails/rails/pull/47753).
+      # This is not needed for ActiveRecord >= 7.1 (https://github.com/rails/rails/pull/47753).
       def index_name(table_name, column_name)
         max_index_name_size = 62
         name = "index_#{table_name}_on_#{Array(column_name) * '_and_'}"
@@ -122,7 +92,7 @@ module OnlineMigrations
       def estimated_count(connection, table_name)
         quoted_table = connection.quote(table_name)
 
-        count = connection.select_value(<<-SQL.strip_heredoc)
+        count = connection.select_value(<<~SQL)
           SELECT
             (reltuples / COALESCE(NULLIF(relpages, 0), 1)) *
             (pg_relation_size(#{quoted_table}) / (current_setting('block_size')::integer))
@@ -140,20 +110,6 @@ module OnlineMigrations
         end
       end
 
-      def ar_where_not_multiple_conditions(relation, conditions)
-        if Utils.ar_version >= 6.1
-          relation.where.not(conditions)
-        else
-          # In Active Record < 6.1, NOT with multiple conditions behaves as NOR,
-          # which should really behave as NAND.
-          # https://www.bigbinary.com/blog/rails-6-deprecates-where-not-working-as-nor-and-will-change-to-nand-in-rails-6-1
-          arel_table = relation.arel_table
-          conditions = conditions.map { |column, value| arel_table[column].not_eq(value) }
-          conditions = conditions.inject(:or)
-          relation.where(conditions)
-        end
-      end
-
       FUNCTION_CALL_RE = /(\w+)\s*\(/
       private_constant :FUNCTION_CALL_RE
 
@@ -167,7 +123,7 @@ module OnlineMigrations
       end
 
       def volatile_function?(connection, function_name)
-        query = <<-SQL.strip_heredoc
+        query = <<~SQL
           SELECT provolatile
           FROM pg_catalog.pg_proc
           WHERE proname = #{connection.quote(function_name)}

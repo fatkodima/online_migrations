@@ -9,8 +9,8 @@ module OnlineMigrations
       @referenced_tables = Set.new
     end
 
-    def collect(&table_definition)
-      table_definition.call(self)
+    def collect
+      yield self
     end
 
     def foreign_key(to_table, **_options)

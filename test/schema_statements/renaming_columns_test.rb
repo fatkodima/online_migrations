@@ -83,12 +83,9 @@ module SchemaStatements
 
       assert_equal "id", User.primary_key
 
-      refute_empty User.columns
-      refute_empty User.columns_hash
-
-      if ar_version >= 6.0
-        refute_empty @schema_cache.indexes("users")
-      end
+      assert_not_empty User.columns
+      assert_not_empty User.columns_hash
+      assert_not_empty @schema_cache.indexes("users")
     end
 
     def test_old_code_accepts_crud_operations
@@ -211,8 +208,6 @@ module SchemaStatements
 
     # Test that it is properly reset in rails tests using fixtures.
     def test_initialize_column_rename_and_resetting_sequence
-      skip("Rails 4.2 is not working with newer PostgreSQL") if ar_version <= 4.2
-
       column_renames("fname" => "first_name")
       @connection.initialize_column_rename(:users, :fname, :first_name)
 

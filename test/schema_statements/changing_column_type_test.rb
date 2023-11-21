@@ -17,13 +17,7 @@ module SchemaStatements
       @connection.create_table(:users, id: :serial, force: :cascade)
 
       @connection.create_table(:projects, id: :serial, force: :cascade) do |t|
-        # Database comments were added in Active Record 5.0
-        # (see https://github.com/rails/rails/pull/22911).
-        if ar_version >= 5
-          t.text :name, default: "My project", null: false, comment: "Project's name"
-        else
-          t.text :name, default: "My project", null: false
-        end
+        t.text :name, default: "My project", null: false, comment: "Project's name"
         t.string :long_name
         t.string :description, null: false
         t.text :settings
@@ -33,12 +27,8 @@ module SchemaStatements
 
         t.index :name
         t.index :long_name
-
-        # Active Record < 5 does not support expression indexes
-        if ar_version >= 5
-          t.index "lower(name)"
-          t.index "lower(long_name)"
-        end
+        t.index "lower(name)"
+        t.index "lower(long_name)"
 
         t.foreign_key :users
       end
@@ -64,10 +54,7 @@ module SchemaStatements
         assert_equal 100, column.limit
         assert column.null
         assert_equal "My project", column.default
-
-        if ar_version >= 5.0
-          assert_equal "Project's name", column.comment
-        end
+        assert_equal "Project's name", column.comment
       end
     end
 
@@ -80,10 +67,7 @@ module SchemaStatements
         assert_equal 100, column.limit
         assert_not column.null
         assert_equal "My project", column.default
-
-        if ar_version >= 5.0
-          assert_equal "Project's name", column.comment
-        end
+        assert_equal "Project's name", column.comment
       end
     end
 
@@ -201,11 +185,7 @@ module SchemaStatements
       @connection.backfill_columns_for_type_change(:projects, :name, :user_id)
 
       result = @connection.select_rows("SELECT name_for_type_change, user_id_for_type_change FROM projects WHERE id = #{p.id}").first
-      if ar_version <= 4.2
-        assert_equal ["rails", u.id.to_s], result
-      else
-        assert_equal ["rails", u.id], result
-      end
+      assert_equal ["rails", u.id], result
     end
 
     def test_backfill_column_for_type_change_type_cast_function
@@ -257,13 +237,11 @@ module SchemaStatements
       @connection.initialize_column_type_change(:projects, :name, :string)
       @connection.finalize_column_type_change(:projects, :name)
 
-      indexes_count = (ar_version >= 5 ? 2 : 1)
-      assert_equal(indexes_count, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
+      assert_equal(2, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
     end
 
     def test_finalize_column_type_change_copies_indexes_with_long_names
-      max_identifier_length = 63 # could use just `max_identifier_length` method for ActiveRecord >= 5.0.
-      long_column_name = "a" * (max_identifier_length - "index_projects_on_".length)
+      long_column_name = "a" * (@connection.max_identifier_length - "index_projects_on_".length)
 
       @connection.change_table(:projects) do |t|
         t.text long_column_name
@@ -289,7 +267,7 @@ module SchemaStatements
       user = User.create!
 
       assert_raises(ActiveRecord::StatementInvalid) do
-        @connection.execute <<-SQL.strip_heredoc
+        @connection.execute(<<~SQL)
           INSERT INTO projects (description, user_id, star_count)
           VALUES ('Description', #{user.id}, -1)
         SQL

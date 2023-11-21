@@ -118,7 +118,7 @@ module BackgroundMigrations
       migration = OnlineMigrations::BackgroundMigrations::ResetCounters.new(User.name, [:projects], { touch: true })
       migration.process_batch(migration.relation)
 
-      refute_equal prev_updated_at, @user1.reload.updated_at
+      assert_not_equal prev_updated_at, @user1.reload.updated_at
     end
 
     def test_touches_specific_parent_column
@@ -130,8 +130,8 @@ module BackgroundMigrations
 
       @user1.reload
 
-      refute_equal prev_timestamp, @user1.updated_at
-      refute_equal prev_timestamp, @user1.touched_at
+      assert_not_equal prev_timestamp, @user1.updated_at
+      assert_not_equal prev_timestamp, @user1.touched_at
     end
 
     def test_touches_with_concrete_time

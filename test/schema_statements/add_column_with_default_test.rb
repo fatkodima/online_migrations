@@ -49,8 +49,6 @@ module SchemaStatements
     end
 
     def test_add_column_with_default_expression
-      skip if ar_version < 5.0
-
       with_postgres(10) do
         connection.add_column_with_default(:milestones, :created_at, :datetime, default: -> { "now()" })
 
@@ -59,31 +57,21 @@ module SchemaStatements
         assert_equal "now()", column.default_function
 
         milestone = Milestone.create!
-        refute_nil milestone.created_at
+        assert_not_nil milestone.created_at
       end
     end
 
     def test_add_column_with_default_quoted_expression
-      skip if ar_version < 5.0
-
       with_postgres(10) do
         connection.add_column_with_default(:milestones, :created_at, :datetime, default: -> { "'now()'" })
 
         Milestone.reset_column_information
         column = Milestone.columns_hash["created_at"]
         assert_nil column.default_function
-        refute_nil column.default
+        assert_not_nil column.default
 
         milestone = Milestone.create!
-        refute_nil milestone.created_at
-      end
-    end
-
-    def test_add_column_with_default_raises_for_expression_default_in_older_railses
-      skip if ar_version >= 5.0
-
-      assert_raises_with_message(ArgumentError, "Expressions as default are not supported") do
-        connection.add_column_with_default(:milestones, :status, :integer, default: -> { "random()" })
+        assert_not_nil milestone.created_at
       end
     end
 

@@ -15,20 +15,16 @@ module OnlineMigrations
     end
 
     def create_migration_file
-      migration_template("migration.rb", File.join(migrations_dir, "install_online_migrations.rb"))
+      migration_template("migration.rb", File.join(db_migrate_path, "install_online_migrations.rb"))
     end
 
     private
       def migration_parent
-        Utils.migration_parent_string
+        "ActiveRecord::Migration[#{Utils.ar_version}]"
       end
 
       def start_after
-        self.class.current_migration_number(migrations_dir)
-      end
-
-      def migrations_dir
-        Utils.ar_version >= 5.1 ? db_migrate_path : "db/migrate"
+        self.class.current_migration_number(db_migrate_path)
       end
   end
 end

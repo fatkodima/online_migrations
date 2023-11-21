@@ -27,7 +27,7 @@ module CommandChecker
 
     def test_add_timestamps_default_before_11
       with_target_version(10) do
-        assert_unsafe AddTimestampsDefault, <<-MSG.strip_heredoc
+        assert_unsafe AddTimestampsDefault, <<~MSG
           Adding timestamps columns with non-null defaults blocks reads and writes while the entire table is rewritten.
 
           A safer approach is to, for both timestamps columns:
@@ -38,7 +38,7 @@ module CommandChecker
 
           add_column_with_default takes care of all this steps:
 
-          class CommandChecker::AddTimestampsTest::AddTimestampsDefault < #{migration_parent_string}
+          class CommandChecker::AddTimestampsTest::AddTimestampsDefault < #{migration_parent}
             disable_ddl_transaction!
 
             def change
