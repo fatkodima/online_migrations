@@ -137,17 +137,18 @@ require "test_helper"
 module OnlineMigrations
   module BackgroundMigrations
     class BackfillProjectIssuesCountTest < ActiveSupport::TestCase
-      test "#process_batch performs a background migration iteration" do
-        rails = Project.create!(name: "rails")
+      test "#process_batch performs an iteration" do
+        rails = Project.create!(name: "Ruby on Rails")
         postgres = Project.create!(name: "PostgreSQL")
 
         2.times { rails.issues.create! }
-        _postgres_issue = postgres.issues.create!
+        postgres.issues.create!
 
-        BackfillProjectIssuesCount.new.process_batch(Project.all)
+        migration = BackfillProjectIssuesCount.new
+        migration.process_batch(migration.relation)
 
-        assert_equal 2, rails.issues_count
-        assert_equal 1, postgres.issues_count
+        assert_equal 2, rails.reload.issues_count
+        assert_equal 1, postgres.reload.issues_count
       end
     end
   end
