@@ -116,12 +116,14 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 
 ## Predefined background migrations
 
-* `BackfillColumn` - backfills column(s) with scalar values (enqueue using `backfill_column_in_background`)
+* `BackfillColumn` - backfills column(s) with scalar values (enqueue using `backfill_column_in_background`; or `backfill_column_for_type_change_in_background` if backfilling column for which type change is in progress)
 * `CopyColumn` - copies data from one column(s) to other(s) (enqueue using `copy_column_in_background`)
 * `DeleteAssociatedRecords` - deletes records associated with a parent object (enqueue using `delete_associated_records_in_background`)
 * `DeleteOrphanedRecords` - deletes records with one or more missing relations (enqueue using `delete_orphaned_records_in_background`)
 * `PerformActionOnRelation` - performs specific action on a relation or individual records (enqueue using `perform_action_on_relation_in_background`)
 * `ResetCounters` - resets one or more counter caches to their correct value (enqueue using `reset_counters_in_background`)
+
+**Note**: These migration helpers should be run inside the migration against the database where background migrations tables are defined.
 
 ## Testing
 
@@ -306,3 +308,21 @@ OnlineMigrations.config.background_migrations.backtrace_cleaner = cleaner
 ```
 
 If none is specified, the default `Rails.backtrace_cleaner` will be used to clean backtraces.
+
+### Multiple databases and sharding
+
+If you have multiple databases or sharding, you may need to configure where background migrations related tables live
+by configuring the parent model:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+# Referring to one of the databases
+OnlineMigrations::BackgroundMigrations::ApplicationRecord.connects_to database: { writing: :animals }
+
+# Referring to one of the shards (via `:database` option)
+OnlineMigrations::BackgroundMigrations::ApplicationRecord.connects_to database: { writing: :shard_one }
+```
+
+By default, ActiveRecord uses the database config named `:primary` (if exists) under the environment section from the `database.yml`.
+Otherwise, the first config under the environment section is used.

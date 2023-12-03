@@ -2,7 +2,7 @@
 
 module OnlineMigrations
   module BackgroundMigrations
-    class MigrationJob < ActiveRecord::Base
+    class MigrationJob < ApplicationRecord
       STATUSES = [
         :enqueued,
         :running,

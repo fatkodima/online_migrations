@@ -15,14 +15,25 @@ module Rails
 end
 
 database_yml = File.expand_path("support/database.yml", __dir__)
-ActiveRecord::Base.configurations = YAML.load_file(database_yml)
-ActiveRecord::Base.establish_connection(:postgresql)
+
+ActiveRecord::Base.configurations =
+  begin
+    YAML.load_file(database_yml, aliases: true)
+  rescue ArgumentError
+    YAML.load_file(database_yml)
+  end
+
+ActiveRecord::Base.establish_connection(:test)
 
 if ENV["VERBOSE"]
   ActiveRecord::Base.logger = ActiveSupport::Logger.new($stdout)
 else
   ActiveRecord::Base.logger = ActiveSupport::Logger.new("debug.log", 1, 100 * 1024 * 1024) # 100 mb
   ActiveRecord::Migration.verbose = false
+end
+
+if OnlineMigrations::Utils.ar_version < 7.1
+  ActiveRecord::Base.legacy_connection_handling = false
 end
 
 # disallowed_warnings was added in Active Record 6.1
@@ -77,3 +88,13 @@ end
 require_relative "support/schema"
 require_relative "support/minitest_helpers"
 require_relative "background_migrations/background_migrations"
+
+# Load database schema into shards.
+[:shard_one, :shard_two].each do |shard|
+  BackgroundMigrations::ShardRecord.connected_to(shard: shard, role: :writing) do
+    connection = BackgroundMigrations::ShardRecord.connection
+    connection.create_table(:dogs, force: true) do |t|
+      t.boolean :nice, default: nil
+    end
+  end
+end

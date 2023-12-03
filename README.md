@@ -37,9 +37,19 @@ And then run:
 ```sh
 $ bundle install
 $ bin/rails generate online_migrations:install
+$ bin/rails db:migrate
 ```
 
 **Note**: If you do not have plans on using [background migrations](docs/background_migrations.md) feature, then you can delete the generated migration and regenerate it later, if needed.
+
+### Upgrading
+
+If you're already using [background migrations](docs/background_migrations.md), your background migrations tables may require additional columns. After every upgrade run:
+
+```sh
+$ bin/rails generate online_migrations:upgrade
+$ bin/rails db:migrate
+```
 
 ## Motivation
 

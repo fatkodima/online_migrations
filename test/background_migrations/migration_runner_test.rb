@@ -20,6 +20,7 @@ module BackgroundMigrations
     def teardown
       @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      on_each_shard { Dog.delete_all }
     end
 
     def test_run_migration_job_marks_migration_as_running
@@ -105,6 +106,54 @@ module BackgroundMigrations
       assert m.running?
     end
 
+    def test_run_migration_job_on_composite_migration
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      error = assert_raises(RuntimeError) do
+        run_migration_job(m)
+      end
+      assert_match("Should not be called on a composite", error.message)
+    end
+
+    def test_run_migration_job_finishes_parent_on_all_succeded_child_migrations
+      on_each_shard { Dog.create! }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2, child3 = m.children.to_a
+
+      run_all_migration_jobs(child1)
+      run_all_migration_jobs(child2)
+      run_migration_job(child3)
+
+      assert child1.succeeded?
+      assert child2.succeeded?
+      assert child3.running?
+      assert m.reload.running?
+
+      # nothing to run, just updates the status
+      run_migration_job(child3)
+
+      assert m.reload.succeeded?
+      assert child3.succeeded?
+    end
+
+    def test_run_migration_job_finishes_parent_with_failed_child_migrations
+      dog1 = on_shard(:shard_one) { Dog.create! }
+      _dog2 = on_shard(:shard_two) { Dog.create! }
+
+      m = create_migration(migration_name: "MakeAllDogsNice", batch_max_attempts: 2)
+      child1, child2 = m.children.to_a
+
+      # child1 will be failed
+      child1.migration_jobs.create!(status: :failed, attempts: child1.batch_max_attempts, min_value: dog1.id, max_value: dog1.id)
+      run_migration_job(child1)
+
+      run_migration_job(child2)
+      # nothing to run, just updates the status
+      run_migration_job(child2)
+
+      assert m.reload.failed?
+    end
+
     def test_active_support_migration_instrumentation
       _user = User.create!
       m = create_migration(batch_size: 1, sub_batch_size: 1)
@@ -171,6 +220,17 @@ module BackgroundMigrations
       assert_no_admins
     end
 
+    def test_run_all_migration_jobs_on_composite_migration
+      on_each_shard { 2.times { Dog.create! } }
+
+      m = create_migration(migration_name: "MakeAllDogsNice", batch_size: 1, sub_batch_size: 1)
+      run_all_migration_jobs(m)
+
+      on_each_shard do
+        assert_equal 2, Dog.where(nice: true).count
+      end
+    end
+
     def test_run_all_migration_jobs_in_production_like_environment
       User.create!
       m = create_migration
@@ -198,6 +258,23 @@ module BackgroundMigrations
 
       assert m.succeeded?
       assert_no_admins
+    end
+
+    def test_finish_composite_migration
+      on_each_shard { 2.times { Dog.create! } }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2, child3 = m.children.to_a
+      run_migration_job(child1)
+      run_migration_job(child2)
+      run_migration_job(child3)
+
+      runner = migration_runner(m)
+      runner.finish
+
+      on_each_shard do
+        assert_equal 2, Dog.where(nice: true).count
+      end
     end
 
     private

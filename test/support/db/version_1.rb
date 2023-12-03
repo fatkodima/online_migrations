@@ -1,12 +1,7 @@
 # frozen_string_literal: true
 
 ActiveRecord::Schema.define do
-  enable_extension "pgcrypto" # for gen_random_uuid
-  enable_extension "citext"
-  enable_extension "btree_gist"
-
   create_table :background_migrations, force: :cascade do |t|
-    t.bigint :parent_id
     t.string :migration_name, null: false
     t.jsonb :arguments, default: [], null: false
     t.string :batch_column_name, null: false
@@ -19,13 +14,9 @@ ActiveRecord::Schema.define do
     t.integer :sub_batch_pause_ms, null: false
     t.integer :batch_max_attempts, null: false
     t.string :status, default: "enqueued", null: false
-    t.string :shard
-    t.boolean :composite, default: false, null: false
-    t.timestamps
+    t.timestamps null: false
 
-    t.foreign_key :background_migrations, column: :parent_id, on_delete: :cascade
-
-    t.index [:migration_name, :arguments, :shard],
+    t.index [:migration_name, :arguments],
       unique: true, name: :index_background_migrations_on_unique_configuration
   end
 
@@ -44,7 +35,7 @@ ActiveRecord::Schema.define do
     t.string :error_class
     t.string :error_message
     t.string :backtrace, array: true
-    t.timestamps
+    t.timestamps null: false
 
     t.foreign_key :background_migrations, column: :migration_id, on_delete: :cascade
 

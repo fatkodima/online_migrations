@@ -6,7 +6,7 @@ module OnlineMigrations
     class MigrationJobRunner
       attr_reader :migration_job
 
-      delegate :attempts, :migration_relation, :migration_object, :sub_batch_size,
+      delegate :migration, :attempts, :migration_relation, :migration_object, :sub_batch_size,
         :batch_column_name, :min_value, :max_value, :pause_ms, to: :migration_job
 
       def initialize(migration_job)
@@ -30,7 +30,7 @@ module OnlineMigrations
         )
 
         ActiveSupport::Notifications.instrument("process_batch.background_migrations", job_payload) do
-          run_batch
+          migration.on_shard { run_batch }
         end
 
         migration_job.update!(status: :succeeded, finished_at: Time.current)

@@ -1,8 +1,21 @@
-postgresql:
+default: &default
   adapter: postgresql
   host: localhost
-  database: online_migrations_test
   username: postgres
   password: postgres
   variables:
     lock_timeout: 5ms
+
+test:
+  primary:
+    <<: *default
+    database: online_migrations_test
+  animals:
+    <<: *default
+    database: online_migrations_animals_test
+  shard_one:
+    <<: *default
+    database: online_migrations_shard_one
+  shard_two:
+    <<: *default
+    database: online_migrations_shard_two
