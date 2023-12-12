@@ -72,11 +72,6 @@ OnlineMigrations.configure do |config|
   # Do not waste time sleeping in tests
   config.background_migrations.batch_pause = 0.seconds
   config.background_migrations.sub_batch_pause_ms = 0
-
-  # Active Record 5.1 changed the default primary and foreign key type to bigint.
-  # In order to avoid specifying explicitly primary key types in migrations in tests,
-  # disable this check and enable only where necessary.
-  config.disable_check(:short_primary_key_type)
 end
 
 require_relative "support/schema"
