@@ -193,6 +193,15 @@ config.verbose_sql_logs = true
 
 This feature is enabled by default in a production Rails environment. You can override this setting via `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
 
+## Analyze Tables
+
+Analyze tables automatically (to update planner statistics) after an index is added.
+Add to an initializer file:
+
+```ruby
+config.auto_analyze = true
+```
+
 ## Schema Sanity
 
 Columns can flip order in `db/schema.rb` when you have multiple developers. One way to prevent this is to [alphabetize them](https://www.pgrs.net/2008/03/12/alphabetize-schema-rb-columns/).

@@ -84,6 +84,11 @@ module OnlineMigrations
     #
     attr_accessor :error_messages
 
+    # Whether to automatically run ANALYZE on the table after the index was added
+    # @return [Boolean]
+    #
+    attr_accessor :auto_analyze
+
     # Whether to alphabetize schema
     # @return [Boolean]
     #
@@ -189,6 +194,7 @@ module OnlineMigrations
       @target_version = nil
       @small_tables = []
       @check_down = false
+      @auto_analyze = false
       @alphabetize_schema = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
       @verbose_sql_logs = defined?(Rails.env) && Rails.env.production?

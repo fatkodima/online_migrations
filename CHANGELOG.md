@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Add `auto_analyze` configuration option
 - Add `alphabetize_schema` configuration option
 - Fix `backfill_column_for_type_change_in_background` for cast expressions
 - Fix copying indexes with long names when changing column type

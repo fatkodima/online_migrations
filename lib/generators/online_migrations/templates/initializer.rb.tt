@@ -23,6 +23,13 @@ OnlineMigrations.configure do |config|
   # It is considered safe to perform most of the dangerous operations on them.
   # config.small_tables = []
 
+  # Analyze tables after indexes are added.
+  # Outdated statistics can sometimes hurt performance.
+  # config.auto_analyze = true
+
+  # Alphabetize table columns when dumping the schema.
+  # config.alphabetize_schema = true
+
   # Disable specific checks.
   # For the list of available checks look at `lib/error_messages` folder.
   # config.disable_check(:remove_index)
