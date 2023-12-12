@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.10.0 (2023-12-12)
+
 - Add `auto_analyze` configuration option
 - Add `alphabetize_schema` configuration option
 - Fix `backfill_column_for_type_change_in_background` for cast expressions
