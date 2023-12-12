@@ -84,6 +84,11 @@ module OnlineMigrations
     #
     attr_accessor :error_messages
 
+    # Whether to alphabetize schema
+    # @return [Boolean]
+    #
+    attr_accessor :alphabetize_schema
+
     # Maximum allowed lock timeout value (in seconds)
     #
     # If set lock timeout is greater than this value, the migration will fail.
@@ -184,6 +189,7 @@ module OnlineMigrations
       @target_version = nil
       @small_tables = []
       @check_down = false
+      @alphabetize_schema = false
       @enabled_checks = @error_messages.keys.map { |k| [k, {}] }.to_h
       @verbose_sql_logs = defined?(Rails.env) && Rails.env.production?
     end

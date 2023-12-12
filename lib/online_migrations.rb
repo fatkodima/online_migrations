@@ -16,6 +16,7 @@ module OnlineMigrations
   autoload :VerboseSqlLogs
   autoload :Migration
   autoload :Migrator
+  autoload :SchemaDumper
   autoload :DatabaseTasks
   autoload :ForeignKeyDefinition
   autoload :ForeignKeysCollector
@@ -81,6 +82,7 @@ module OnlineMigrations
 
       ActiveRecord::Migration.prepend(OnlineMigrations::Migration)
       ActiveRecord::Migrator.prepend(OnlineMigrations::Migrator)
+      ActiveRecord::SchemaDumper.prepend(OnlineMigrations::SchemaDumper)
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::Migration::CommandRecorder.include(OnlineMigrations::CommandRecorder)
