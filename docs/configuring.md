@@ -3,6 +3,8 @@
 There are a few configurable options for the gem. Custom configurations should be placed in a `online_migrations.rb` initializer.
 
 ```ruby
+# config/initializers/online_migrations.rb
+
 OnlineMigrations.configure do |config|
   # ...
 end
@@ -15,8 +17,6 @@ end
 Add your own custom checks with:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.add_check do |method, args|
   if method == :add_column && args[0].to_s == "users"
     stop!("No more columns on the users table")
@@ -33,8 +33,6 @@ Use the `stop!` method to stop migrations.
 Disable specific checks with:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.disable_check(:remove_index)
 ```
 
@@ -45,8 +43,6 @@ Check the [source code](https://github.com/fatkodima/online_migrations/blob/mast
 By default, checks are disabled when migrating down. Enable them with:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.check_down = true
 ```
 
@@ -55,8 +51,6 @@ config.check_down = true
 You can customize specific error messages:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.error_messages[:add_column_default] = "Your custom instructions"
 ```
 
@@ -88,8 +82,6 @@ ALTER ROLE myuser SET statement_timeout = '15s';
 You can configure this gem to automatically retry statements that exceed the lock timeout:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
   attempts: 30,                # attempt 30 retries
   base_delay: 0.01.seconds,    # starting with delay of 10ms between each unsuccessful try, increasing exponentially
@@ -110,8 +102,6 @@ To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_
 To mark migrations as safe that were created before installing this gem, configure the migration version starting after which checks are performed:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.start_after = 20220101000000
 
 # or if you use multiple databases (Active Record 6+)
@@ -125,8 +115,6 @@ Use the version from your latest migration.
 If your development database version is different from production, you can specify the production version so the right checks run in development.
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.target_version = 10 # or "12.9" etc
 
 # or if you use multiple databases (Active Record 6+)
@@ -200,8 +188,6 @@ So you can actually check which steps are performed.
 To enable verbose sql logs:
 
 ```ruby
-# config/initializers/online_migrations.rb
-
 config.verbose_sql_logs = true
 ```
 
