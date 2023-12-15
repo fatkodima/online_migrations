@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Add support for `:type_cast_function` to `initialize_column_type_change` helper
 - Drop support for Ruby < 2.7 and Rails < 6.1
 
 ## 0.10.0 (2023-12-12)

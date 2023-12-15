@@ -24,6 +24,7 @@ module SchemaStatements
         t.bigint :star_count
         t.integer :user_id
         t.string :company_id
+        t.string :score
 
         t.index :name
         t.index :long_name
@@ -69,6 +70,20 @@ module SchemaStatements
         assert_equal "My project", column.default
         assert_equal "Project's name", column.comment
       end
+    end
+
+    def test_initialize_column_type_change_type_cast_function_as_literal
+      @connection.initialize_column_type_change(:projects, :score, :integer, type_cast_function: Arel.sql("score::decimal::integer"))
+      clear_caches
+      p = Project.create!(description: "Required description", score: "123.4")
+      assert_equal 123, @connection.select_value("SELECT score_for_type_change FROM projects WHERE id = #{p.id}")
+    end
+
+    def test_initialize_column_type_change_type_cast_function
+      @connection.initialize_column_type_change(:projects, :score, :integer, type_cast_function: "score::decimal::integer")
+      clear_caches
+      p = Project.create!(description: "Required description", score: "123.4")
+      assert_equal 123, @connection.select_value("SELECT score_for_type_change FROM projects WHERE id = #{p.id}")
     end
 
     def test_initialize_columns_type_change_creates_new_columns_before_11

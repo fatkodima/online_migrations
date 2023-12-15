@@ -72,6 +72,9 @@ module OnlineMigrations
     #
     # @example With additional column options
     #   initialize_column_type_change(:users, :name, :string, limit: 64)
+    # @example With type casting
+    #   initialize_column_type_change(:users, :settings, :jsonb, type_cast_function: "jsonb")
+    #   initialize_column_type_change(:users, :company_id, :integer, type_cast_function: Arel.sql("company_id::integer"))
     #
     def initialize_column_type_change(table_name, column_name, new_type, **options)
       initialize_columns_type_change(table_name, [[column_name, new_type]], column_name => options)
@@ -105,10 +108,14 @@ module OnlineMigrations
       end
 
       transaction do
+        type_cast_functions = {}.with_indifferent_access
+
         columns_and_types.each do |(column_name, new_type)|
           old_col = column_for(table_name, column_name)
           old_col_options = __options_from_column(old_col, [:collation, :comment])
           column_options = options[column_name] || {}
+          type_cast_function = column_options.delete(:type_cast_function)
+          type_cast_functions[column_name] = type_cast_function if type_cast_function
           tmp_column_name = conversions[column_name]
 
           if raw_connection.server_version >= 11_00_00
@@ -132,7 +139,7 @@ module OnlineMigrations
           end
         end
 
-        __create_copy_triggers(table_name, conversions.keys, conversions.values)
+        __create_copy_triggers(table_name, conversions.keys, conversions.values, type_cast_functions: type_cast_functions)
       end
     end
 
@@ -392,8 +399,8 @@ module OnlineMigrations
         CopyTrigger.on_table(table_name, connection: self).name(from_column, to_column)
       end
 
-      def __create_copy_triggers(table_name, from_column, to_column)
-        CopyTrigger.on_table(table_name, connection: self).create(from_column, to_column)
+      def __create_copy_triggers(table_name, from_columns, to_columns, type_cast_functions: nil)
+        CopyTrigger.on_table(table_name, connection: self).create(from_columns, to_columns, type_cast_functions: type_cast_functions)
       end
 
       def __remove_copy_triggers(table_name, from_column, to_column)

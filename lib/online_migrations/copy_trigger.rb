@@ -18,10 +18,10 @@ module OnlineMigrations
       "trigger_#{hashed_identifier}"
     end
 
-    def create(from_columns, to_columns)
+    def create(from_columns, to_columns, type_cast_functions: {})
       from_columns, to_columns = normalize_column_names(from_columns, to_columns)
       trigger_name = name(from_columns, to_columns)
-      assignment_clauses = assignment_clauses_for_columns(from_columns, to_columns)
+      assignment_clauses = assignment_clauses_for_columns(from_columns, to_columns, type_cast_functions)
 
       connection.execute(<<~SQL)
         CREATE OR REPLACE FUNCTION #{trigger_name}() RETURNS TRIGGER AS $$
@@ -75,14 +75,19 @@ module OnlineMigrations
         [from_columns, to_columns]
       end
 
-      def assignment_clauses_for_columns(from_columns, to_columns)
+      def assignment_clauses_for_columns(from_columns, to_columns, type_cast_functions)
         combined_column_names = to_columns.zip(from_columns)
 
         assignment_clauses = combined_column_names.map do |(new_name, old_name)|
-          new_name = connection.quote_column_name(new_name)
-          old_name = connection.quote_column_name(old_name)
+          quoted_new_name = connection.quote_column_name(new_name)
+          quoted_old_name = connection.quote_column_name(old_name)
+          type_cast_function = type_cast_functions[old_name]
 
-          "NEW.#{new_name} := NEW.#{old_name}"
+          if type_cast_function
+            "NEW.#{quoted_new_name} := #{type_cast_function.gsub(old_name.to_s, "NEW.#{quoted_old_name}")}"
+          else
+            "NEW.#{quoted_new_name} := NEW.#{quoted_old_name}"
+          end
         end
 
         assignment_clauses.join(";\n  ")
