@@ -81,7 +81,7 @@ module OnlineMigrations
         end
       end
 
-      model = Utils.define_model(table_name, self)
+      model = Utils.define_model(table_name)
 
       conditions = columns_and_values.filter_map do |(column_name, value)|
         value = Arel.sql(value.call.to_s) if value.is_a?(Proc)

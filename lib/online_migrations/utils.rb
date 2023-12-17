@@ -27,16 +27,10 @@ module OnlineMigrations
         Kernel.warn("[online_migrations] #{message}")
       end
 
-      def define_model(table_name, connection = ActiveRecord::Base.connection)
+      def define_model(table_name)
         Class.new(ActiveRecord::Base) do
           self.table_name = table_name
           self.inheritance_column = :_type_disabled
-
-          @online_migrations_connection = connection
-
-          def self.connection
-            @online_migrations_connection
-          end
         end
       end
 
