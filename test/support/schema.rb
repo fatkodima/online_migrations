@@ -18,7 +18,7 @@ ActiveRecord::Schema.define do
     t.integer :sub_batch_pause_ms, null: false
     t.integer :batch_max_attempts, null: false
     t.string :status, default: "enqueued", null: false
-    t.timestamps null: false
+    t.timestamps
 
     t.index [:migration_name, :arguments],
       unique: true, name: :index_background_migrations_on_unique_configuration
@@ -39,7 +39,7 @@ ActiveRecord::Schema.define do
     t.string :error_class
     t.string :error_message
     t.string :backtrace, array: true
-    t.timestamps null: false
+    t.timestamps
 
     t.foreign_key :background_migrations, column: :migration_id, on_delete: :cascade
 

@@ -27,7 +27,7 @@ module BackgroundMigrations
         t.boolean :banned, default: false
         t.integer :projects_count
         t.timestamp :touched_at
-        t.timestamps(null: false)
+        t.timestamps
       end
 
       @connection.create_table(:projects, force: :cascade) do |t|

@@ -9,7 +9,7 @@ module CommandChecker
       @connection.create_table(:users, force: :cascade) do |t|
         t.string :name
         t.string :email, null: false
-        t.timestamps(null: false)
+        t.timestamps
       end
 
       @connection.create_table(:projects, force: :cascade) do |t|
@@ -181,7 +181,7 @@ module CommandChecker
       def change
         create_table :users_new do |t|
           t.string :name
-          t.timestamps(null: false)
+          t.timestamps
         end
         remove_timestamps :users_new
       end
