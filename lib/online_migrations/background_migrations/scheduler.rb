@@ -12,7 +12,7 @@ module OnlineMigrations
     # @example Run via whenever
     #   # add this to schedule.rb
     #   every 1.minute do
-    #     runner "OnlineMigrations::BackgroundMigrations::Scheduler.run"
+    #     runner "OnlineMigrations.run_background_migrations"
     #   end
     #
     class Scheduler

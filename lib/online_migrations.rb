@@ -75,6 +75,12 @@ module OnlineMigrations
       @config ||= Config.new
     end
 
+    # Run background migrations
+    def run_background_migrations
+      BackgroundMigrations::Scheduler.run
+    end
+
+    # @private
     def load
       require "active_record/connection_adapters/postgresql_adapter"
       ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(OnlineMigrations::SchemaStatements)

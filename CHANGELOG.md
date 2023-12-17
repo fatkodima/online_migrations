@@ -1,5 +1,14 @@
 ## master (unreleased)
 
+- Add a shortcut for running background migrations
+
+    ```ruby
+    # Before:
+    OnlineMigrations::BackgroundMigrations::Scheduler.run
+    # After
+    OnlineMigrations.run_background_migrations
+    ```
+
 - Add support for `:type_cast_function` to `initialize_column_type_change` helper
 - Drop support for Ruby < 2.7 and Rails < 6.1
 
