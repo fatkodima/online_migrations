@@ -53,6 +53,8 @@ module CommandChecker
 
             def up
               backfill_column_for_type_change :files, :cost_per_gb
+              # You can use `backfill_column_for_type_change_in_background` if want to
+              # backfill using background migrations.
             end
 
             def down
