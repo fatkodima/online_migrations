@@ -50,7 +50,6 @@ Style/NegatedIf:
 Style/ConditionalAssignment:
   Enabled: false
 
-# only for ruby 2.3+
 Style/SafeNavigation:
   Enabled: false
 
@@ -73,9 +72,8 @@ Style/WhileUntilModifier:
 Style/HashAsLastArrayItem:
   Enabled: false
 
-# only for ruby 2.6+
 Style/MapToHash:
-  Enabled: false
+  Enabled: true
 
 Style/FetchEnvVar:
   Enabled: false
@@ -92,10 +90,6 @@ Style/DisableSyntax:
     - and_or_not
     - until
     - percent_literals
-
-# we can not use new syntax for older rubies
-Lint/ErbNewArguments:
-  Enabled: false
 
 Lint/MissingSuper:
   Enabled: false
