@@ -15,10 +15,7 @@ RDoc::Task.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = "rdoc"
   rdoc.title    = "OnlineMigrations"
   rdoc.options << "--line-numbers"
-  rdoc.rdoc_files.include("README.md")
-  rdoc.rdoc_files.include("docs/background_migrations.md")
-  rdoc.rdoc_files.include("docs/configuring.md")
-  rdoc.rdoc_files.include("lib/**/*.rb")
+  rdoc.rdoc_files.include("README.md", "docs/*", "lib/**/*.rb")
 end
 
 require "rubocop/rake_task"
