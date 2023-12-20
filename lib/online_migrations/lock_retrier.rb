@@ -96,9 +96,8 @@ module OnlineMigrations
         else
           yield
         end
-      # ActiveRecord::LockWaitTimeout can be used for Active Record 5.2+
-      rescue ActiveRecord::StatementInvalid => e
-        if lock_timeout_error?(e) && current_attempt <= attempts
+      rescue ActiveRecord::LockWaitTimeout
+        if current_attempt <= attempts
           current_delay = delay(current_attempt)
           Utils.say("Lock timeout. Retrying in #{current_delay} seconds...")
           sleep(current_delay)
@@ -121,10 +120,6 @@ module OnlineMigrations
         yield
       ensure
         connection.execute("SET lock_timeout TO #{connection.quote(prev_value)}")
-      end
-
-      def lock_timeout_error?(error)
-        error.message.include?("canceling statement due to lock timeout")
       end
   end
 
