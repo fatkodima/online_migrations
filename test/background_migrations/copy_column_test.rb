@@ -25,7 +25,7 @@ module BackgroundMigrations
     end
 
     def teardown
-      @connection.drop_table(:projects) rescue nil
+      @connection.drop_table(:projects, if_exists: true)
     end
 
     def test_relation

@@ -21,11 +21,11 @@ module CommandChecker
     end
 
     def teardown
-      @connection.drop_table(:projects) rescue nil
-      @connection.drop_table(:repositories) rescue nil
-      @connection.drop_join_table(:companies, :users) rescue nil
-      @connection.drop_table(:users) rescue nil
-      @connection.drop_table(:companies) rescue nil
+      @connection.drop_table(:projects, if_exists: true)
+      @connection.drop_table(:repositories, if_exists: true)
+      @connection.drop_join_table(:companies, :users, if_exists: true)
+      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:companies, if_exists: true)
     end
 
     class DropTable < TestMigration

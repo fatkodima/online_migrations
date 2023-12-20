@@ -45,9 +45,9 @@ module BackgroundMigrations
     end
 
     def teardown
-      @connection.drop_table(:users) rescue nil
-      @connection.drop_table(:posts) rescue nil
-      @connection.drop_table(:comments) rescue nil
+      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:posts, if_exists: true)
+      @connection.drop_table(:comments, if_exists: true)
     end
 
     def test_relation

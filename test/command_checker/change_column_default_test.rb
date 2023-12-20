@@ -12,7 +12,7 @@ module CommandChecker
     end
 
     def teardown
-      @connection.drop_table(:users) rescue nil
+      @connection.drop_table(:users, if_exists: true)
     end
 
     class ChangeColumnDefault < TestMigration

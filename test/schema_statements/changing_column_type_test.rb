@@ -42,8 +42,8 @@ module SchemaStatements
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
-      @connection.drop_table(:projects) rescue nil
-      @connection.drop_table(:users) rescue nil
+      @connection.drop_table(:projects, if_exists: true)
+      @connection.drop_table(:users, if_exists: true)
     end
 
     def test_initialize_column_type_change_creates_new_column_before_11

@@ -57,9 +57,9 @@ module BackgroundMigrations
     end
 
     def teardown
-      @connection.drop_table(:users) rescue nil
-      @connection.drop_table(:projects) rescue nil
-      @connection.drop_table(:subscriptions) rescue nil
+      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:projects, if_exists: true)
+      @connection.drop_table(:subscriptions, if_exists: true)
     end
 
     def test_relation
@@ -141,7 +141,7 @@ module BackgroundMigrations
 
       @user1.reload
 
-      # For Active Record 4.2 need to call to_i for correct comparison
+      # Need to call to_i for correct comparison.
       assert_equal time.to_i, @user1.updated_at.to_i
     end
 

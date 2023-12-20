@@ -33,8 +33,8 @@ module SchemaStatements
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
-      @connection.drop_table(:users) rescue nil
-      @connection.drop_table(:posts) rescue nil
+      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:posts, if_exists: true)
     end
 
     def test_schema

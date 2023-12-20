@@ -19,9 +19,9 @@ module SchemaStatements
     end
 
     def teardown
-      connection.drop_table(:milestones) rescue nil
-      connection.drop_table(:projects) rescue nil
-      connection.drop_table(:users) rescue nil
+      connection.drop_table(:milestones, if_exists: true)
+      connection.drop_table(:projects, if_exists: true)
+      connection.drop_table(:users, if_exists: true)
     end
 
     def test_add_foreign_key_is_idempotent

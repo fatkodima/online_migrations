@@ -12,7 +12,7 @@ class CommandRecorderTest < Minitest::Test
 
   def teardown
     @connection.execute("DROP VIEW users CASCADE") rescue nil
-    @connection.drop_table(:users) rescue nil
+    @connection.drop_table(:users, if_exists: true)
   end
 
   class UpdateColumnInBatches < TestMigration

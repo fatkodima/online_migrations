@@ -23,10 +23,8 @@ module SchemaStatements
       @schema_cache.clear!
 
       @connection.execute("DROP VIEW users") rescue nil
-      @connection.drop_table(:users) rescue nil
-
-      # For Active Record 5.0+ we can use if_exists: true for drop_table
-      @connection.drop_table(:users_column_rename) rescue nil
+      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:users_column_rename, if_exists: true)
     end
 
     def test_column_is_not_renamed

@@ -22,8 +22,8 @@ module BackgroundMigrations
     end
 
     def teardown
-      @connection.drop_table(:projects) rescue nil
-      @connection.drop_table(:users) rescue nil
+      @connection.drop_table(:projects, if_exists: true)
+      @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
     end
 

@@ -29,8 +29,8 @@ module SchemaStatements
       @connection.schema_cache.clear!
 
       @connection.execute("DROP VIEW projects") rescue nil
-      @connection.drop_table(:projects) rescue nil
-      @connection.drop_table(:projects_new) rescue nil
+      @connection.drop_table(:projects, if_exists: true)
+      @connection.drop_table(:projects_new, if_exists: true)
     end
 
     def test_table_is_not_renamed

@@ -13,7 +13,7 @@ class ConfigTest < Minitest::Test
 
   def teardown
     connection = ActiveRecord::Base.connection
-    connection.drop_table(:users) rescue nil
+    connection.drop_table(:users, if_exists: true)
   end
 
   class RemoveNameFromUsers < TestMigration

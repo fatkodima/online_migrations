@@ -23,7 +23,7 @@ module SchemaStatements
     end
 
     def teardown
-      connection.drop_table(:milestones) rescue nil
+      connection.drop_table(:milestones, if_exists: true)
     end
 
     def test_update_column_in_batches_raises_in_transaction

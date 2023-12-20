@@ -32,8 +32,8 @@ module BackgroundMigrations
     end
 
     def teardown
-      @connection.drop_table(:links) rescue nil
-      @connection.drop_table(:clicks) rescue nil
+      @connection.drop_table(:links, if_exists: true)
+      @connection.drop_table(:clicks, if_exists: true)
     end
 
     def test_relation

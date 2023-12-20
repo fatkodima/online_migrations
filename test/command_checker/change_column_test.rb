@@ -19,7 +19,7 @@ module CommandChecker
     end
 
     def teardown
-      connection.drop_table(:files) rescue nil
+      connection.drop_table(:files, if_exists: true)
     end
 
     class ChangeColumnType < TestMigration
