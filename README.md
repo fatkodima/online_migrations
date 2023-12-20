@@ -180,16 +180,8 @@ end
 1. Ignore the column:
 
    ```ruby
-   # For Active Record 5+
    class User < ApplicationRecord
      self.ignored_columns = ["name"]
-   end
-
-   # For Active Record < 5
-   class User < ActiveRecord::Base
-     def self.columns
-       super.reject { |c| c.name == "name" }
-     end
    end
    ```
 
@@ -470,16 +462,8 @@ It will use a combination of a VIEW and column aliasing to work with both column
    (is disabled by default in Active Record >= 7), then you need to ignore old column:
 
    ```ruby
-   # For Active Record 5+
    class User < ApplicationRecord
      self.ignored_columns = ["name"]
-   end
-
-   # For Active Record < 5
-   class User < ActiveRecord::Base
-     def self.columns
-       super.reject { |c| c.name == "name" }
-     end
    end
    ```
 
@@ -1162,16 +1146,8 @@ A safer approach is to:
 1. ignore the column:
 
    ```ruby
-   # For Active Record 5+
    class User < ApplicationRecord
      self.ignored_columns = ["type"]
-   end
-
-   # For Active Record < 5
-   class User < ActiveRecord::Base
-     def self.columns
-       super.reject { |c| c.name == "type" }
-     end
    end
    ```
 
