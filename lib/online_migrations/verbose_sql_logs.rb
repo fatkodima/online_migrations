@@ -7,6 +7,7 @@ module OnlineMigrations
       def enable
         @activerecord_logger_was = ActiveRecord::Base.logger
         @verbose_query_logs_was = verbose_query_logs
+        return if @activerecord_logger_was.nil?
 
         stdout_logger = ActiveSupport::Logger.new($stdout)
         stdout_logger.formatter = @activerecord_logger_was.formatter

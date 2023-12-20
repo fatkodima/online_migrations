@@ -195,7 +195,7 @@ module OnlineMigrations
       @auto_analyze = false
       @alphabetize_schema = false
       @enabled_checks = @error_messages.keys.index_with({})
-      @verbose_sql_logs = defined?(Rails.env) && Rails.env.production?
+      @verbose_sql_logs = defined?(Rails.env) && (Rails.env.production? || Rails.env.staging?)
     end
 
     def lock_retrier=(value)

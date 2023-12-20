@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix verbose query logging when `ActiveRecord::Base.logger` is `nil`
 - Add a shortcut for running background migrations
 
     ```ruby

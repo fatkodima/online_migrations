@@ -234,6 +234,21 @@ class ConfigTest < Minitest::Test
     OnlineMigrations.config.verbose_sql_logs = previous
   end
 
+  def test_verbose_sql_logs_when_there_is_no_logger
+    previous = OnlineMigrations.config.verbose_sql_logs
+    previous_logger = ActiveRecord::Base.logger
+
+    OnlineMigrations.config.verbose_sql_logs = true
+    ActiveRecord::Base.logger = nil
+    out, = capture_io do
+      assert_safe AddEmailToUsers
+    end
+    assert_empty(out)
+  ensure
+    OnlineMigrations.config.verbose_sql_logs = previous
+    ActiveRecord::Base.logger = previous_logger
+  end
+
   private
     def with_multiple_dbs(connects_to: :primary, &block)
       database_yml = File.expand_path("support/multiple_database.yml", __dir__)
