@@ -62,7 +62,10 @@ module CommandChecker
             end
           end
 
-        3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
+        3. Make sure your application works with values in both formats (when read from the database, converting
+        during writes works automatically). For most column type changes, this does not need any updates in the app.
+        4. Deploy
+        5. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
 
           class FinalizeCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             disable_ddl_transaction!
@@ -72,8 +75,8 @@ module CommandChecker
             end
           end
 
-        4. Deploy
-        5. Finally, if everything is working as expected, remove copy trigger and old column:
+        6. Deploy
+        7. Finally, if everything works as expected, remove copy trigger and old column:
 
           class CleanupCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
             def up
@@ -85,7 +88,8 @@ module CommandChecker
             end
           end
 
-        6. Deploy
+        8. Remove changes from step 3, if any
+        9. Deploy
       MSG
     end
 

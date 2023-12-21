@@ -250,6 +250,8 @@ module OnlineMigrations
         [column_name.to_s, __change_type_column(column_name)]
       end
 
+      primary_key = primary_key(table_name)
+
       conversions.each do |column_name, tmp_column_name|
         old_column = column_for(table_name, column_name)
         column = column_for(table_name, tmp_column_name)
@@ -271,7 +273,7 @@ module OnlineMigrations
         __copy_foreign_keys(table_name, column_name, tmp_column_name)
         __copy_check_constraints(table_name, column_name, tmp_column_name)
 
-        if primary_key(table_name) == column_name
+        if column_name == primary_key
           __finalize_primary_key_type_change(table_name, column_name, column_names)
         end
       end
@@ -281,7 +283,7 @@ module OnlineMigrations
       # already were swapped and which were not.
       transaction do
         conversions
-          .reject { |column_name, _tmp_column_name| column_name == primary_key(table_name) }
+          .reject { |column_name, _tmp_column_name| column_name == primary_key }
           .each do |column_name, tmp_column_name|
             swap_column_names(table_name, column_name, tmp_column_name)
           end
@@ -313,36 +315,23 @@ module OnlineMigrations
         [column_name.to_s, __change_type_column(column_name)]
       end
 
-      transaction do
-        conversions
-          .reject { |column_name, _tmp_column_name| column_name == primary_key(table_name) }
-          .each do |column_name, tmp_column_name|
+      primary_key = primary_key(table_name)
+      primary_key_conversion = conversions.delete(primary_key)
+
+      # No need to remove indexes, foreign keys etc, because it  can take a significant amount
+      # of time and will be automatically removed if decided to remove the column itself.
+      if conversions.any?
+        transaction do
+          conversions.each do |column_name, tmp_column_name|
             swap_column_names(table_name, column_name, tmp_column_name)
           end
 
-        __reset_trigger_function(table_name, column_names)
+          __reset_trigger_function(table_name, column_names)
+        end
       end
 
-      conversions.each do |column_name, tmp_column_name|
-        indexes(table_name).each do |index|
-          if index.columns.include?(tmp_column_name)
-            remove_index(table_name, tmp_column_name, algorithm: :concurrently)
-          end
-        end
-
-        foreign_keys(table_name).each do |fk|
-          if fk.column == tmp_column_name
-            remove_foreign_key(table_name, column: tmp_column_name)
-          end
-        end
-
-        __check_constraints_for(table_name, tmp_column_name).each do |constraint|
-          remove_check_constraint(table_name, name: constraint.constraint_name)
-        end
-
-        if primary_key(table_name) == column_name
-          __finalize_primary_key_type_change(table_name, column_name, column_names)
-        end
+      if primary_key_conversion
+        __finalize_primary_key_type_change(table_name, primary_key, column_names)
       end
     end
 

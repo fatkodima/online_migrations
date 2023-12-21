@@ -310,6 +310,17 @@ Type | Safe Changes
 
 :white_check_mark: **Good**
 
+#### "Classic" approach (abstract)
+
+1. Create a new column
+2. Write to both columns
+3. Backfill data from the old column to the new column
+4. Move reads from the old column to the new column
+5. Stop writing to the old column
+6. Drop the old column
+
+#### :bullettrain_side: Concrete steps for Active Record
+
 **Note**: The following steps can also be used to change the primary key's type (e.g., from `integer` to `bigint`).
 
 A safer approach can be accomplished in several steps:
@@ -343,7 +354,10 @@ A safer approach can be accomplished in several steps:
    end
    ```
 
-3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
+3. Make sure your application works with values in both formats (when read from the database, converting
+during writes works automatically). For most column type changes, this does not need any updates in the app.
+4. Deploy
+5. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
 
    ```ruby
    class FinalizeChangeFilesSizeType < ActiveRecord::Migration[7.1]
@@ -355,8 +369,8 @@ A safer approach can be accomplished in several steps:
    end
    ```
 
-4. Deploy
-5. Finally, if everything is working as expected, remove copy trigger and old column:
+6. Deploy
+7. Finally, if everything works as expected, remove copy trigger and old column:
 
    ```ruby
    class CleanupChangeFilesSizeType < ActiveRecord::Migration[7.1]
@@ -370,7 +384,8 @@ A safer approach can be accomplished in several steps:
    end
    ```
 
-6. Deploy
+8. Remove changes from step 3, if any
+9. Deploy
 
 ### Renaming a column
 

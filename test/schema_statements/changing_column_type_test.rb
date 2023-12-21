@@ -389,7 +389,7 @@ module SchemaStatements
       assert @connection.index_exists?(:projects, :name_for_type_change)
 
       @connection.revert_finalize_column_type_change(:projects, :name)
-      assert_not @connection.index_exists?(:projects, :name_for_type_change)
+      assert @connection.index_exists?(:projects, :name_for_type_change)
     end
 
     def test_cleanup_column_type_change

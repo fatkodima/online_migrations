@@ -213,7 +213,10 @@ which will be passed to `add_column` when creating a new column, so you can over
     end
   end
 
-3. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
+3. Make sure your application works with values in both formats (when read from the database, converting
+during writes works automatically). For most column type changes, this does not need any updates in the app.
+4. Deploy
+5. Copy indexes, foreign keys, check constraints, NOT NULL constraint, swap new column in place:
 
   class Finalize<%= migration_name %> < <%= migration_parent %>
     disable_ddl_transaction!
@@ -223,8 +226,8 @@ which will be passed to `add_column` when creating a new column, so you can over
     end
   end
 
-4. Deploy
-5. Finally, if everything is working as expected, remove copy trigger and old column:
+6. Deploy
+7. Finally, if everything works as expected, remove copy trigger and old column:
 
   class Cleanup<%= migration_name %> < <%= migration_parent %>
     def up
@@ -236,7 +239,8 @@ which will be passed to `add_column` when creating a new column, so you can over
     end
   end
 
-6. Deploy",
+8. Remove changes from step 3, if any
+9. Deploy",
 
       change_column_default:
 "Partial writes are enabled, which can cause incorrect values
