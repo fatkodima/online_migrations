@@ -468,13 +468,14 @@ module OnlineMigrations
       end
 
       def __copy_check_constraints(table_name, from_column, to_column)
-        __check_constraints_for(table_name, from_column).each do |check|
-          expression = check["constraint_def"][/CHECK \({2}(.+)\){2}/, 1]
-          new_expression = expression.gsub(from_column.to_s, to_column.to_s)
+        check_constraints = check_constraints(table_name).select { |c| c.expression.include?(from_column) }
+
+        check_constraints.each do |check|
+          new_expression = check.expression.gsub(from_column, to_column)
 
           add_check_constraint(table_name, new_expression, validate: false)
 
-          if check["valid"]
+          if check.validated?
             validate_check_constraint(table_name, expression: new_expression)
           end
         end
@@ -501,33 +502,6 @@ module OnlineMigrations
               AND attname = #{quote(column_name)}
           SQL
         end
-      end
-
-      def __check_constraints_for(table_name, column_name)
-        __check_constraints(table_name).select { |c| c["column_name"] == column_name }
-      end
-
-      def __check_constraints(table_name)
-        schema = __schema_for_table(table_name)
-
-        select_all(<<~SQL)
-          SELECT
-            ccu.column_name as column_name,
-            con.conname as constraint_name,
-            pg_get_constraintdef(con.oid) as constraint_def,
-            con.convalidated AS valid
-          FROM pg_catalog.pg_constraint con
-            INNER JOIN pg_catalog.pg_class rel
-              ON rel.oid = con.conrelid
-            INNER JOIN pg_catalog.pg_namespace nsp
-              ON nsp.oid = con.connamespace
-            INNER JOIN information_schema.constraint_column_usage ccu
-              ON con.conname = ccu.constraint_name
-                AND rel.relname = ccu.table_name
-          WHERE rel.relname = #{quote(table_name)}
-            AND con.contype = 'c'
-            AND nsp.nspname = #{schema}
-        SQL
       end
 
       def __rename_constraint(table_name, old_name, new_name)
