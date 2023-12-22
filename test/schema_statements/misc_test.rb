@@ -5,11 +5,11 @@ require "test_helper"
 module SchemaStatements
   class MiscTest < Minitest::Test
     class User < ActiveRecord::Base
-      has_many :posts, foreign_key: :author_id
+      has_many :invoices
     end
 
-    class Post < ActiveRecord::Base
-      belongs_to :author, class_name: User.name
+    class Invoice < ActiveRecord::Base
+      belongs_to :user
     end
 
     def setup
@@ -23,18 +23,20 @@ module SchemaStatements
         t.string :name_for_type_change
       end
 
-      @connection.create_table(:posts, force: :cascade) do |t|
-        t.belongs_to :author
+      @connection.create_table(:invoices, force: :cascade) do |t|
+        t.belongs_to :user
+        t.date :start_date
+        t.date :end_date
       end
 
       User.reset_column_information
-      Post.reset_column_information
+      Invoice.reset_column_information
     end
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
       @connection.drop_table(:users, if_exists: true)
-      @connection.drop_table(:posts, if_exists: true)
+      @connection.drop_table(:invoices, if_exists: true)
     end
 
     def test_schema
@@ -47,6 +49,32 @@ module SchemaStatements
           add_index :users, :name
         end
       end
+    end
+
+    def test_add_exclusion_constraint
+      skip if ar_version < 7.1
+
+      user = User.create!
+      start_date = 3.days.ago
+      end_date = 1.day.ago
+
+      user.invoices.create!(start_date: start_date, end_date: end_date)
+
+      @connection.add_exclusion_constraint(:invoices, "daterange(start_date, end_date) WITH &&", using: :gist)
+
+      error = assert_raises(ActiveRecord::StatementInvalid) do
+        user.invoices.create!(start_date: start_date, end_date: end_date)
+      end
+      assert_instance_of PG::ExclusionViolation, error.cause
+    end
+
+    def test_add_exclusion_constraint_is_idempotent
+      skip if ar_version < 7.1
+
+      2.times do
+        @connection.add_exclusion_constraint(:invoices, "daterange(start_date, end_date) WITH &&", using: :gist)
+      end
+      assert true # rubocop:disable Minitest/UselessAssertion
     end
 
     def test_swap_column_names
@@ -92,18 +120,18 @@ module SchemaStatements
     end
 
     def test_delete_orphaned_records_in_background
-      m = @connection.delete_orphaned_records_in_background(Post.name, :author)
+      m = @connection.delete_orphaned_records_in_background(Invoice.name, :user)
 
       assert_equal "DeleteOrphanedRecords", m.migration_name
-      assert_equal [Post.name, ["author"]], m.arguments
+      assert_equal [Invoice.name, ["user"]], m.arguments
     end
 
     def test_delete_associated_records_in_background
       user = User.create!
-      m = @connection.delete_associated_records_in_background(User.name, user.id, :posts)
+      m = @connection.delete_associated_records_in_background(User.name, user.id, :invoices)
 
       assert_equal "DeleteAssociatedRecords", m.migration_name
-      assert_equal [User.name, user.id, "posts"], m.arguments
+      assert_equal [User.name, user.id, "invoices"], m.arguments
     end
 
     def test_perform_action_on_relation_in_background

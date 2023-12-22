@@ -791,11 +791,11 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
     #
     def add_check_constraint(table_name, expression, **options)
-      constraint_name = check_constraint_name(table_name, expression: expression, **options)
-
-      if __check_constraint_exists?(table_name, constraint_name)
-        Utils.say("Check constraint was not created because it already exists (this may be due to an aborted migration " \
-                  "or similar) table_name: #{table_name}, expression: #{expression}, constraint name: #{constraint_name}")
+      if __check_constraint_exists?(table_name, expression: expression, **options)
+        Utils.say(<<~MSG.squish)
+          Check constraint was not created because it already exists (this may be due to an aborted migration or similar).
+          table_name: #{table_name}, expression: #{expression}
+        MSG
       else
         super
       end
@@ -816,6 +816,19 @@ module OnlineMigrations
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
         super
+      end
+    end
+
+    if Utils.ar_version >= 7.1
+      def add_exclusion_constraint(table_name, expression, **options)
+        if __exclusion_constraint_exists?(table_name, expression: expression, **options)
+          Utils.say(<<~MSG.squish)
+            Exclusion constraint was not created because it already exists (this may be due to an aborted migration or similar).
+            table_name: #{table_name}, expression: #{expression}
+          MSG
+        else
+          super
+        end
       end
     end
 
@@ -894,7 +907,7 @@ module OnlineMigrations
 
       def __not_null_constraint_exists?(table_name, column_name, name: nil)
         name ||= __not_null_constraint_name(table_name, column_name)
-        __check_constraint_exists?(table_name, name)
+        __check_constraint_exists?(table_name, name: name)
       end
 
       def __not_null_constraint_name(table_name, column_name)
@@ -907,7 +920,7 @@ module OnlineMigrations
 
       def __text_limit_constraint_exists?(table_name, column_name, name: nil)
         name ||= __text_limit_constraint_name(table_name, column_name)
-        __check_constraint_exists?(table_name, name)
+        __check_constraint_exists?(table_name, name: name)
       end
 
       # Can use index validity attribute for Active Record >= 7.1.
@@ -946,23 +959,20 @@ module OnlineMigrations
       end
 
       # Can be replaced by native method in Active Record >= 7.1.
-      def __check_constraint_exists?(table_name, constraint_name)
-        schema = __schema_for_table(table_name)
+      def __check_constraint_exists?(table_name, **options)
+        if !options.key?(:name) && !options.key?(:expression)
+          raise ArgumentError, "At least one of :name or :expression must be supplied"
+        end
 
-        check_sql = <<~SQL
-          SELECT COUNT(*)
-          FROM pg_catalog.pg_constraint con
-            INNER JOIN pg_catalog.pg_class cl
-              ON cl.oid = con.conrelid
-            INNER JOIN pg_catalog.pg_namespace nsp
-              ON nsp.oid = con.connamespace
-          WHERE con.contype = 'c'
-            AND con.conname = #{quote(constraint_name)}
-            AND cl.relname = #{quote(table_name)}
-            AND nsp.nspname = #{schema}
-        SQL
+        check_constraint_for(table_name, **options).present?
+      end
 
-        select_value(check_sql).to_i > 0
+      def __exclusion_constraint_exists?(table_name, **options)
+        if !options.key?(:name) && !options.key?(:expression)
+          raise ArgumentError, "At least one of :name or :expression must be supplied"
+        end
+
+        exclusion_constraint_for(table_name, **options).present?
       end
 
       def __schema_for_table(table_name)

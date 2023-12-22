@@ -5,6 +5,7 @@ require "test_helper"
 module SchemaStatements
   class ChangingColumnTypeTest < Minitest::Test
     class User < ActiveRecord::Base
+      has_many :projects
     end
 
     class Project < ActiveRecord::Base
@@ -25,6 +26,8 @@ module SchemaStatements
         t.integer :user_id
         t.string :company_id
         t.string :score
+        t.timestamp :start_at
+        t.timestamp :end_at
 
         t.index :name
         t.index :long_name
@@ -32,9 +35,12 @@ module SchemaStatements
         t.index "lower(long_name)"
 
         t.foreign_key :users
-      end
+        t.check_constraint "star_count >= 0"
 
-      @connection.add_check_constraint(:projects, "star_count >= 0")
+        if ar_version >= 7.1
+          t.exclusion_constraint "tsrange(start_at, end_at) WITH &&", name: "original_e_constraint", using: :gist, deferrable: :deferred
+        end
+      end
 
       User.reset_column_information
       Project.reset_column_information
@@ -287,6 +293,21 @@ module SchemaStatements
           VALUES ('Description', #{user.id}, -1)
         SQL
       end
+    end
+
+    def test_finalize_column_type_change_copies_exclusion_constraints
+      skip if ar_version < 7.1
+
+      @connection.initialize_column_type_change(:projects, :start_at, :timestamp, limit: 4)
+      @connection.finalize_column_type_change(:projects, :start_at)
+
+      constraints = @connection.exclusion_constraints(:projects)
+      assert_equal 2, constraints.size
+
+      constraint = constraints.find { |con| con.name != "original_e_constraint" }
+      assert_equal :gist, constraint.using
+      assert_equal :deferred, constraint.deferrable
+      assert_includes constraint.expression, "start_at"
     end
 
     def test_finalize_column_type_change_preserves_not_null_without_default_before_12

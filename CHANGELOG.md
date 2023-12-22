@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Copy exclusion constraints when changing column type
 - Update `revert_finalize_columns_type_change` to not remove indexes, foreign keys etc
 - Fix verbose query logging when `ActiveRecord::Base.logger` is `nil`
 - Add a shortcut for running background migrations

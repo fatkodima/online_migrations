@@ -273,6 +273,11 @@ module OnlineMigrations
         __copy_foreign_keys(table_name, column_name, tmp_column_name)
         __copy_check_constraints(table_name, column_name, tmp_column_name)
 
+        # Exclusion constraints were added in https://github.com/rails/rails/pull/40224.
+        if Utils.ar_version >= 7.1
+          __copy_exclusion_constraints(table_name, column_name, tmp_column_name)
+        end
+
         if column_name == primary_key
           __finalize_primary_key_type_change(table_name, column_name, column_names)
         end
@@ -478,6 +483,21 @@ module OnlineMigrations
           if check.validated?
             validate_check_constraint(table_name, expression: new_expression)
           end
+        end
+      end
+
+      def __copy_exclusion_constraints(table_name, from_column, to_column)
+        exclusion_constraints = exclusion_constraints(table_name).select { |c| c.expression.include?(from_column) }
+
+        exclusion_constraints.each do |constraint|
+          new_expression = constraint.expression.gsub(from_column, to_column)
+          add_exclusion_constraint(
+            table_name,
+            new_expression,
+            using: constraint.using,
+            where: constraint.where,
+            deferrable: constraint.deferrable
+          )
         end
       end
 
