@@ -182,7 +182,7 @@ module OnlineMigrations
         attempts: 30,
         base_delay: 0.01.seconds,
         max_delay: 1.minute,
-        lock_timeout: 0.05.seconds
+        lock_timeout: 0.2.seconds
       )
 
       @background_migrations = BackgroundMigrations::Config.new

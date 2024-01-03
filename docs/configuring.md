@@ -86,7 +86,7 @@ config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
   attempts: 30,                # attempt 30 retries
   base_delay: 0.01.seconds,    # starting with delay of 10ms between each unsuccessful try, increasing exponentially
   max_delay: 1.minute,         # maximum delay is 1 minute
-  lock_timeout: 0.05.seconds   # and 50ms set as lock timeout for each try
+  lock_timeout: 0.2.seconds    # and 200ms set as lock timeout for each try
 )
 ```
 
