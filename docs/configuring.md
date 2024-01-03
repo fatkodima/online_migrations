@@ -93,7 +93,8 @@ config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
 When statement within transaction fails - the whole transaction is retried.
 
 To permanently disable lock retries, you can set `lock_retrier` to `nil`.
-To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable.
+
+To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable. This is useful when you are deploying a hotfix and do not want to wait too long while the lock retrier safely tries to acquire the lock, but try to acquire the lock immediately with the default configured lock timeout value.
 
 **Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
 
