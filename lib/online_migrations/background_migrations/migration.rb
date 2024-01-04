@@ -69,17 +69,17 @@ module OnlineMigrations
       # Returns the progress of the background migration.
       #
       # @return [Float, nil]
-      #   - when background migration is configured to not to track progress, returns `nil`
-      #   - otherwise returns value in range of 0.0 and 1.0
+      #   - when background migration is configured to not track progress, returns `nil`
+      #   - otherwise returns value in range from 0.0 to 100.0
       #
       def progress
         if succeeded?
-          1.0
+          100.0
         elsif rows_count
           jobs_rows_count = migration_jobs.succeeded.sum(:batch_size)
           # The last migration job may need to process the amount of rows
           # less than the batch size, so we can get a value > 1.0.
-          [jobs_rows_count.to_f / rows_count, 1.0].min
+          [jobs_rows_count.to_f / rows_count, 1.0].min * 100
         end
       end
 

@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Change background migration `progress` to return values in range from 0.0 to 100.0
+
+    Previously, these were values in range from 0.0 to 1.0 and caused confusion
+
 - Copy exclusion constraints when changing column type
 - Update `revert_finalize_columns_type_change` to not remove indexes, foreign keys etc
 - Fix verbose query logging when `ActiveRecord::Base.logger` is `nil`

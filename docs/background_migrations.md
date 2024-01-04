@@ -221,7 +221,7 @@ To get the progress (assuming `#count` method on background migration class was 
 
 ```ruby
 migration = OnlineMigrations::BackgroundMigrations::Migration.find(id)
-migration.progress # value from 0 to 1.0
+migration.progress # value from 0 to 100.0
 ```
 
 **Note**: It will be easier to work with background migrations through some kind of Web UI, but until it is implemented, we can work with them only manually.
