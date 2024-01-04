@@ -146,7 +146,7 @@ module OnlineMigrations
     # Returns a list of enabled checks
     #
     # All checks are enabled by default. To disable/enable a check use `disable_check`/`enable_check`.
-    # For the list of available checks look at `lib/error_messages` folder.
+    # For the list of available checks look at the `error_messages.rb` file.
     #
     # @return [Array]
     #
@@ -208,7 +208,7 @@ module OnlineMigrations
 
     # Enables specific check
     #
-    # For the list of available checks look at `lib/error_messages` module.
+    # For the list of available checks look at the `error_messages.rb` file.
     #
     # @param name [Symbol] check name
     # @param start_after [Integer] migration version from which this check will be performed
@@ -220,7 +220,7 @@ module OnlineMigrations
 
     # Disables specific check
     #
-    # For the list of available checks look at `lib/error_messages` module.
+    # For the list of available checks look at the `error_messages.rb` file.
     #
     # @param name [Symbol] check name
     # @return [void]
@@ -231,7 +231,7 @@ module OnlineMigrations
 
     # Test whether specific check is enabled
     #
-    # For the list of available checks look at `lib/error_messages` module.
+    # For the list of available checks look at the `error_messages.rb` file.
     #
     # @param name [Symbol] check name
     # @param version [Integer] migration version

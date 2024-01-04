@@ -31,12 +31,14 @@ OnlineMigrations.configure do |config|
   # config.alphabetize_schema = true
 
   # Disable specific checks.
-  # For the list of available checks look at `lib/error_messages` folder.
+  # For the list of available checks look at the `error_messages.rb` file inside
+  # the `online_migrations` gem.
   # config.disable_check(:remove_index)
 
   # Enable specific checks. All checks are enabled by default,
   # but this may change in the future.
-  # For the list of available checks look at `lib/error_messages` folder.
+  # For the list of available checks look at the `error_messages.rb` file inside
+  # the `online_migrations` gem.
   # config.enable_check(:remove_index)
 
   # Configure whether to log every SQL query happening in a migration.
