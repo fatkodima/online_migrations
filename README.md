@@ -1027,7 +1027,7 @@ end
 
 :x: **Bad**
 
-Adding multiple foreign keys in a single migration blocks reads and writes on all involved tables until migration is completed.
+Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
 Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.
 
 ```ruby

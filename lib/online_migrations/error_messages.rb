@@ -492,7 +492,7 @@ execute call, so cannot help you here. Make really sure that what
 you're doing is safe before proceeding, then wrap it in a safety_assured { ... } block.",
 
       multiple_foreign_keys:
-"Adding multiple foreign keys in a single migration blocks reads and writes on all involved tables until migration is completed.
+"Adding multiple foreign keys in a single migration blocks writes on all involved tables until migration is completed.
 Avoid adding foreign key more than once per migration file, unless the source and target tables are identical.",
 
       drop_table_multiple_foreign_keys:
