@@ -230,7 +230,19 @@ migration.progress # value from 0 to 100.0
 
 There are a few configurable options for the Background Migrations. Custom configurations should be placed in a `online_migrations.rb` initializer.
 
-**Note**: Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/config.rb) for the list of all available configuration options.
+Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/config.rb) for the list of all available configuration options.
+
+**Note**: You can dynamically change certain migration parameters while the migration is run.
+For example,
+```ruby
+migration = OnlineMigrations::BackgroundMigrations::Migration.find(id)
+migration.update!(
+  batch_size: 50_000,      # The # of records migration will update per run
+  sub_batch_size: 10_000,  # The # of records migration will update via single `UPDATE`
+  batch_pause: 1.second,   # Minimum time (in seconds) between successive migration runs
+  sub_batch_pause_ms: 20   # Minimum time (in ms) between successive migration `UPDATE`s
+)
+```
 
 ### Throttling
 
