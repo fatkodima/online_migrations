@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.11.0 (2024-01-09)
+
 - Support sharding for background migrations
 
     Now, if a `relation` inside background migration definition is defined on a sharded model,
