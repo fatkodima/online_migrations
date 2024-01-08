@@ -99,7 +99,7 @@ module OnlineMigrations
           count = count.to_i
           # If the table has never yet been vacuumed or analyzed, reltuples contains -1
           # indicating that the row count is unknown.
-          count = 0 if count == -1
+          count = 0 if count < 0
           count
         end
       end
@@ -124,6 +124,18 @@ module OnlineMigrations
         SQL
 
         connection.select_value(query) == "v"
+      end
+
+      def shard_names(model)
+        model.ancestors.each do |ancestor|
+          # There is no official method to get shard names from the model.
+          # This is the way that currently is used in ActiveRecord tests themselves.
+          pool_manager = ActiveRecord::Base.connection_handler.send(:get_pool_manager, ancestor.name)
+
+          # .uniq call is not needed for Active Record 7.1+
+          # See https://github.com/rails/rails/pull/49284.
+          return pool_manager.shard_names.uniq if pool_manager
+        end
       end
     end
   end

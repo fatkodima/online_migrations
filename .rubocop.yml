@@ -118,6 +118,7 @@ Naming/FileName:
   Exclude:
     - lib/online_migrations/version.rb
     - test/support/schema.rb
+    - test/support/db/**
     - test/test_helper.rb
     - gemfiles/**.gemfile
 

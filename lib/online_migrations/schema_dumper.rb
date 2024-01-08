@@ -4,7 +4,7 @@ require "delegate"
 
 module OnlineMigrations
   module SchemaDumper
-    def initialize(connection, *args, **options)
+    def initialize(connection, options = {})
       if OnlineMigrations.config.alphabetize_schema
         connection = WrappedConnection.new(connection)
       end

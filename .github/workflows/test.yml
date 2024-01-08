@@ -51,5 +51,13 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
+      - name: Prepare PostgreSQL shards
+        run: |
+          createdb online_migrations_shard_one
+          createdb online_migrations_shard_two
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
       - name: Run the test suite
         run: bundle exec rake test

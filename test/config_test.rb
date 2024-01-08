@@ -78,23 +78,19 @@ class ConfigTest < Minitest::Test
   end
 
   def test_start_after_multiple_dbs
-    with_multiple_dbs do
-      with_start_after({ primary: 20200101000001 }) do
-        assert_safe RemoveNameFromUsers
-      end
+    with_start_after({ primary: 20200101000001 }) do
+      assert_safe RemoveNameFromUsers
+    end
 
-      with_start_after({ primary: 20200101000000 }) do
-        assert_unsafe RemoveNameFromUsers
-      end
+    with_start_after({ primary: 20200101000000 }) do
+      assert_unsafe RemoveNameFromUsers
     end
   end
 
   def test_start_after_multiple_dbs_unconfigured
-    with_multiple_dbs(connects_to: :primary) do
-      assert_raises_with_message(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
-        with_start_after({ animals: 20200101000001 }) do
-          assert_safe RemoveNameFromUsers
-        end
+    assert_raises_with_message(StandardError, /OnlineMigrations.config.start_after is not configured for :primary/i) do
+      with_start_after({ animals: 20200101000001 }) do
+        assert_safe RemoveNameFromUsers
       end
     end
   end
@@ -118,23 +114,19 @@ class ConfigTest < Minitest::Test
   end
 
   def test_target_version_multiple_dbs
-    with_multiple_dbs do
-      with_target_version({ primary: 11 }) do
-        assert_safe AddColumnDefault
-      end
+    with_target_version({ primary: 11 }) do
+      assert_safe AddColumnDefault
+    end
 
-      with_target_version({ primary: 10 }) do
-        assert_unsafe AddColumnDefault
-      end
+    with_target_version({ primary: 10 }) do
+      assert_unsafe AddColumnDefault
     end
   end
 
   def test_target_version_multiple_dbs_unconfigured
-    with_multiple_dbs(connects_to: :primary) do
-      assert_raises_with_message(StandardError, /OnlineMigrations.config.target_version is not configured for :primary/i) do
-        with_target_version({ animals: 10 }) do
-          assert_safe AddColumnDefault
-        end
+    assert_raises_with_message(StandardError, /OnlineMigrations.config.target_version is not configured for :primary/i) do
+      with_target_version({ animals: 10 }) do
+        assert_safe AddColumnDefault
       end
     end
   end
@@ -250,22 +242,6 @@ class ConfigTest < Minitest::Test
   end
 
   private
-    def with_multiple_dbs(connects_to: :primary, &block)
-      database_yml = File.expand_path("support/multiple_database.yml", __dir__)
-      yaml = File.read(database_yml)
-
-      prev_configs = ActiveRecord::Base.configurations
-      ActiveRecord::Base.configurations =
-        YAML.respond_to?(:unsafe_load) ? YAML.unsafe_load(yaml) : YAML.load(yaml) # rubocop:disable Security/YAMLLoad
-
-      ActiveRecord::Base.connects_to(database: { writing: connects_to })
-
-      ActiveRecord::Base.connected_to(role: :writing, &block)
-    ensure
-      ActiveRecord::Base.configurations = prev_configs
-      ActiveRecord::Base.establish_connection(:postgresql)
-    end
-
     def with_start_after(value)
       previous = config.start_after
       config.start_after = value

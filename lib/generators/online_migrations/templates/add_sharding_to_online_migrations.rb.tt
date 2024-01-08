@@ -1,0 +1,18 @@
+class AddShardingToOnlineMigrations < <%= migration_parent %>
+  def change
+    safety_assured do
+      remove_index :background_migrations, [:migration_name, :arguments], unique: true
+
+      change_table :background_migrations do |t|
+        t.bigint :parent_id
+        t.string :shard
+        t.boolean :composite, default: false, null: false
+
+        t.foreign_key :background_migrations, column: :parent_id, on_delete: :cascade
+
+        t.index [:migration_name, :arguments, :shard],
+          unique: true, name: :index_background_migrations_on_unique_configuration
+      end
+    end
+  end
+end

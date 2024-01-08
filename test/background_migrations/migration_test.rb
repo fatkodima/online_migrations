@@ -9,12 +9,12 @@ module BackgroundMigrations
 
     def setup
       @connection = ActiveRecord::Base.connection
-      @connection.create_table(:users) do |t|
+      @connection.create_table(:users, force: true) do |t|
         t.string :name
         t.boolean :admin
       end
 
-      @connection.create_table(:projects) do |t|
+      @connection.create_table(:projects, force: true) do |t|
         t.bigint :user_id
       end
 
@@ -25,6 +25,7 @@ module BackgroundMigrations
       @connection.drop_table(:projects, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      on_each_shard { Dog.delete_all }
     end
 
     def test_min_value_and_max_value_validations
@@ -97,11 +98,47 @@ module BackgroundMigrations
       assert_equal "id", m.batch_column_name
       assert_equal user1.id, m.min_value
       assert_equal user2.id, m.max_value
+      assert_not m.composite?
+      assert_nil m.parent
     end
 
     def test_normalizes_migration_name
       m = build_migration(migration_name: "::BackgroundMigrations::MakeAllNonAdmins")
       assert_equal "MakeAllNonAdmins", m.migration_name
+    end
+
+    def test_paused_bang_pauses_migration
+      m = create_migration
+      m.paused!
+      assert m.paused?
+    end
+
+    def test_paused_bang_pauses_composite_migration
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2 = m.children.to_a
+      m.paused!
+
+      assert m.paused?
+      assert child1.paused?
+      assert child2.paused?
+    end
+
+    def test_running_bang_resumes_migration
+      m = create_migration
+      m.paused!
+      m.running!
+      assert m.running?
+    end
+
+    def test_running_bang_pauses_composite_migration
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2 = m.children.to_a
+      m.paused!
+      m.running!
+
+      assert m.running?
+      assert child1.running?
+      assert child2.running?
     end
 
     def test_empty_relation
@@ -112,7 +149,12 @@ module BackgroundMigrations
     end
 
     def test_progress_succeded_migration
-      m = create_migration(status: OnlineMigrations::BackgroundMigrations::Migration.statuses[:succeeded])
+      m = create_migration(status: :succeeded)
+      assert_in_delta 100.0, m.progress
+    end
+
+    def test_progress_succeded_sharded_migration
+      m = create_migration(migration_name: "MakeAllDogsNice", status: :succeeded)
       assert_in_delta 100.0, m.progress
     end
 
@@ -125,6 +167,24 @@ module BackgroundMigrations
 
       run_migration_job(m)
       assert_in_delta 100.0, m.progress
+    end
+
+    def test_progress_not_finished_sharded_migration
+      on_each_shard { Dog.create! }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      # child1 is for `:default` and same as child2.
+      child1, child2, child3 = m.children.to_a
+
+      run_migration_job(child1)
+      run_migration_job(child1) # marks migration as completed
+      assert_in_delta 100.0 / 3, m.progress, 1
+
+      run_migration_job(child2)
+      run_migration_job(child3)
+      assert_in_delta 100.0, m.progress
+    ensure
+      on_each_shard { Dog.delete_all }
     end
 
     def test_migration_class
@@ -245,6 +305,53 @@ module BackgroundMigrations
 
       m.failed!
       assert m.failed?
+    end
+
+    def test_creates_child_migrations_for_sharded_migration
+      on_shard(:shard_one) do
+        Dog.insert_all!([{ id: 10 }, { id: 100 }])
+      end
+
+      on_shard(:shard_two) do
+        Dog.insert_all!([{ id: 200 }, { id: 201 }, { id: 300 }])
+      end
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      assert m.composite?
+      assert_nil m.parent
+      assert_equal(-1, m.min_value)
+      assert_equal(-1, m.max_value)
+      assert_equal(-1, m.rows_count)
+
+      children = m.children.order(:shard).to_a
+      assert children.none?(&:composite?)
+
+      child1, child2, child3 = children
+
+      assert_equal "default", child1.shard
+      assert_equal 10, child1.min_value
+      assert_equal 100, child1.max_value
+      assert_equal 2, child1.rows_count
+
+      # Everything else is same as for "default".
+      assert_equal "shard_one", child2.shard
+
+      assert_equal "shard_two", child3.shard
+      assert_equal 200, child3.min_value
+      assert_equal 300, child3.max_value
+      assert_equal 3, child3.rows_count
+    end
+
+    def test_copies_attribute_changes_to_child_migrations
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      assert m.composite?
+
+      batch_size = m.batch_size
+      child = m.children.first
+      assert_equal child.batch_size, batch_size
+
+      m.update!(batch_size: batch_size + 1)
+      assert_equal batch_size + 1, child.reload.batch_size
     end
 
     private

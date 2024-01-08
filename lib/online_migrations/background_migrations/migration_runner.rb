@@ -12,8 +12,13 @@ module OnlineMigrations
 
       # Runs one background migration job.
       def run_migration_job
-        migration.running! if migration.enqueued?
-        migration_payload = { background_migration: migration }
+        raise "Should not be called on a composite (with sharding) migration" if migration.composite?
+
+        if migration.enqueued?
+          migration.running!
+          migration.parent.running! if migration.parent && migration.parent.enqueued?
+        end
+        migration_payload = notifications_payload(migration)
 
         if !migration.migration_jobs.exists?
           ActiveSupport::Notifications.instrument("started.background_migrations", migration_payload)
@@ -37,6 +42,8 @@ module OnlineMigrations
           end
 
           ActiveSupport::Notifications.instrument("completed.background_migrations", migration_payload)
+
+          complete_parent_if_needed(migration) if migration.parent.present?
         end
 
         next_migration_job
@@ -52,8 +59,15 @@ module OnlineMigrations
 
         migration.running!
 
-        while migration.running?
-          run_migration_job
+        if migration.composite?
+          migration.children.each do |child_migration|
+            runner = self.class.new(child_migration)
+            runner.run_all_migration_jobs
+          end
+        else
+          while migration.running?
+            run_migration_job
+          end
         end
       end
 
@@ -64,13 +78,20 @@ module OnlineMigrations
       def finish
         return if migration.completed?
 
-        # Mark is as finishing to avoid being picked up
-        # by the background migrations scheduler.
-        migration.finishing!
-        migration.reset_failed_jobs_attempts
+        if migration.composite?
+          migration.children.each do |child_migration|
+            runner = self.class.new(child_migration)
+            runner.finish
+          end
+        else
+          # Mark is as finishing to avoid being picked up
+          # by the background migrations scheduler.
+          migration.finishing!
+          migration.reset_failed_jobs_attempts
 
-        while migration.finishing?
-          run_migration_job
+          while migration.finishing?
+            run_migration_job
+          end
         end
       end
 
@@ -94,6 +115,30 @@ module OnlineMigrations
             min_value: min_value,
             max_value: max_value
           )
+        end
+
+        def complete_parent_if_needed(migration)
+          parent = migration.parent
+          completed = false
+
+          parent.with_lock do
+            children = parent.children.select(:status)
+            if children.all?(&:succeeded?)
+              parent.succeeded!
+              completed = true
+            elsif children.any?(&:failed?)
+              parent.failed!
+              completed = true
+            end
+          end
+
+          if completed
+            ActiveSupport::Notifications.instrument("completed.background_migrations", notifications_payload(migration))
+          end
+        end
+
+        def notifications_payload(migration)
+          { background_migration: migration }
         end
     end
   end

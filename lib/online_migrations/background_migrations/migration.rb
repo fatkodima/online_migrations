@@ -2,7 +2,7 @@
 
 module OnlineMigrations
   module BackgroundMigrations
-    class Migration < ActiveRecord::Base
+    class Migration < ApplicationRecord
       STATUSES = [
         :enqueued,    # The migration has been enqueued by the user.
         :running,     # The migration is being performed by a migration executor.
@@ -15,7 +15,9 @@ module OnlineMigrations
       self.table_name = :background_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
+      scope :runnable, -> { where(composite: false) }
       scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
+      scope :except_succeeded, -> { where.not(status: :succeeded) }
       scope :for_migration_name, ->(migration_name) { where(migration_name: normalize_migration_name(migration_name)) }
       scope :for_configuration, ->(migration_name, arguments) do
         for_migration_name(migration_name).where("arguments = ?", arguments.to_json)
@@ -23,17 +25,19 @@ module OnlineMigrations
 
       enum status: STATUSES.index_with(&:to_s)
 
+      belongs_to :parent, class_name: name, optional: true
+      has_many :children, class_name: name, foreign_key: :parent_id
       has_many :migration_jobs
 
       validates :migration_name, :batch_column_name, presence: true
 
-      validates :min_value, :max_value, :batch_size, :sub_batch_size,
-                  presence: true, numericality: { greater_than: 0 }
+      validates :batch_size, :sub_batch_size, presence: true, numericality: { greater_than: 0 }
+      validates :min_value, :max_value, presence: true, numericality: { greater_than: 0, unless: :composite? }
 
       validates :batch_pause, :sub_batch_pause_ms, presence: true,
                   numericality: { greater_than_or_equal_to: 0 }
-      validates :rows_count, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
-      validates :arguments, uniqueness: { scope: :migration_name }
+      validates :rows_count, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true, unless: :composite?
+      validates :arguments, uniqueness: { scope: [:migration_name, :shard] }
 
       validate :validate_batch_column_values
       validate :validate_batch_sizes
@@ -43,6 +47,8 @@ module OnlineMigrations
       validates_with MigrationStatusValidator, on: :update
 
       before_validation :set_defaults
+      before_create :create_child_migrations, if: :composite?
+      before_update :copy_attributes_to_children, if: :composite?
 
       # @private
       def self.normalize_migration_name(migration_name)
@@ -58,12 +64,32 @@ module OnlineMigrations
         succeeded? || failed?
       end
 
+      # Overwrite enum's generated method to correctly work for composite migrations.
+      def paused!
+        return super if !composite?
+
+        transaction do
+          super
+          children.each { |child| child.paused! if child.enqueued? || child.running? }
+        end
+      end
+
+      # Overwrite enum's generated method to correctly work for composite migrations.
+      def running!
+        return super if !composite?
+
+        transaction do
+          super
+          children.each { |child| child.running! if child.paused? }
+        end
+      end
+
       def last_job
-        migration_jobs.order(max_value: :desc).first
+        migration_jobs.order(:max_value).last
       end
 
       def last_completed_job
-        migration_jobs.completed.order(finished_at: :desc).first
+        migration_jobs.completed.order(:finished_at).last
       end
 
       # Returns the progress of the background migration.
@@ -75,11 +101,16 @@ module OnlineMigrations
       def progress
         if succeeded?
           100.0
+        elsif composite?
+          progresses = children.map(&:progress).compact
+          if progresses.any?
+            (progresses.sum / progresses.size).round(2)
+          end
         elsif rows_count
           jobs_rows_count = migration_jobs.succeeded.sum(:batch_size)
           # The last migration job may need to process the amount of rows
           # less than the batch size, so we can get a value > 1.0.
-          [jobs_rows_count.to_f / rows_count, 1.0].min * 100
+          ([jobs_rows_count.to_f / rows_count, 1.0].min * 100).round(2)
         end
       end
 
@@ -95,6 +126,10 @@ module OnlineMigrations
         migration_object.relation
       end
 
+      def migration_model
+        migration_relation.model
+      end
+
       # Returns whether the interval between previous step run has passed.
       # @return [Boolean]
       #
@@ -103,7 +138,7 @@ module OnlineMigrations
 
         if last_active_job && !last_active_job.stuck?
           false
-        elsif (job = last_completed_job)
+        elsif batch_pause > 0 && (job = last_completed_job)
           job.finished_at + batch_pause <= Time.current
         else
           true
@@ -123,6 +158,14 @@ module OnlineMigrations
             enqueued!
           end
         end
+      end
+
+      # @private
+      def on_shard(&block)
+        abstract_class = find_abstract_class(migration_model)
+
+        shard = (self.shard || abstract_class.default_shard).to_sym
+        abstract_class.connected_to(shard: shard, role: :writing, &block)
       end
 
       # @private
@@ -158,6 +201,10 @@ module OnlineMigrations
         [min_value, max_value]
       end
 
+      protected
+        attr_accessor :child
+        alias child? child
+
       private
         def validate_batch_column_values
           if max_value.to_i < min_value.to_i
@@ -172,7 +219,13 @@ module OnlineMigrations
         end
 
         def validate_jobs_status
-          if succeeded? && migration_jobs.except_succeeded.exists?
+          if composite?
+            if succeeded? && children.except_succeeded.exists?
+              errors.add(:base, "all child migrations must be succeeded")
+            elsif failed? && !children.failed.exists?
+              errors.add(:base, "at least one child migration must be failed")
+            end
+          elsif succeeded? && migration_jobs.except_succeeded.exists?
             errors.add(:base, "all migration jobs must be succeeded")
           elsif failed? && !migration_jobs.failed.exists?
             errors.add(:base, "at least one migration job must be failed")
@@ -181,12 +234,30 @@ module OnlineMigrations
 
         def set_defaults
           if migration_relation.is_a?(ActiveRecord::Relation)
-            self.batch_column_name  ||= migration_relation.primary_key
-            self.min_value          ||= migration_relation.minimum(batch_column_name)
-            self.max_value          ||= migration_relation.maximum(batch_column_name)
+            if !child?
+              shards = Utils.shard_names(migration_model)
+              self.composite = shards.size > 1
+            end
 
-            count = migration_object.count
-            self.rows_count = count if count != :no_count
+            self.batch_column_name ||= migration_relation.primary_key
+
+            if composite?
+              self.min_value = self.max_value = self.rows_count = -1 # not relevant
+            else
+              on_shard do
+                self.min_value ||= migration_relation.minimum(batch_column_name)
+                self.max_value ||= migration_relation.maximum(batch_column_name)
+
+                # This can be the case when run in development on empty tables
+                if min_value.nil?
+                  # integer IDs minimum value is 1
+                  self.min_value = self.max_value = 1
+                end
+
+                count = migration_object.count
+                self.rows_count = count if count != :no_count
+              end
+            end
           end
 
           config = ::OnlineMigrations.config.background_migrations
@@ -195,12 +266,27 @@ module OnlineMigrations
           self.batch_pause          ||= config.batch_pause
           self.sub_batch_pause_ms   ||= config.sub_batch_pause_ms
           self.batch_max_attempts   ||= config.batch_max_attempts
+        end
 
-          # This can be the case when run in development on empty tables
-          if min_value.nil?
-            # integer IDs minimum value is 1
-            self.min_value = self.max_value = 1
+        def create_child_migrations
+          shards = Utils.shard_names(migration_model)
+
+          children = shards.map do |shard|
+            child = Migration.new(migration_name: migration_name, arguments: arguments, shard: shard)
+            child.child = true
+            child
           end
+
+          self.children = children
+        end
+
+        def copy_attributes_to_children
+          attributes = [:batch_size, :sub_batch_size, :batch_pause, :sub_batch_pause_ms, :batch_max_attempts]
+          updates = {}
+          attributes.each do |attribute|
+            updates[attribute] = read_attribute(attribute) if attribute_changed?(attribute)
+          end
+          children.update_all(updates) if updates.any?
         end
 
         def next_min_value
@@ -208,6 +294,13 @@ module OnlineMigrations
             last_job.max_value.next
           else
             min_value
+          end
+        end
+
+        def find_abstract_class(model)
+          model.ancestors.find do |parent|
+            parent == ActiveRecord::Base ||
+              (parent.is_a?(Class) && parent.abstract_class?)
           end
         end
     end

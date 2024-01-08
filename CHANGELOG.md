@@ -1,5 +1,17 @@
 ## master (unreleased)
 
+- Support sharding for background migrations
+
+    Now, if a `relation` inside background migration definition is defined on a sharded model,
+    then that background migration would automatically run on all the shards.
+
+    To get all the new sharding related schema changes, you need to run:
+
+    ```sh
+    $ bin/rails generate online_migrations:upgrade
+    $ bin/rails db:migrate
+    ```
+
 - Change background migration `progress` to return values in range from 0.0 to 100.0
 
     Previously, these were values in range from 0.0 to 1.0 and caused confusion

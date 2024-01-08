@@ -54,12 +54,12 @@ module OnlineMigrations
     autoload :DeleteOrphanedRecords
     autoload :PerformActionOnRelation
     autoload :ResetCounters
+    autoload :ApplicationRecord
     autoload :MigrationJob
     autoload :Migration
     autoload :MigrationJobRunner
     autoload :MigrationRunner
     autoload :MigrationHelpers
-    autoload :AdvisoryLock
     autoload :Scheduler
   end
 

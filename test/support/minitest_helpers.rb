@@ -119,6 +119,19 @@ module MinitestHelpers
   def migration_parent
     "ActiveRecord::Migration[#{OnlineMigrations::Utils.ar_version}]"
   end
+
+  def load_schema(version)
+    load File.expand_path("db/version_#{version}.rb", __dir__)
+  end
+
+  def on_each_shard(&block)
+    on_shard(:shard_one, &block)
+    on_shard(:shard_two, &block)
+  end
+
+  def on_shard(shard, &block)
+    BackgroundMigrations::ShardRecord.connected_to(shard: shard, role: :writing, &block)
+  end
 end
 
 Minitest::Test.class_eval do

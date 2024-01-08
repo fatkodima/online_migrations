@@ -8,6 +8,21 @@ module BackgroundMigrations
   class Project < ActiveRecord::Base
   end
 
+  class ShardRecord < ActiveRecord::Base
+    self.abstract_class = true
+
+    connects_to shards: {
+      # Can be removed for Active Record 7.1+.
+      # See https://github.com/rails/rails/pull/48353.
+      default: { writing: :shard_one, reading: :shard_one },
+      shard_one: { writing: :shard_one, reading: :shard_one },
+      shard_two: { writing: :shard_two, reading: :shard_two },
+    }
+  end
+
+  class Dog < ShardRecord
+  end
+
   class MakeAllNonAdmins < OnlineMigrations::BackgroundMigration
     def relation
       User.all
@@ -15,6 +30,20 @@ module BackgroundMigrations
 
     def process_batch(users)
       users.update_all(admin: false)
+    end
+  end
+
+  class MakeAllDogsNice < OnlineMigrations::BackgroundMigration
+    def relation
+      Dog.all
+    end
+
+    def process_batch(dogs)
+      dogs.update_all(nice: true)
+    end
+
+    def count
+      relation.count
     end
   end
 
