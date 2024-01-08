@@ -25,6 +25,7 @@ module BackgroundMigrations
       @connection.drop_table(:projects, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      on_each_shard { Dog.delete_all }
     end
 
     def test_min_value_and_max_value_validations
