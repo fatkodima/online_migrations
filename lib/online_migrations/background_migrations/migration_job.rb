@@ -15,8 +15,8 @@ module OnlineMigrations
       scope :active, -> { where(status: [:enqueued, :running]) }
       scope :completed, -> { where(status: [:failed, :succeeded]) }
       scope :stuck, -> do
-        timeout = ::OnlineMigrations.config.background_migrations.stuck_jobs_timeout
-        active.where("updated_at <= ?", timeout.ago)
+        timeout = OnlineMigrations.config.background_migrations.stuck_jobs_timeout
+        active.where("updated_at <= ?", timeout.seconds.ago)
       end
 
       scope :retriable, -> do
@@ -51,6 +51,13 @@ module OnlineMigrations
       validates_with MigrationJobStatusValidator, on: :update
 
       before_create :copy_settings_from_migration
+
+      # Whether the job is considered stuck (is running for some configured time).
+      #
+      def stuck?
+        timeout = OnlineMigrations.config.background_migrations.stuck_jobs_timeout
+        running? && updated_at <= timeout.seconds.ago
+      end
 
       # Mark this job as ready to be processed again.
       #

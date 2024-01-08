@@ -99,7 +99,9 @@ module OnlineMigrations
       # @return [Boolean]
       #
       def interval_elapsed?
-        if migration_jobs.running.exists?
+        last_active_job = migration_jobs.active.order(:updated_at).last
+
+        if last_active_job && !last_active_job.stuck?
           false
         elsif (job = last_completed_job)
           job.finished_at + batch_pause <= Time.current
