@@ -343,15 +343,22 @@ module BackgroundMigrations
     end
 
     def test_copies_attribute_changes_to_child_migrations
+      on_each_shard { Dog.create! }
+
       m = create_migration(migration_name: "MakeAllDogsNice")
       assert m.composite?
 
       batch_size = m.batch_size
-      child = m.children.first
-      assert_equal child.batch_size, batch_size
+      child1, child2 = m.children.to_a
+      assert_equal batch_size, child1.batch_size
+      assert_equal batch_size, child2.batch_size
+
+      run_migration_job(child1)
+      run_migration_job(child1) # marks migration as completed
 
       m.update!(batch_size: batch_size + 1)
-      assert_equal batch_size + 1, child.reload.batch_size
+      assert_equal batch_size, child1.reload.batch_size
+      assert_equal batch_size + 1, child2.reload.batch_size
     end
 
     private

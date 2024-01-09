@@ -286,7 +286,7 @@ module OnlineMigrations
           attributes.each do |attribute|
             updates[attribute] = read_attribute(attribute) if attribute_changed?(attribute)
           end
-          children.update_all(updates) if updates.any?
+          children.active.update_all(updates) if updates.any?
         end
 
         def next_min_value

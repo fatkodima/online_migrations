@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix updating completed children migrations when updating composite migration
+
 ## 0.11.0 (2024-01-09)
 
 - Support sharding for background migrations
