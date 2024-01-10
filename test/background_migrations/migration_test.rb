@@ -176,15 +176,25 @@ module BackgroundMigrations
       # child1 is for `:default` and same as child2.
       child1, child2, child3 = m.children.to_a
 
-      run_migration_job(child1)
-      run_migration_job(child1) # marks migration as completed
+      run_all_migration_jobs(child1)
       assert_in_delta 100.0 / 3, m.progress, 1
 
-      run_migration_job(child2)
-      run_migration_job(child3)
+      run_all_migration_jobs(child2)
+      run_all_migration_jobs(child3)
       assert_in_delta 100.0, m.progress
-    ensure
-      on_each_shard { Dog.delete_all }
+    end
+
+    def test_progress_not_finished_sharded_migration_when_child_migration_has_nil_progress
+      on_each_shard { Dog.create! }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      # child1 is for `:default` and same as child2.
+      child1, _child2, child3 = m.children.to_a
+
+      run_all_migration_jobs(child1)
+      child3.update_column(:rows_count, nil) # make migration's progress untrackable
+
+      assert_nil m.progress
     end
 
     def test_migration_class
@@ -375,7 +385,15 @@ module BackgroundMigrations
       end
 
       def run_migration_job(migration)
-        OnlineMigrations::BackgroundMigrations::MigrationRunner.new(migration).run_migration_job
+        migration_runner(migration).run_migration_job
+      end
+
+      def run_all_migration_jobs(migration)
+        migration_runner(migration).run_all_migration_jobs
+      end
+
+      def migration_runner(migration)
+        OnlineMigrations::BackgroundMigrations::MigrationRunner.new(migration)
       end
   end
 end

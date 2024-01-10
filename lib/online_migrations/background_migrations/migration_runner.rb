@@ -14,10 +14,7 @@ module OnlineMigrations
       def run_migration_job
         raise "Should not be called on a composite (with sharding) migration" if migration.composite?
 
-        if migration.enqueued?
-          migration.running!
-          migration.parent.running! if migration.parent && migration.parent.enqueued?
-        end
+        mark_as_running if migration.enqueued?
         migration_payload = notifications_payload(migration)
 
         if !migration.migration_jobs.exists?
@@ -57,7 +54,7 @@ module OnlineMigrations
         raise "This method is not intended for use in production environments" if !Utils.developer_env?
         return if migration.completed?
 
-        migration.running!
+        mark_as_running
 
         if migration.composite?
           migration.children.each do |child_migration|
@@ -96,6 +93,11 @@ module OnlineMigrations
       end
 
       private
+        def mark_as_running
+          migration.running!
+          migration.parent.running! if migration.parent && migration.parent.enqueued?
+        end
+
         def should_throttle?
           ::OnlineMigrations.config.background_migrations.throttler.call
         end

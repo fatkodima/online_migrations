@@ -102,9 +102,15 @@ module OnlineMigrations
         if succeeded?
           100.0
         elsif composite?
-          progresses = children.map(&:progress).compact
-          if progresses.any?
-            (progresses.sum / progresses.size).round(2)
+          rows_counts = children.to_a.pluck(:rows_count)
+          if rows_counts.none?(nil)
+            total_rows_count = rows_counts.sum
+
+            progresses = children.map do |child|
+              child.progress * child.rows_count / total_rows_count # weighted progress
+            end
+
+            progresses.sum.round(2)
           end
         elsif rows_count
           jobs_rows_count = migration_jobs.succeeded.sum(:batch_size)
