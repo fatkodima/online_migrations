@@ -187,15 +187,17 @@ module OnlineMigrations
         iterator = BatchIterator.new(migration_relation)
         batch_range = nil
 
-        # rubocop:disable Lint/UnreachableLoop
-        iterator.each_batch(of: batch_size, column: batch_column_name, start: next_min_value) do |relation|
-          min = relation.arel_table[batch_column_name].minimum
-          max = relation.arel_table[batch_column_name].maximum
-          batch_range = relation.pick(min, max)
+        on_shard do
+          # rubocop:disable Lint/UnreachableLoop
+          iterator.each_batch(of: batch_size, column: batch_column_name, start: next_min_value) do |relation|
+            min = relation.arel_table[batch_column_name].minimum
+            max = relation.arel_table[batch_column_name].maximum
+            batch_range = relation.pick(min, max)
 
-          break
+            break
+          end
+          # rubocop:enable Lint/UnreachableLoop
         end
-        # rubocop:enable Lint/UnreachableLoop
 
         return if batch_range.nil?
 

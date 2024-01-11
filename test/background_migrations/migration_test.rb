@@ -272,6 +272,17 @@ module BackgroundMigrations
       assert_equal [user3.id, user3.id], m.next_batch_range
     end
 
+    def test_next_batch_range_on_composite_migration
+      on_shard(:shard_one) { Dog.create!(id: 100) }
+      on_shard(:shard_two) { Dog.create!(id: 1000) }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, _child2, child3 = m.children.to_a
+
+      assert_equal [100, 100], child1.next_batch_range
+      assert_equal [1000, 1000], child3.next_batch_range
+    end
+
     def test_mark_as_succeeded_when_not_all_jobs_succeeded
       2.times { User.create! }
       m = create_migration(batch_size: 1, sub_batch_size: 1)

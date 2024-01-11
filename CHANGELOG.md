@@ -1,6 +1,6 @@
 ## master (unreleased)
 
-- Fix updating completed children migrations when updating composite migration
+- Fix calculation of batch ranges for sharded background migrations
 
 ## 0.11.0 (2024-01-09)
 
