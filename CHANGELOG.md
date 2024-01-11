@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.11.1 (2024-01-11)
+
 - Fix calculation of batch ranges for sharded background migrations
 
 ## 0.11.0 (2024-01-09)
