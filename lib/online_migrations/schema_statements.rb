@@ -680,7 +680,7 @@ module OnlineMigrations
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index
     #
-    def add_index(table_name, column_name, options = {})
+    def add_index(table_name, column_name, **options)
       algorithm = options[:algorithm]
 
       __ensure_not_in_transaction! if algorithm == :concurrently
@@ -694,8 +694,7 @@ module OnlineMigrations
         schema = __schema_for_table(table_name)
 
         if __index_valid?(index_name, schema: schema)
-          Utils.say("Index was not created because it already exists (this may be due to an aborted migration " \
-                    "or similar): table_name: #{table_name}, column_name: #{column_name}")
+          Utils.say("Index was not created because it already exists.")
           return
         else
           Utils.say("Recreating invalid index: table_name: #{table_name}, column_name: #{column_name}")
