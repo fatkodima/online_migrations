@@ -1,7 +1,19 @@
 # frozen_string_literal: true
 
 require "active_record"
+
 require "online_migrations/version"
+require "online_migrations/utils"
+require "online_migrations/change_column_type_helpers"
+require "online_migrations/background_migrations/migration_helpers"
+require "online_migrations/schema_statements"
+require "online_migrations/migration"
+require "online_migrations/migrator"
+require "online_migrations/schema_dumper"
+require "online_migrations/database_tasks"
+require "online_migrations/command_recorder"
+require "online_migrations/error_messages"
+require "online_migrations/config"
 
 module OnlineMigrations
   class Error < StandardError; end
@@ -9,15 +21,8 @@ module OnlineMigrations
 
   extend ActiveSupport::Autoload
 
-  autoload :Utils
-  autoload :ErrorMessages
-  autoload :Config
   autoload :BatchIterator
   autoload :VerboseSqlLogs
-  autoload :Migration
-  autoload :Migrator
-  autoload :SchemaDumper
-  autoload :DatabaseTasks
   autoload :ForeignKeysCollector
   autoload :IndexDefinition
   autoload :IndexesCollector
@@ -36,10 +41,7 @@ module OnlineMigrations
     autoload :NullLockRetrier
   end
 
-  autoload :CommandRecorder
   autoload :CopyTrigger
-  autoload :ChangeColumnTypeHelpers
-  autoload :SchemaStatements
 
   module BackgroundMigrations
     extend ActiveSupport::Autoload
@@ -59,7 +61,6 @@ module OnlineMigrations
     autoload :Migration
     autoload :MigrationJobRunner
     autoload :MigrationRunner
-    autoload :MigrationHelpers
     autoload :Scheduler
   end
 
