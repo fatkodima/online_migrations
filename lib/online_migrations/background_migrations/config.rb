@@ -39,17 +39,13 @@ module OnlineMigrations
       #
       attr_accessor :batch_max_attempts
 
-      # Allows to throttle background migrations based on external signal (e.g. database health)
-      #
-      # It will be called before each batch run.
-      # If throttled, the current run will be retried next time.
-      #
-      # @return [Proc]
-      #
-      # @example
-      #   OnlineMigrations.config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
-      #
-      attr_reader :throttler
+      def throttler
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          `config.background_migrations.throttler` is deprecated and will be removed.
+          Use `config.throttler` instead.
+        MSG
+        OnlineMigrations.config.throttler
+      end
 
       # The number of seconds that must pass before the running job is considered stuck
       #
@@ -57,13 +53,21 @@ module OnlineMigrations
       #
       attr_accessor :stuck_jobs_timeout
 
-      # The Active Support backtrace cleaner that will be used to clean the
-      # backtrace of a migration job that errors.
-      #
-      # @return [ActiveSupport::BacktraceCleaner, nil] the backtrace cleaner to
-      #   use when cleaning a job's backtrace. Defaults to `Rails.backtrace_cleaner`
-      #
-      attr_accessor :backtrace_cleaner
+      def backtrace_cleaner
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          `config.background_migrations.backtrace_cleaner` is deprecated and will be removed.
+          Use `config.backtrace_cleaner` instead.
+        MSG
+        OnlineMigrations.config.backtrace_cleaner
+      end
+
+      def backtrace_cleaner=(value)
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          `config.background_migrations.backtrace_cleaner=` is deprecated and will be removed.
+          Use `config.backtrace_cleaner=` instead.
+        MSG
+        OnlineMigrations.config.backtrace_cleaner = value
+      end
 
       # The callback to perform when an error occurs in the migration job.
       #
@@ -86,17 +90,16 @@ module OnlineMigrations
         @batch_pause = 0.seconds
         @sub_batch_pause_ms = 100
         @batch_max_attempts = 5
-        @throttler = -> { false }
         @stuck_jobs_timeout = 1.hour
         @error_handler = ->(error, errored_job) {}
       end
 
       def throttler=(value)
-        if !value.respond_to?(:call)
-          raise ArgumentError, "background_migrations throttler must be a callable."
-        end
-
-        @throttler = value
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          `config.background_migrations.throttler=` is deprecated and will be removed.
+          Use `config.throttler=` instead.
+        MSG
+        OnlineMigrations.config.throttler = value
       end
     end
   end

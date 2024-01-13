@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Add support for asynchronous creation/removal of indexes
+
+    See `docs/background_schema_migrations.md` for the feature description.
+
 - Allow adding bigint foreign keys referencing integer primary keys
 - Fix `add_reference_concurrently` to check for mismatched key types
 

@@ -23,6 +23,11 @@ module OnlineMigrations
 
         migrations = []
         migrations << "add_sharding_to_online_migrations" if !columns.include?("shard")
+
+        if !connection.table_exists?(BackgroundSchemaMigrations::Migration.table_name)
+          migrations << "create_background_schema_migrations"
+        end
+
         migrations
       end
 

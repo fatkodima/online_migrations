@@ -21,6 +21,17 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_adds_background_schema_migrations
+    simulate_transactional_test do
+      load_schema(2)
+      run_generator
+
+      assert_migration("db/migrate/create_background_schema_migrations.rb") do |content|
+        assert_includes content, "create_table :background_schema_migrations"
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do

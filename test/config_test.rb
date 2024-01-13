@@ -132,15 +132,15 @@ class ConfigTest < Minitest::Test
   end
 
   def test_background_migrations_throttler
-    previous = config.background_migrations.throttler
+    previous = config.throttler
 
-    assert_raises_with_message(ArgumentError, "background_migrations throttler must be a callable.") do
-      config.background_migrations.throttler = :not_callable
+    assert_raises_with_message(ArgumentError, "throttler must be a callable.") do
+      config.throttler = :not_callable
     end
 
-    config.background_migrations.throttler = -> { :callable }
+    config.throttler = -> { :callable }
   ensure
-    config.background_migrations.throttler = previous
+    config.throttler = previous
   end
 
   def test_disable_check

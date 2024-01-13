@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 ActiveRecord::Schema.define do
-  enable_extension "pgcrypto" # for gen_random_uuid
-  enable_extension "citext"
-  enable_extension "btree_gist"
-
   create_table :background_migrations, force: :cascade do |t|
     t.bigint :parent_id
     t.string :migration_name, null: false
@@ -53,27 +49,6 @@ ActiveRecord::Schema.define do
     t.index [:migration_id, :finished_at], name: :index_background_migration_jobs_on_finished_at
   end
 
-  create_table :background_schema_migrations, force: :cascade do |t|
-    t.bigint :parent_id
-    t.string :migration_name, null: false
-    t.string :table_name, null: false
-    t.string :definition, null: false
-    t.string :status, default: "enqueued", null: false
-    t.string :shard
-    t.boolean :composite, default: false, null: false
-    t.integer :statement_timeout
-    t.datetime :started_at
-    t.datetime :finished_at
-    t.integer :max_attempts, null: false
-    t.integer :attempts, default: 0, null: false
-    t.string :error_class
-    t.string :error_message
-    t.string :backtrace, array: true
-    t.string :connection_class_name
-    t.timestamps
-
-    t.foreign_key :background_schema_migrations, column: :parent_id, on_delete: :cascade
-
-    t.index [:migration_name, :shard], unique: true, name: :index_background_schema_migrations_on_unique_configuration
-  end
+  # Explicitly drop the table, because it already exists when the test is run.
+  drop_table :background_schema_migrations, force: :cascade
 end
