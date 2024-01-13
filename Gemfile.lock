@@ -52,22 +52,22 @@ GEM
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
     io-console (0.7.1)
-    irb (1.11.0)
+    irb (1.11.1)
       rdoc
-      reline (>= 0.3.8)
+      reline (>= 0.4.2)
     json (2.7.1)
     language_server-protocol (3.17.0.3)
     loofah (2.22.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
     mini_portile2 (2.8.5)
-    minitest (5.20.0)
+    minitest (5.21.1)
     mutex_m (0.2.0)
     nokogiri (1.16.0)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     parallel (1.24.0)
-    parser (3.3.0.2)
+    parser (3.3.0.3)
       ast (~> 2.4.1)
       racc
     pg (1.5.4)
@@ -120,7 +120,7 @@ GEM
       parser (>= 3.2.1.0)
     rubocop-disable_syntax (0.1.1)
       rubocop (>= 1.50)
-    rubocop-minitest (0.34.3)
+    rubocop-minitest (0.34.4)
       rubocop (>= 1.39, < 2.0)
       rubocop-ast (>= 1.30.0, < 2.0)
     ruby-progressbar (1.13.0)
@@ -142,7 +142,7 @@ DEPENDENCIES
   activerecord
   minitest (~> 5.0)
   online_migrations!
-  pg (~> 1.2)
+  pg
   railties
   rake (~> 12.0)
   rubocop (< 2)
