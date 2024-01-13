@@ -15,6 +15,7 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     assert_migration("db/migrate/install_online_migrations.rb") do |content|
       assert_includes content, "create_table :background_migrations"
       assert_includes content, "create_table :background_migration_jobs"
+      assert_includes content, "create_table :background_schema_migrations"
     end
   end
 

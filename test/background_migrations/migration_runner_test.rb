@@ -182,10 +182,10 @@ module BackgroundMigrations
     end
 
     def test_throttling
-      previous = OnlineMigrations.config.background_migrations.throttler
+      previous = OnlineMigrations.config.throttler
 
       throttler_called = 0
-      OnlineMigrations.config.background_migrations.throttler = -> do
+      OnlineMigrations.config.throttler = -> do
         throttler_called += 1
         throttler_called == 1
       end
@@ -208,7 +208,7 @@ module BackgroundMigrations
       assert_equal 1, throttled_called
       assert_equal 1, m.migration_jobs.count
     ensure
-      OnlineMigrations.config.background_migrations.throttler = previous
+      OnlineMigrations.config.throttler = previous
     end
 
     def test_run_all_migration_jobs

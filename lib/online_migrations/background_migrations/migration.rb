@@ -181,7 +181,7 @@ module OnlineMigrations
 
       # @private
       def on_shard(&block)
-        abstract_class = find_abstract_class(migration_model)
+        abstract_class = Utils.find_connection_class(migration_model)
 
         shard = (self.shard || abstract_class.default_shard).to_sym
         abstract_class.connected_to(shard: shard, role: :writing, &block)
@@ -288,13 +288,6 @@ module OnlineMigrations
             last_job.max_value.next
           else
             min_value
-          end
-        end
-
-        def find_abstract_class(model)
-          model.ancestors.find do |parent|
-            parent == ActiveRecord::Base ||
-              (parent.is_a?(Class) && parent.abstract_class?)
           end
         end
     end

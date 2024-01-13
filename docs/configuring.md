@@ -216,7 +216,7 @@ Add to an initializer file:
 config.auto_analyze = true
 ```
 
-### Running background migrations inline
+## Running background migrations inline
 
 `config.run_background_migrations_inline` can be configured with a proc to decide whether background migrations should be run inline. For convenience defaults to true for development and test environments.
 
@@ -226,6 +226,35 @@ config.run_background_migrations_inline = -> { Rails.env.local? }
 ```
 
 Set to `nil` to avoid running background migrations inline.
+
+## Throttling
+
+Background data and schema migrations can be taxing on your database. There is a throttling mechanism that can be used to throttle a background migration when a given condition is met. If a migration is throttled, it will be interrupted and retried on the next Scheduler cycle run.
+
+Specify the throttle condition as a block:
+
+```ruby
+# config/initializers/online_migrations.rb
+
+OnlineMigrations.config.throttler = -> { DatabaseStatus.unhealthy? }
+```
+
+**Note**: It's up to you to define a throttling condition that makes sense for your app. For example, you can check various PostgreSQL metrics such as replication lag, DB threads, whether DB writes are available, etc.
+
+## Customizing the backtrace cleaner
+
+`OnlineMigrations.config.backtrace_cleaner` can be configured to specify a backtrace cleaner to use when a background data or schema migration errors and the backtrace is cleaned and persisted. An `ActiveSupport::BacktraceCleaner` should be used.
+
+```ruby
+# config/initializers/online_migrations.rb
+
+cleaner = ActiveSupport::BacktraceCleaner.new
+cleaner.add_silencer { |line| line =~ /ignore_this_dir/ }
+
+OnlineMigrations.config.backtrace_cleaner = cleaner
+```
+
+If none is specified, the default `Rails.backtrace_cleaner` will be used to clean backtraces.
 
 ## Schema Sanity
 

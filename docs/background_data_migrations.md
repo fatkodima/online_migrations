@@ -1,4 +1,4 @@
-# Background Migrations
+# Background Data Migrations
 
 When a project grows, your database starts to be heavy and changing the data through the deployment process can be very painful.
 
@@ -18,7 +18,7 @@ Start a background migrations scheduler. For example, to run it on cron using [w
 
 ```ruby
 every 1.minute do
-  runner "OnlineMigrations.run_background_migrations"
+  runner "OnlineMigrations.run_background_data_migrations"
 end
 ```
 
@@ -261,20 +261,6 @@ migration.update!(
 )
 ```
 
-### Throttling
-
-Background Migrations often modify a lot of data and can be taxing on your database. There is a throttling mechanism that can be used to throttle a background migration when a given condition is met. If a migration is throttled, it will be interrupted and retried on the next Scheduler cycle run.
-
-Specify the throttle condition as a block:
-
-```ruby
-# config/initializers/online_migrations.rb
-
-config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
-```
-
-Note that it's up to you to define a throttling condition that makes sense for your app. For example, you can check various PostgreSQL metrics such as replication lag, DB threads, whether DB writes are available, etc.
-
 ### Customizing the error handler
 
 Exceptions raised while a Background Migration is performing are rescued and information about the error is persisted in the database.
@@ -321,21 +307,6 @@ config.background_migrations.migrations_module = "BackgroundMigrationsModule"
 
 If no value is specified, it will default to `"OnlineMigrations::BackgroundMigrations"`.
 
-### Customizing the backtrace cleaner
-
-`config.background_migrations.backtrace_cleaner` can be configured to specify a backtrace cleaner to use when a Background Migration errors and the backtrace is cleaned and persisted. An `ActiveSupport::BacktraceCleaner` should be used.
-
-```ruby
-# config/initializers/online_migrations.rb
-
-cleaner = ActiveSupport::BacktraceCleaner.new
-cleaner.add_silencer { |line| line =~ /ignore_this_dir/ }
-
-config.background_migrations.backtrace_cleaner = cleaner
-```
-
-If none is specified, the default `Rails.backtrace_cleaner` will be used to clean backtraces.
-
 ### Multiple databases and sharding
 
 If you have multiple databases or sharding, you may need to configure where background migrations related tables live
@@ -345,10 +316,10 @@ by configuring the parent model:
 # config/initializers/online_migrations.rb
 
 # Referring to one of the databases
-OnlineMigrations::BackgroundMigrations::ApplicationRecord.connects_to database: { writing: :animals }
+OnlineMigrations::ApplicationRecord.connects_to database: { writing: :animals }
 
 # Referring to one of the shards (via `:database` option)
-OnlineMigrations::BackgroundMigrations::ApplicationRecord.connects_to database: { writing: :shard_one }
+OnlineMigrations::ApplicationRecord.connects_to database: { writing: :shard_one }
 ```
 
 By default, ActiveRecord uses the database config named `:primary` (if exists) under the environment section from the `database.yml`.

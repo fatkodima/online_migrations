@@ -35,7 +35,7 @@ module OnlineMigrations
 
         migration_job.update!(status: :succeeded, finished_at: Time.current)
       rescue Exception => e # rubocop:disable Lint/RescueException
-        backtrace_cleaner = ::OnlineMigrations.config.background_migrations.backtrace_cleaner
+        backtrace_cleaner = ::OnlineMigrations.config.backtrace_cleaner
 
         migration_job.update!(
           status: :failed,

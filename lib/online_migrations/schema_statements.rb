@@ -4,6 +4,7 @@ module OnlineMigrations
   module SchemaStatements
     include ChangeColumnTypeHelpers
     include BackgroundMigrations::MigrationHelpers
+    include BackgroundSchemaMigrations::MigrationHelpers
 
     # Updates the value of a column in batches.
     #

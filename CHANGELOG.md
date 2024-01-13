@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Add support for asynchronous creation/removal of indexes
+
+    See `docs/background_schema_migrations.md` for the feature description.
+
 ## 0.15.0 (2024-03-19)
 
 - Reraise errors when running background migrations inline

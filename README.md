@@ -40,11 +40,11 @@ $ bin/rails generate online_migrations:install
 $ bin/rails db:migrate
 ```
 
-**Note**: If you do not have plans on using [background migrations](docs/background_migrations.md) feature, then you can delete the generated migration and regenerate it later, if needed.
+**Note**: If you do not have plans on using [background data migrations](docs/background_data_migrations.md) or [background schema migrations](docs/background_schema_migrations.md) features, then you can delete the generated migration and regenerate it later, if needed.
 
 ### Upgrading
 
-If you're already using [background migrations](docs/background_migrations.md), your background migrations tables may require additional columns. After every upgrade run:
+If you're already using [background data migrations](docs/background_data_migrations.md) or [background schema migrations](docs/background_schema_migrations.md), your background migrations tables may require additional columns. After every upgrade run:
 
 ```sh
 $ bin/rails generate online_migrations:upgrade
@@ -285,7 +285,7 @@ end
 ```
 
 **Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
-**Note**: You may consider [background migrations](#background-migrations) to run data changes on large tables.
+**Note**: You may consider [background data migrations](#background-data-migrations) or [background schema migrations](#background-schema-migrations) to run data changes on large tables.
 
 ### Changing the type of a column
 
@@ -1228,9 +1228,13 @@ Certain methods like `execute` and `change_table` cannot be inspected and are pr
 
 Read [configuring.md](docs/configuring.md).
 
-## Background Migrations
+## Background Data Migrations
 
-Read [background_migrations.md](docs/background_migrations.md) on how to perform data migrations on large tables.
+Read [background_data_migrations.md](docs/background_data_migrations.md) on how to perform data migrations on large tables.
+
+## Background Schema Migrations
+
+Read [background_schema_migrations.md](docs/background_schema_migrations.md) on how to perform background schema migrations on large tables.
 
 ## Credits
 
@@ -1295,7 +1299,7 @@ The main differences are:
      * adding different types of constraints
      * and others
 
-2. This gem has a [powerful internal framework](https://github.com/fatkodima/online_migrations/blob/master/docs/background_migrations.md) for running data migrations on very large tables using background migrations.
+2. This gem has a powerful internal framework for running [data migrations](docs/background_data_migrations.md) and [schema migrations](docs/background_schema_migrations.md) on very large tables in background.
 
    For example, you can use background migrations to migrate data that’s stored in a single JSON column to a separate table instead; backfill values from one column to another (as one of the steps when changing column type); or backfill some column’s value from an API.
 

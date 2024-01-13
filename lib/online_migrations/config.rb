@@ -181,12 +181,34 @@ module OnlineMigrations
     #
     attr_accessor :run_background_migrations_inline
 
+    # Allows to throttle background data or schema migrations based on external signal (e.g. database health)
+    #
+    # It will be called before each run.
+    # If throttled, the current run will be retried next time.
+    #
+    # @return [Proc]
+    #
+    # @example
+    #   OnlineMigrations.config.throttler = -> { DatabaseStatus.unhealthy? }
+    #
+    attr_reader :throttler
+
+    # The Active Support backtrace cleaner that will be used to clean the
+    # backtrace of a background data or schema migration that errors.
+    #
+    # @return [ActiveSupport::BacktraceCleaner, nil] the backtrace cleaner to
+    #   use when cleaning a background migrations's backtrace. Defaults to `Rails.backtrace_cleaner`
+    #
+    attr_accessor :backtrace_cleaner
+
     # Configuration object to configure background migrations
     #
     # @return [BackgroundMigrationsConfig]
     # @see BackgroundMigrationsConfig
     #
     attr_reader :background_migrations
+
+    attr_reader :background_schema_migrations
 
     def initialize
       @table_renames = {}
@@ -202,6 +224,7 @@ module OnlineMigrations
       )
 
       @background_migrations = BackgroundMigrations::Config.new
+      @background_schema_migrations = BackgroundSchemaMigrations::Config.new
 
       @checks = []
       @start_after = 0
@@ -213,6 +236,7 @@ module OnlineMigrations
       @enabled_checks = @error_messages.keys.index_with({})
       @verbose_sql_logs = defined?(Rails.env) && (Rails.env.production? || Rails.env.staging?)
       @run_background_migrations_inline = -> { Utils.developer_env? }
+      @throttler = -> { false }
     end
 
     def lock_retrier=(value)
@@ -221,6 +245,14 @@ module OnlineMigrations
 
     def small_tables=(table_names)
       @small_tables = table_names.map(&:to_s)
+    end
+
+    def throttler=(value)
+      if !value.respond_to?(:call)
+        raise ArgumentError, "throttler must be a callable."
+      end
+
+      @throttler = value
     end
 
     # Enables specific check

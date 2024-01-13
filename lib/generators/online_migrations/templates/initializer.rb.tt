@@ -77,12 +77,20 @@ OnlineMigrations.configure do |config|
   #   end
   # end
 
-  # Decide whether background migrations should be run inline.
+  # Decide whether background data and schema migrations should be run inline.
   # Convenient for development and test environments.
   config.run_background_migrations_inline = -> { Rails.env.local? }
 
-  # ==> Background migrations configuration
+  # Configure custom throttler for background data and schema migrations.
+  # It will be called before each run.
+  # If throttled, the current run will be retried next time.
+  # config.throttler = -> { DatabaseStatus.unhealthy? }
 
+  # The Active Support backtrace cleaner that will be used to clean the
+  # backtrace of a background data or schema migration that errors.
+  config.backtrace_cleaner = Rails.backtrace_cleaner
+
+  # ==> Background data migrations configuration
   # The path where generated background migrations will be placed.
   # config.background_migrations.migrations_path = "lib"
 
@@ -105,22 +113,27 @@ OnlineMigrations.configure do |config|
   # When attempts are exhausted, the individual batch is marked as failed.
   # config.background_migrations.batch_max_attempts = 5
 
-  # Configure custom throttler for background migrations.
-  # It will be called before each batch run.
-  # If throttled, the current run will be retried next time.
-  # config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
-
   # The number of seconds that must pass before the running job is considered stuck.
   # config.background_migrations.stuck_jobs_timeout = 1.hour
-
-  # The Active Support backtrace cleaner that will be used to clean the
-  # backtrace of a migration job that errors.
-  config.background_migrations.backtrace_cleaner = Rails.backtrace_cleaner
 
   # The callback to perform when an error occurs in the migration job.
   # config.background_migrations.error_handler = ->(error, errored_job) do
   #   Bugsnag.notify(error) do |notification|
   #     notification.add_metadata(:background_migration, { name: errored_job.migration_name })
+  #   end
+  # end
+
+  # ==> Background schema migrations configuration
+  # When attempts are exhausted, the failing migration stops to be retried.
+  # config.background_schema_migrations.max_attempts = 5
+
+  # Statement timeout value used when running background schema migration.
+  # config.background_schema_migrations.statement_timeout = 1.hour
+
+  # The callback to perform when an error occurs during the background schema migration.
+  # config.background_schema_migrations.error_handler = ->(error, errored_migration) do
+  #   Bugsnag.notify(error) do |notification|
+  #     notification.add_metadata(:background_schema_migration, { name: errored_migration.name })
   #   end
   # end
 end

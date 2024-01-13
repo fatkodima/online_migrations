@@ -105,7 +105,7 @@ module OnlineMigrations
         end
 
         def should_throttle?
-          ::OnlineMigrations.config.background_migrations.throttler.call
+          ::OnlineMigrations.config.throttler.call
         end
 
         def find_or_create_next_migration_job

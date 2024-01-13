@@ -15,6 +15,7 @@ module SchemaStatements
 
     def teardown
       @connection.drop_table(:users, if_exists: true)
+      OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
     end
 
     def test_add_index
@@ -91,6 +92,63 @@ module SchemaStatements
     def test_remove_non_existing_index
       @connection.remove_index(:users, :name)
       assert_not @connection.index_exists?(:users, :name)
+    end
+
+    def test_add_index_in_background
+      m = @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+      assert_equal "index_users_on_name", m.name
+      assert_equal "users", m.table_name
+      assert_equal 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("name")', m.definition
+    end
+
+    def test_add_index_in_background_when_index_already_exists
+      @connection.add_index(:users, :name, unique: true)
+      @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+      assert @connection.index_exists?(:users, :name)
+      assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
+    def test_add_index_in_background_custom_attributes
+      m = @connection.add_index_in_background(:users, :name, name: "my_name", max_attempts: 5, statement_timeout: 10, connection_class_name: "User")
+      assert_equal "my_name", m.name
+      assert_equal 5, m.max_attempts
+      assert_equal 10, m.statement_timeout
+    end
+
+    def test_add_index_in_background_requires_connection_class_name_for_multiple_databases
+      assert_raises_with_message(ArgumentError, /when using multiple databases/i) do
+        @connection.add_index_in_background(:users, :name)
+      end
+    end
+
+    def test_remove_index_in_background_raises_without_name
+      @connection.add_index(:users, :name)
+      assert_raises_with_message(ArgumentError, /Index name must be specified/i) do
+        @connection.remove_index_in_background(:users, :name, name: nil, connection_class_name: "User")
+      end
+    end
+
+    def test_remove_index_in_background_when_does_not_exist
+      @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", connection_class_name: "User")
+
+      assert_not @connection.index_exists?(:users, :name)
+      assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
+    def test_remove_index_in_background_custom_attributes
+      @connection.add_index(:users, :name)
+      m = @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", max_attempts: 5, statement_timeout: 10, connection_class_name: "User")
+      assert_equal "index_users_on_name", m.name
+      assert_equal 5, m.max_attempts
+      assert_equal 10, m.statement_timeout
+    end
+
+    def test_remove_index_in_background_requires_connection_class_name_for_multiple_databases
+      @connection.add_index(:users, :name)
+
+      assert_raises_with_message(ArgumentError, /when using multiple databases/i) do
+        @connection.remove_index_in_background(:users, :name, name: "index_users_on_name")
+      end
     end
 
     private

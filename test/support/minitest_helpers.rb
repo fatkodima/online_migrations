@@ -143,7 +143,7 @@ module MinitestHelpers
   end
 
   def on_shard(shard, &block)
-    BackgroundMigrations::ShardRecord.connected_to(shard: shard, role: :writing, &block)
+    ShardRecord.connected_to(shard: shard, role: :writing, &block)
   end
 end
 

@@ -97,13 +97,15 @@ end
 
 require_relative "support/schema"
 require_relative "support/minitest_helpers"
+require_relative "support/models"
 require_relative "background_migrations/background_migrations"
 
 # Load database schema into shards.
 [:shard_one, :shard_two].each do |shard|
-  BackgroundMigrations::ShardRecord.connected_to(shard: shard, role: :writing) do
-    connection = BackgroundMigrations::ShardRecord.connection
+  ShardRecord.connected_to(shard: shard, role: :writing) do
+    connection = ShardRecord.connection
     connection.create_table(:dogs, force: true) do |t|
+      t.string :name
       t.boolean :nice, default: nil
     end
   end

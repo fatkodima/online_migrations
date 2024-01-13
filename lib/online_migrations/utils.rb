@@ -135,6 +135,13 @@ module OnlineMigrations
         connection.select_value(query) == "v"
       end
 
+      def find_connection_class(model)
+        model.ancestors.find do |parent|
+          parent == ActiveRecord::Base ||
+            (parent.is_a?(Class) && parent.abstract_class?)
+        end
+      end
+
       def shard_names(model)
         model.ancestors.each do |ancestor|
           # There is no official method to get shard names from the model.
