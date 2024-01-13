@@ -48,7 +48,7 @@ OnlineMigrations.configure do |config|
   # a better grasp of what is going on for high-level statements like add_column_with_default.
   #
   # Note: It can be overridden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
-  config.verbose_sql_logs = defined?(Rails) && Rails.env.production?
+  config.verbose_sql_logs = defined?(Rails.env) && (Rails.env.production? || Rails.env.staging?)
 
   # Lock retries.
   # Configure your custom lock retrier (see LockRetrier).

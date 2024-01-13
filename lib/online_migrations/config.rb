@@ -158,7 +158,7 @@ module OnlineMigrations
     # migration failure in production. This is also useful in development to get
     # a better grasp of what is going on for high-level statements like add_column_with_default.
     #
-    # This feature is enabled by default in a production Rails environment.
+    # This feature is enabled by default in a staging and production Rails environments.
     # @return [Boolean]
     #
     # @note: It can be overridden by `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.

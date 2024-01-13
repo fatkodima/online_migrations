@@ -192,7 +192,7 @@ To enable verbose sql logs:
 config.verbose_sql_logs = true
 ```
 
-This feature is enabled by default in a production Rails environment. You can override this setting via `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
+This feature is enabled by default in a staging and production Rails environments. You can override this setting via `ONLINE_MIGRATIONS_VERBOSE_SQL_LOGS` environment variable.
 
 ## Analyze Tables
 
