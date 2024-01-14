@@ -2,6 +2,11 @@
 
 module OnlineMigrations
   module BackgroundMigrations
+    # Class representing background data migration.
+    #
+    # @note The records of this class should not be created manually, but via
+    #   `enqueue_background_migration` helper inside migrations.
+    #
     class Migration < ApplicationRecord
       STATUSES = [
         :enqueued,    # The migration has been enqueued by the user.
@@ -47,7 +52,6 @@ module OnlineMigrations
       validates_with MigrationStatusValidator, on: :update
 
       before_validation :set_defaults
-      before_create :create_child_migrations, if: :composite?
       before_update :copy_attributes_to_children, if: :composite?
 
       # @private
@@ -57,6 +61,7 @@ module OnlineMigrations
       end
 
       def migration_name=(class_name)
+        class_name = class_name.name if class_name.is_a?(Class)
         write_attribute(:migration_name, self.class.normalize_migration_name(class_name))
       end
 
@@ -209,10 +214,6 @@ module OnlineMigrations
         [min_value, max_value]
       end
 
-      protected
-        attr_accessor :child
-        alias child? child
-
       private
         def validate_batch_column_values
           if max_value.to_i < min_value.to_i
@@ -242,11 +243,6 @@ module OnlineMigrations
 
         def set_defaults
           if migration_relation.is_a?(ActiveRecord::Relation)
-            if !child?
-              shards = Utils.shard_names(migration_model)
-              self.composite = shards.size > 1
-            end
-
             self.batch_column_name ||= migration_relation.primary_key
 
             if composite?
@@ -274,18 +270,6 @@ module OnlineMigrations
           self.batch_pause          ||= config.batch_pause
           self.sub_batch_pause_ms   ||= config.sub_batch_pause_ms
           self.batch_max_attempts   ||= config.batch_max_attempts
-        end
-
-        def create_child_migrations
-          shards = Utils.shard_names(migration_model)
-
-          children = shards.map do |shard|
-            child = Migration.new(migration_name: migration_name, arguments: arguments, shard: shard)
-            child.child = true
-            child
-          end
-
-          self.children = children
         end
 
         def copy_attributes_to_children

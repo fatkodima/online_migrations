@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix a bug that can lead to unfinished children of a sharded background migration
+
 ## 0.11.1 (2024-01-11)
 
 - Fix calculation of batch ranges for sharded background migrations

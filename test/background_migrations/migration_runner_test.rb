@@ -224,6 +224,8 @@ module BackgroundMigrations
       on_each_shard { 2.times { Dog.create! } }
 
       m = create_migration(migration_name: "MakeAllDogsNice", batch_size: 1, sub_batch_size: 1)
+      # Reload children. There was a bug, not shown in tests, because the association was cached.
+      m.children.reload
       run_all_migration_jobs(m)
 
       on_each_shard do
@@ -278,10 +280,8 @@ module BackgroundMigrations
     end
 
     private
-      def create_migration(attributes = {})
-        OnlineMigrations::BackgroundMigrations::Migration.create!(
-          { migration_name: "MakeAllNonAdmins" }.merge(attributes)
-        )
+      def create_migration(migration_name: "MakeAllNonAdmins", **attributes)
+        @connection.create_background_migration(migration_name, **attributes)
       end
 
       def run_migration_job(migration)

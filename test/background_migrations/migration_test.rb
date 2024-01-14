@@ -78,7 +78,7 @@ module BackgroundMigrations
     end
 
     def test_status_transitions
-      m = create_migration(status: :enqueued)
+      m = create_migration
 
       m.status = :succeeded
       assert_not m.valid?
@@ -149,12 +149,12 @@ module BackgroundMigrations
     end
 
     def test_progress_succeded_migration
-      m = create_migration(status: :succeeded)
+      m = build_migration(status: :succeeded)
       assert_in_delta 100.0, m.progress
     end
 
     def test_progress_succeded_sharded_migration
-      m = create_migration(migration_name: "MakeAllDogsNice", status: :succeeded)
+      m = build_migration(migration_name: "MakeAllDogsNice", status: :succeeded)
       assert_in_delta 100.0, m.progress
     end
 
@@ -383,10 +383,8 @@ module BackgroundMigrations
     end
 
     private
-      def create_migration(attributes = {})
-        migration = build_migration(attributes)
-        migration.save!
-        migration
+      def create_migration(migration_name: "MakeAllNonAdmins", **attributes)
+        @connection.create_background_migration(migration_name, **attributes)
       end
 
       def build_migration(attributes = {})

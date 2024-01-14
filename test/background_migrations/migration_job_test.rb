@@ -70,10 +70,8 @@ module BackgroundMigrations
     end
 
     private
-      def create_migration(attributes = {})
-        OnlineMigrations::BackgroundMigrations::Migration.create!(
-          { migration_name: "EachBatchCalled" }.merge(attributes)
-        )
+      def create_migration(migration_name: "EachBatchCalled", **attributes)
+        @connection.create_background_migration(migration_name, **attributes)
       end
 
       def run_migration_job(migration)

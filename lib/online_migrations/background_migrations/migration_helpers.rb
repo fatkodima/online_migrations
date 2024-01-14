@@ -358,16 +358,7 @@ module OnlineMigrations
       #     in development and test environments
       #
       def enqueue_background_migration(migration_name, *arguments, **options)
-        options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
-            :batch_pause, :sub_batch_pause_ms, :batch_max_attempts)
-
-        migration_name = migration_name.name if migration_name.is_a?(Class)
-
-        migration = Migration.create!(
-          migration_name: migration_name,
-          arguments: arguments,
-          **options
-        )
+        migration = create_background_migration(migration_name, *arguments, **options)
 
         # For convenience in dev/test environments
         if Utils.developer_env?
@@ -375,6 +366,33 @@ module OnlineMigrations
           runner.run_all_migration_jobs
         end
 
+        migration
+      end
+
+      # @private
+      def create_background_migration(migration_name, *arguments, **options)
+        options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
+            :batch_pause, :sub_batch_pause_ms, :batch_max_attempts)
+
+        migration = Migration.new(
+          migration_name: migration_name,
+          arguments: arguments,
+          **options
+        )
+
+        shards = Utils.shard_names(migration.migration_model)
+        if shards.size > 1
+          migration.children = shards.map do |shard|
+            child = migration.dup
+            child.shard = shard
+            child
+          end
+
+          migration.composite = true
+        end
+
+        # This will save all the records using a transaction.
+        migration.save!
         migration
       end
     end
