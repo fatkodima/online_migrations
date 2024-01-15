@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Make `lock_timeout` argument optional for `config.lock_retrier`
+
+    This way, a default lock timeout value will be used (configured in `database.yml` or for the database user).
+
 - Fix a bug that can lead to unfinished children of a sharded background migration
 
 ## 0.11.1 (2024-01-11)

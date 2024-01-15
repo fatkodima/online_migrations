@@ -60,9 +60,7 @@ module OnlineMigrations
     #
     # @param _attempt [Integer] attempt number
     #
-    def lock_timeout(_attempt)
-      raise NotImplementedError
-    end
+    def lock_timeout(_attempt); end
 
     # Returns sleep time after unsuccessful lock attempt (in seconds)
     #
@@ -143,9 +141,9 @@ module OnlineMigrations
     #
     # @param attempts [Integer] Maximum number of attempts
     # @param delay [Numeric] Sleep time after unsuccessful lock attempt (in seconds)
-    # @param lock_timeout [Numeric] Database lock timeout value (in seconds)
+    # @param lock_timeout [Numeric, nil] Database lock timeout value (in seconds)
     #
-    def initialize(attempts:, delay:, lock_timeout:)
+    def initialize(attempts:, delay:, lock_timeout: nil)
       super()
       @attempts = attempts
       @delay = delay
@@ -196,7 +194,7 @@ module OnlineMigrations
     # @param max_delay [Numeric] Maximum sleep time after unsuccessful lock attempt (in seconds)
     # @param lock_timeout [Numeric] Database lock timeout value (in seconds)
     #
-    def initialize(attempts:, base_delay:, max_delay:, lock_timeout:)
+    def initialize(attempts:, base_delay:, max_delay:, lock_timeout: nil)
       super()
       @attempts = attempts
       @base_delay = base_delay

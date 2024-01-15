@@ -57,7 +57,7 @@ OnlineMigrations.configure do |config|
     attempts: 30,                # attempt 30 retries
     base_delay: 0.01.seconds,    # starting with delay of 10ms between each unsuccessful try, increasing exponentially
     max_delay: 1.minute,         # up to the maximum delay of 1 minute
-    lock_timeout: 0.2.seconds    # and 200ms set as lock timeout for each try
+    lock_timeout: 0.2.seconds    # and 200ms set as lock timeout for each try. Remove this line to use a default lock timeout.
   )
 
   # Configure tables that are in the process of being renamed.
