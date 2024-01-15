@@ -42,6 +42,10 @@ module OnlineMigrations
       # @see #backfill_column_in_background
       #
       def backfill_columns_in_background(table_name, updates, model_name: nil, **options)
+        if model_name.nil? && Utils.multiple_databases?
+          raise ArgumentError, "You must pass a :model_name when using multiple databases."
+        end
+
         model_name = model_name.name if model_name.is_a?(Class)
 
         enqueue_background_migration(
@@ -99,6 +103,10 @@ module OnlineMigrations
       #
       def backfill_columns_for_type_change_in_background(table_name, *column_names, model_name: nil,
                                                          type_cast_functions: {}, **options)
+        if model_name.nil? && Utils.multiple_databases?
+          raise ArgumentError, "You must pass a :model_name when using multiple databases."
+        end
+
         tmp_columns = column_names.map { |column_name| "#{column_name}_for_type_change" }
         model_name = model_name.name if model_name.is_a?(Class)
 
@@ -153,6 +161,10 @@ module OnlineMigrations
       # @see #copy_column_in_background
       #
       def copy_columns_in_background(table_name, copy_from, copy_to, model_name: nil, type_cast_functions: {}, **options)
+        if model_name.nil? && Utils.multiple_databases?
+          raise ArgumentError, "You must pass a :model_name when using multiple databases."
+        end
+
         model_name = model_name.name if model_name.is_a?(Class)
 
         enqueue_background_migration(

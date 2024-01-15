@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Require passing model name for background migration helpers when using multiple databases
 - Add `statement_timeout` configuration option
 
 - Make `lock_timeout` argument optional for `config.lock_retrier`

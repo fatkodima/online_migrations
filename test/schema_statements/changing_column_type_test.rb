@@ -248,6 +248,13 @@ module SchemaStatements
                     "SchemaStatements::ChangingColumnTypeTest::Project", { "name" => "jsonb" }], m.arguments)
     end
 
+    def test_backfill_columns_for_type_change_in_background_raises_for_multiple_dbs_when_no_model_name
+      error = assert_raises(ArgumentError) do
+        @connection.backfill_columns_for_type_change_in_background(:projects, :name, :description)
+      end
+      assert_match(/must pass a :model_name/i, error.message)
+    end
+
     def test_finalize_column_type_change_raises_in_transaction
       assert_raises_in_transaction do
         @connection.finalize_column_type_change(:projects, :name)

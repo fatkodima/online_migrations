@@ -98,6 +98,13 @@ module SchemaStatements
       assert_equal ["users", { "admin" => false, "status" => "active" }, "SchemaStatements::MiscTest::User"], m.arguments
     end
 
+    def test_backfill_columns_in_background_raises_for_multiple_dbs_when_no_model_name
+      error = assert_raises(ArgumentError) do
+        @connection.backfill_columns_in_background(:users, { admin: false, status: "active" })
+      end
+      assert_match(/must pass a :model_name/i, error.message)
+    end
+
     def test_copy_column_in_background
       m = @connection.copy_column_in_background(:users, :name, :name_for_type_change, model_name: User)
 
@@ -110,6 +117,13 @@ module SchemaStatements
 
       assert_equal "CopyColumn", m.migration_name
       assert_equal ["users", ["id", "name"], ["id_for_type_change", "name_for_type_change"], "SchemaStatements::MiscTest::User", {}], m.arguments
+    end
+
+    def test_copy_columns_in_background_raises_for_multiple_dbs_when_no_model_name
+      error = assert_raises(ArgumentError) do
+        @connection.copy_columns_in_background(:users, [:id, :name], [:id_for_type_change, :name_for_type_change])
+      end
+      assert_match(/must pass a :model_name/i, error.message)
     end
 
     def test_reset_counters_in_background

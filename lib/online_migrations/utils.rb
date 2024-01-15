@@ -10,8 +10,17 @@ module OnlineMigrations
         ActiveRecord.version.to_s.to_f
       end
 
+      def env
+        if defined?(Rails.env)
+          Rails.env
+        else
+          # default to production for safety
+          ENV["RACK_ENV"] || "production"
+        end
+      end
+
       def developer_env?
-        defined?(Rails.env) && (Rails.env.development? || Rails.env.test?)
+        env == "development" || env == "test"
       end
 
       def say(message)
@@ -136,6 +145,11 @@ module OnlineMigrations
           # See https://github.com/rails/rails/pull/49284.
           return pool_manager.shard_names.uniq if pool_manager
         end
+      end
+
+      def multiple_databases?
+        db_config = ActiveRecord::Base.configurations.configs_for(env_name: env)
+        db_config.reject(&:replica?).size > 1
       end
     end
   end
