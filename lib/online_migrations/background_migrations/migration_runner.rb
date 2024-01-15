@@ -94,8 +94,10 @@ module OnlineMigrations
 
       private
         def mark_as_running
-          migration.running!
-          migration.parent.running! if migration.parent && migration.parent.enqueued?
+          Migration.transaction do
+            migration.running!
+            migration.parent.running! if migration.parent && migration.parent.enqueued?
+          end
         end
 
         def should_throttle?
