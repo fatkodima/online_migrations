@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add `statement_timeout` configuration option
+
 - Make `lock_timeout` argument optional for `config.lock_retrier`
 
     This way, a default lock timeout value will be used (configured in `database.yml` or for the database user).

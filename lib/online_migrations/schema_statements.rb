@@ -702,11 +702,22 @@ module OnlineMigrations
         end
       end
 
-      disable_statement_timeout do
+      if OnlineMigrations.config.statement_timeout
         # "CREATE INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with constraint validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
         super(table_name, column_name, **options.merge(name: index_name))
+      else
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          Running `add_index` without a statement timeout is deprecated.
+          Configure an explicit statement timeout in the initializer file via `config.statement_timeout`
+          or the default database statement timeout will be used.
+          Example, `config.statement_timeout = 1.hour`.
+        MSG
+
+        disable_statement_timeout do
+          super(table_name, column_name, **options.merge(name: index_name))
+        end
       end
     end
 
@@ -722,12 +733,23 @@ module OnlineMigrations
       column_names = index_column_names(column_name || options[:column])
 
       if index_exists?(table_name, column_names, **options)
-        disable_statement_timeout do
+        if OnlineMigrations.config.statement_timeout
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
 
           super(table_name, **options.merge(column: column_names))
+        else
+          OnlineMigrations.deprecator.warn(<<~MSG)
+            Running `remove_index` without a statement timeout is deprecated.
+            Configure an explicit statement timeout in the initializer file via `config.statement_timeout`
+            or the default database statement timeout will be used.
+            Example, `config.statement_timeout = 1.hour`.
+          MSG
+
+          disable_statement_timeout do
+            super(table_name, **options.merge(column: column_names))
+          end
         end
       else
         Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration " \
@@ -777,11 +799,22 @@ module OnlineMigrations
       # Skip costly operation if already validated.
       return if foreign_key.validated?
 
-      disable_statement_timeout do
+      if OnlineMigrations.config.statement_timeout
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
         super
+      else
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          Running `validate_foreign_key` without a statement timeout is deprecated.
+          Configure an explicit statement timeout in the initializer file via `config.statement_timeout`
+          or the default database statement timeout will be used.
+          Example, `config.statement_timeout = 1.hour`.
+        MSG
+
+        disable_statement_timeout do
+          super
+        end
       end
     end
 
@@ -810,11 +843,22 @@ module OnlineMigrations
       # Skip costly operation if already validated.
       return if check_constraint.validated?
 
-      disable_statement_timeout do
+      if OnlineMigrations.config.statement_timeout
         # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with other validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
         super
+      else
+        OnlineMigrations.deprecator.warn(<<~MSG)
+          Running `validate_check_constraint` without a statement timeout is deprecated.
+          Configure an explicit statement timeout in the initializer file via `config.statement_timeout`
+          or the default database statement timeout will be used.
+          Example, `config.statement_timeout = 1.hour`.
+        MSG
+
+        disable_statement_timeout do
+          super
+        end
       end
     end
 
@@ -854,28 +898,26 @@ module OnlineMigrations
       end
     end
 
-    # Disables statement timeout while executing &block
-    #
-    # Long-running migrations may take more than the timeout allowed by the database.
-    # Disable the session's statement timeout to ensure migrations don't get killed prematurely.
-    #
-    # Statement timeouts are already disabled in `add_index`, `remove_index`,
-    # `validate_foreign_key`, and `validate_check_constraint` helpers.
-    #
-    # @return [void]
-    #
-    # @example
-    #   disable_statement_timeout do
-    #     add_index(:users, :email, unique: true, algorithm: :concurrently)
-    #   end
-    #
+    # @private
     def disable_statement_timeout
-      prev_value = select_value("SHOW statement_timeout")
-      execute("SET statement_timeout TO 0")
+      OnlineMigrations.deprecator.warn(<<~MSG)
+        `disable_statement_timeout` is deprecated and will be removed. Configure an explicit
+        statement timeout in the initializer file via `config.statement_timeout` or the default
+        database statement timeout will be used. Example, `config.statement_timeout = 1.hour`.
+      MSG
 
+      prev_value = select_value("SHOW statement_timeout")
+      __set_statement_timeout(0)
       yield
     ensure
-      execute("SET statement_timeout TO #{quote(prev_value)}")
+      __set_statement_timeout(prev_value)
+    end
+
+    # @private
+    def __set_statement_timeout(timeout)
+      # use ceil to prevent no timeout for values under 1 ms
+      timeout = (timeout.to_f * 1000).ceil if !timeout.is_a?(String)
+      execute("SET statement_timeout TO #{quote(timeout)}")
     end
 
     # @private

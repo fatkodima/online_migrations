@@ -160,8 +160,10 @@ module SchemaStatements
       prev_value = get_statement_timeout
       set_statement_timeout(10)
 
-      @connection.disable_statement_timeout do
-        assert_equal "0", get_statement_timeout
+      OnlineMigrations.deprecator.silence do
+        @connection.disable_statement_timeout do
+          assert_equal "0", get_statement_timeout
+        end
       end
       assert_equal "10ms", get_statement_timeout
     ensure
@@ -172,14 +174,16 @@ module SchemaStatements
       prev_value = get_statement_timeout
       set_statement_timeout(10)
 
-      @connection.disable_statement_timeout do
-        set_statement_timeout(20)
-
+      OnlineMigrations.deprecator.silence do
         @connection.disable_statement_timeout do
-          assert_equal "0", get_statement_timeout
-        end
+          set_statement_timeout(20)
 
-        assert_equal "20ms", get_statement_timeout
+          @connection.disable_statement_timeout do
+            assert_equal "0", get_statement_timeout
+          end
+
+          assert_equal "20ms", get_statement_timeout
+        end
       end
 
       assert_equal "10ms", get_statement_timeout

@@ -30,13 +30,6 @@ module SchemaStatements
       assert connection.foreign_key_exists?(:milestones, :projects)
     end
 
-    def test_validate_foreign_key_disables_statement_timeout
-      connection.add_foreign_key :milestones, :projects, validate: false
-      assert_sql("SET statement_timeout TO 0") do
-        connection.validate_foreign_key :milestones, :projects
-      end
-    end
-
     def test_validate_non_existing_foreign_key
       assert_raises_with_message(ArgumentError, "has no foreign key") do
         connection.validate_foreign_key :milestones, :non_existing

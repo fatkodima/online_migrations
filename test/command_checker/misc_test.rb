@@ -553,5 +553,16 @@ module CommandChecker
         For more details, see https://github.com/fatkodima/online_migrations#renaming-a-column
       MSG
     end
+
+    def test_statement_timeout
+      prev = OnlineMigrations.config.statement_timeout
+      OnlineMigrations.config.statement_timeout = 42.seconds
+
+      assert_sql("SET statement_timeout TO 42000") do
+        assert_safe CreateTable
+      end
+    ensure
+      OnlineMigrations.config.statement_timeout = prev
+    end
   end
 end

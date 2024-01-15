@@ -31,6 +31,7 @@ module OnlineMigrations
 
     def check(command, *args, &block)
       check_database_version
+      set_statement_timeout
       check_lock_timeout
 
       if !safe?
@@ -96,6 +97,16 @@ module OnlineMigrations
         end
 
         @database_version_checked = true
+      end
+
+      def set_statement_timeout
+        if !@statement_timeout_set
+          if (statement_timeout = OnlineMigrations.config.statement_timeout)
+            # TODO: inline this method call after deprecated `disable_statement_timeout` method removal.
+            connection.__set_statement_timeout(statement_timeout)
+          end
+          @statement_timeout_set = true
+        end
       end
 
       def check_lock_timeout

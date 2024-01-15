@@ -81,6 +81,15 @@ module OnlineMigrations
       BackgroundMigrations::Scheduler.run
     end
 
+    def deprecator
+      @deprecator ||=
+        if Utils.ar_version >= 7.1
+          ActiveSupport::Deprecation.new(nil, "online_migrations")
+        else
+          ActiveSupport::Deprecation
+        end
+    end
+
     # @private
     def load
       require "active_record/connection_adapters/postgresql_adapter"

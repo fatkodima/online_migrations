@@ -35,6 +35,12 @@ module OnlineMigrations
       end
     end
 
+    # Statement timeout used for migrations (in seconds)
+    #
+    # @return [Numeric]
+    #
+    attr_accessor :statement_timeout
+
     # Set the database version against which the checks will be performed
     #
     # If your development database version is different from production, you can specify

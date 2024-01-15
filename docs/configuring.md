@@ -59,8 +59,26 @@ Check the [source code](https://github.com/fatkodima/online_migrations/blob/mast
 ## Migration Timeouts
 
 It’s extremely important to set a short lock timeout for migrations. This way, if a migration can't acquire a lock in a timely manner, other statements won't be stuck behind it.
+We also recommend setting a long statement timeout so migrations can run for a while.
 
-Add timeouts to `config/database.yml`:
+You can configure a statement timeout for migrations via:
+
+```ruby
+config.statement_timeout = 1.hour
+```
+
+and a lock timeout for migrations can be configured via the `lock_retrier`.
+
+Or set the timeouts directly on the database user that runs migrations:
+
+```sql
+ALTER ROLE myuser SET lock_timeout = '10s';
+ALTER ROLE myuser SET statement_timeout = '1h';
+```
+
+## App Timeouts
+
+We recommend adding timeouts to `config/database.yml` to prevent connections from hanging and individual queries from taking up too many resources in controllers, jobs, the Rails console, and other places.
 
 ```yml
 production:
@@ -68,13 +86,6 @@ production:
   variables:
     lock_timeout: 10s
     statement_timeout: 15s
-```
-
-Or set the timeouts directly on the database user that runs migrations:
-
-```sql
-ALTER ROLE myuser SET lock_timeout = '10s';
-ALTER ROLE myuser SET statement_timeout = '15s';
 ```
 
 ## Lock Timeout Retries
