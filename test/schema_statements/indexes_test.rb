@@ -75,6 +75,12 @@ module SchemaStatements
       assert_not @connection.index_exists?(:users, :name)
     end
 
+    def test_remove_index_without_columns_and_name_provided
+      assert_raises_with_message(ArgumentError, "No name or columns specified") do
+        @connection.remove_index(:users)
+      end
+    end
+
     def test_remove_index_concurrently_in_transaction
       @connection.add_index(:users, :name)
       assert_raises_in_transaction do

@@ -726,19 +726,18 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_index
     #
     def remove_index(table_name, column_name = nil, **options)
-      algorithm = options[:algorithm]
+      if column_name.blank? && options[:column].blank? && options[:name].blank?
+        raise ArgumentError, "No name or columns specified"
+      end
 
-      __ensure_not_in_transaction! if algorithm == :concurrently
+      __ensure_not_in_transaction! if options[:algorithm] == :concurrently
 
-      column_names = index_column_names(column_name || options[:column])
-
-      if index_exists?(table_name, column_names, **options)
+      if index_exists?(table_name, column_name, **options)
         if OnlineMigrations.config.statement_timeout
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
-
-          super(table_name, **options.merge(column: column_names))
+          super(table_name, column_name, **options)
         else
           OnlineMigrations.deprecator.warn(<<~MSG)
             Running `remove_index` without a statement timeout is deprecated.
@@ -748,12 +747,11 @@ module OnlineMigrations
           MSG
 
           disable_statement_timeout do
-            super(table_name, **options.merge(column: column_names))
+            super(table_name, column_name, **options)
           end
         end
       else
-        Utils.say("Index was not removed because it does not exist (this may be due to an aborted migration " \
-                  "or similar): table_name: #{table_name}, column_name: #{column_names}")
+        Utils.say("Index was not removed because it does not exist.")
       end
     end
 
