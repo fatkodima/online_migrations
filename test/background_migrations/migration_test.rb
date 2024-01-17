@@ -382,6 +382,25 @@ module BackgroundMigrations
       assert_equal batch_size + 1, child2.reload.batch_size
     end
 
+    def test_delete_all_deletes_children
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      assert m.composite?
+      assert_equal 3, m.children.count
+      m.children.delete_all
+      assert_equal 1, OnlineMigrations::BackgroundMigrations::Migration.count
+    end
+
+    def test_delete_all_deletes_migration_jobs
+      assert_equal 0, OnlineMigrations::BackgroundMigrations::MigrationJob.count
+
+      User.create!
+      m = create_migration(batch_size: 1, sub_batch_size: 1)
+      run_migration_job(m)
+      assert_equal 1, OnlineMigrations::BackgroundMigrations::MigrationJob.count
+      m.migration_jobs.delete_all
+      assert_equal 0, OnlineMigrations::BackgroundMigrations::MigrationJob.count
+    end
+
     private
       def create_migration(migration_name: "MakeAllNonAdmins", **attributes)
         @connection.create_background_migration(migration_name, **attributes)

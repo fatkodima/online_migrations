@@ -31,8 +31,8 @@ module OnlineMigrations
       enum status: STATUSES.index_with(&:to_s)
 
       belongs_to :parent, class_name: name, optional: true
-      has_many :children, class_name: name, foreign_key: :parent_id
-      has_many :migration_jobs
+      has_many :children, class_name: name, foreign_key: :parent_id, dependent: :delete_all
+      has_many :migration_jobs, dependent: :delete_all
 
       validates :migration_name, :batch_column_name, presence: true
 
