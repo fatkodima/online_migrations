@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.12.0 (2024-01-18)
+
 - Require passing model name for background migration helpers when using multiple databases
 - Add `statement_timeout` configuration option
 
