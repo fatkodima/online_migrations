@@ -78,6 +78,10 @@ OnlineMigrations.configure do |config|
   # end
 
   # ==> Background migrations configuration
+
+  # The module in which background migrations will be placed.
+  # config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
+
   # The number of rows to process in a single background migration run.
   # config.background_migrations.batch_size = 20_000
 

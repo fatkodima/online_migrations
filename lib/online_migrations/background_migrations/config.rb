@@ -4,7 +4,7 @@ module OnlineMigrations
   module BackgroundMigrations
     # Class representing configuration options for background migrations.
     class Config
-      # The module to namespace background migrations in
+      # The module in which background migrations will be placed
       # @return [String] defaults to "OnlineMigrations::BackgroundMigrations"
       attr_accessor :migrations_module
 
