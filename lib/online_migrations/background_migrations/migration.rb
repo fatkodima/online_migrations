@@ -195,9 +195,8 @@ module OnlineMigrations
         on_shard do
           # rubocop:disable Lint/UnreachableLoop
           iterator.each_batch(of: batch_size, column: batch_column_name, start: next_min_value) do |relation|
-            min = relation.arel_table[batch_column_name].minimum
-            max = relation.arel_table[batch_column_name].maximum
-            batch_range = relation.pick(min, max)
+            arel_column = relation.arel_table[batch_column_name]
+            batch_range = relation.pick(arel_column.minimum, arel_column.maximum)
 
             break
           end
@@ -249,14 +248,10 @@ module OnlineMigrations
               self.min_value = self.max_value = self.rows_count = -1 # not relevant
             else
               on_shard do
-                self.min_value ||= migration_relation.minimum(batch_column_name)
-                self.max_value ||= migration_relation.maximum(batch_column_name)
-
-                # This can be the case when run in development on empty tables
-                if min_value.nil?
-                  # integer IDs minimum value is 1
-                  self.min_value = self.max_value = 1
-                end
+                # Getting exact min/max values can be a very heavy operation
+                # and is not needed practically.
+                self.min_value ||= 1
+                self.max_value ||= migration_model.unscoped.maximum(batch_column_name) || self.min_value
 
                 count = migration_object.count
                 self.rows_count = count if count != :no_count

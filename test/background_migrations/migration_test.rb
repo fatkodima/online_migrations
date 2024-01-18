@@ -89,14 +89,14 @@ module BackgroundMigrations
     end
 
     def test_sets_defaults
-      user1 = User.create!
+      _user1 = User.create!
       user2 = User.create!
 
       m = create_migration
 
       assert m.enqueued?
       assert_equal "id", m.batch_column_name
-      assert_equal user1.id, m.min_value
+      assert_equal 1, m.min_value
       assert_equal user2.id, m.max_value
       assert_not m.composite?
       assert_nil m.parent
@@ -350,7 +350,7 @@ module BackgroundMigrations
       child1, child2, child3 = children
 
       assert_equal "default", child1.shard
-      assert_equal 10, child1.min_value
+      assert_equal 1, child1.min_value
       assert_equal 100, child1.max_value
       assert_equal 2, child1.rows_count
 
@@ -358,7 +358,7 @@ module BackgroundMigrations
       assert_equal "shard_one", child2.shard
 
       assert_equal "shard_two", child3.shard
-      assert_equal 200, child3.min_value
+      assert_equal 1, child3.min_value
       assert_equal 300, child3.max_value
       assert_equal 3, child3.rows_count
     end
