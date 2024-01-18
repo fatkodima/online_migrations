@@ -28,6 +28,8 @@ module OnlineMigrations
         for_migration_name(migration_name).where("arguments = ?", arguments.to_json)
       end
 
+      alias_attribute :name, :migration_name
+
       enum status: STATUSES.index_with(&:to_s)
 
       belongs_to :parent, class_name: name, optional: true
@@ -64,6 +66,7 @@ module OnlineMigrations
         class_name = class_name.name if class_name.is_a?(Class)
         write_attribute(:migration_name, self.class.normalize_migration_name(class_name))
       end
+      alias name= migration_name=
 
       def completed?
         succeeded? || failed?
