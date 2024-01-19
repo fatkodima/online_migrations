@@ -416,15 +416,8 @@ module OnlineMigrations
               end
             end
 
-          if index.name.include?(from_column)
-            name = index.name.gsub(from_column, to_column)
-          end
-
-          name = index_name(table_name, new_columns) if !name || name.length > max_identifier_length
-
           options = {
             unique: index.unique,
-            name: name,
             length: index.lengths,
             order: index.orders,
           }

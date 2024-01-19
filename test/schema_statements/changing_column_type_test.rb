@@ -351,6 +351,21 @@ module SchemaStatements
       assert_equal project.id, old_id
     end
 
+    def test_finalize_column_type_change_does_not_recreate_existing_index
+      # assert_not @connection.index_exists?(:projects, :company_id)
+      @connection.add_index(:projects, :company_id)
+
+      @connection.initialize_column_type_change(:projects, :company_id, :bigint)
+      # Lets imagine, that the index was added before, manually, to the column.
+      @connection.add_index(:projects, :company_id_for_type_change, name: "my_custom_name") # use custom index name
+
+      refute_sql("CREATE INDEX") do
+        @connection.finalize_column_type_change(:projects, :company_id)
+        assert @connection.index_exists?(:projects, :company_id)
+        assert @connection.index_exists?(:projects, :company_id_for_type_change)
+      end
+    end
+
     def test_finalize_columns_type_change
       @connection.initialize_columns_type_change(:projects, [[:id, :bigint], [:name, :string]])
       @connection.finalize_columns_type_change(:projects, :id, :name)

@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `finalize_column_type_change` to not recreate already existing indexes on the temporary column
 - Remove potentially heavy queries used to get the ranges of a background migration
 
 ## 0.12.0 (2024-01-18)

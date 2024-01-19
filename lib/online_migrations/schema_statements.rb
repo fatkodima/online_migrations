@@ -681,24 +681,20 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index
     #
     def add_index(table_name, column_name, **options)
-      algorithm = options[:algorithm]
+      __ensure_not_in_transaction! if options[:algorithm] == :concurrently
 
-      __ensure_not_in_transaction! if algorithm == :concurrently
-
-      column_names = index_column_names(column_name || options[:column])
-
-      index_name = options[:name]
-      index_name ||= index_name(table_name, column_names)
-
-      if index_exists?(table_name, column_name, **options)
+      # Rewrite this with `IndexDefinition#defined_for?` when Active Record >= 7.1 is supported.
+      # See https://github.com/rails/rails/pull/45160.
+      index = indexes(table_name).find { |i| __index_defined_for?(i, column_name, **options) }
+      if index
         schema = __schema_for_table(table_name)
 
-        if __index_valid?(index_name, schema: schema)
+        if __index_valid?(index.name, schema: schema)
           Utils.say("Index was not created because it already exists.")
           return
         else
           Utils.say("Recreating invalid index: table_name: #{table_name}, column_name: #{column_name}")
-          remove_index(table_name, column_name, name: index_name, algorithm: algorithm)
+          remove_index(table_name, column_name, **options)
         end
       end
 
@@ -706,7 +702,7 @@ module OnlineMigrations
         # "CREATE INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with constraint validations, creating/removing indexes,
         # and some other "ALTER TABLE"s.
-        super(table_name, column_name, **options.merge(name: index_name))
+        super
       else
         OnlineMigrations.deprecator.warn(<<~MSG)
           Running `add_index` without a statement timeout is deprecated.
@@ -716,7 +712,7 @@ module OnlineMigrations
         MSG
 
         disable_statement_timeout do
-          super(table_name, column_name, **options.merge(name: index_name))
+          super
         end
       end
     end
@@ -942,6 +938,17 @@ module OnlineMigrations
             your migration class.
           MSG
         end
+      end
+
+      # Will not be needed for Active Record >= 7.1
+      def __index_defined_for?(index, columns = nil, name: nil, unique: nil, valid: nil, include: nil, nulls_not_distinct: nil, **options)
+        columns = options[:column] if columns.blank?
+        (columns.nil? || Array(index.columns) == Array(columns).map(&:to_s)) &&
+          (name.nil? || index.name == name.to_s) &&
+          (unique.nil? || index.unique == unique) &&
+          (valid.nil? || index.valid == valid) &&
+          (include.nil? || Array(index.include) == Array(include).map(&:to_s)) &&
+          (nulls_not_distinct.nil? || index.nulls_not_distinct == nulls_not_distinct)
       end
 
       def __not_null_constraint_exists?(table_name, column_name, name: nil)
