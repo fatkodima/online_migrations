@@ -255,7 +255,7 @@ Specify the throttle condition as a block:
 ```ruby
 # config/initializers/online_migrations.rb
 
-OnlineMigrations.config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
+config.background_migrations.throttler = -> { DatabaseStatus.unhealthy? }
 ```
 
 Note that it's up to you to define a throttling condition that makes sense for your app. For example, you can check various PostgreSQL metrics such as replication lag, DB threads, whether DB writes are available, etc.
@@ -269,7 +269,7 @@ If you want to integrate with an exception monitoring service (e.g. Bugsnag), yo
 ```ruby
 # config/initializers/online_migrations.rb
 
-OnlineMigrations.config.background_migrations.error_handler = ->(error, errored_job) do
+config.background_migrations.error_handler = ->(error, errored_job) do
   Bugsnag.notify(error) do |notification|
     notification.add_metadata(:background_migration, { name: errored_job.migration_name })
   end
@@ -283,20 +283,20 @@ The error handler should be a lambda that accepts 2 arguments:
 
 ### Customizing the background migrations module
 
-`OnlineMigrations.config.background_migrations.migrations_module` can be configured to define the module in which
+`config.background_migrations.migrations_module` can be configured to define the module in which
 background migrations will be placed.
 
 ```ruby
 # config/initializers/online_migrations.rb
 
-OnlineMigrations.config.background_migrations.migrations_module = "BackgroundMigrationsModule"
+config.background_migrations.migrations_module = "BackgroundMigrationsModule"
 ```
 
 If no value is specified, it will default to `OnlineMigrations::BackgroundMigrations`.
 
 ### Customizing the backtrace cleaner
 
-`OnlineMigrations.config.background_migrations.backtrace_cleaner` can be configured to specify a backtrace cleaner to use when a Background Migration errors and the backtrace is cleaned and persisted. An `ActiveSupport::BacktraceCleaner` should be used.
+`config.background_migrations.backtrace_cleaner` can be configured to specify a backtrace cleaner to use when a Background Migration errors and the backtrace is cleaned and persisted. An `ActiveSupport::BacktraceCleaner` should be used.
 
 ```ruby
 # config/initializers/online_migrations.rb
@@ -304,7 +304,7 @@ If no value is specified, it will default to `OnlineMigrations::BackgroundMigrat
 cleaner = ActiveSupport::BacktraceCleaner.new
 cleaner.add_silencer { |line| line =~ /ignore_this_dir/ }
 
-OnlineMigrations.config.background_migrations.backtrace_cleaner = cleaner
+config.background_migrations.backtrace_cleaner = cleaner
 ```
 
 If none is specified, the default `Rails.backtrace_cleaner` will be used to clean backtraces.
