@@ -147,6 +147,9 @@ Bundler/OrderedGems:
 Metrics:
   Enabled: false
 
+Minitest/AssertOperator:
+  Enabled: false
+
 Minitest/MultipleAssertions:
   Enabled: false
 

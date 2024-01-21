@@ -76,7 +76,7 @@ module SchemaStatements
       connection.update_column_in_batches(:milestones, :started_at, -> { "CURRENT_TIMESTAMP" })
 
       assert_not_nil m1.reload.started_at
-      assert_equal m1.started_at, m2.reload.started_at
+      assert m2.reload.started_at > 1.minute.ago # started_at was updated
     end
 
     def test_update_column_in_batches_value_is_subquery

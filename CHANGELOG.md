@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Reduce number of queries needed to calculate batch ranges for background migrations
 - Fix `finalize_column_type_change` to not recreate already existing indexes on the temporary column
 - Remove potentially heavy queries used to get the ranges of a background migration
 

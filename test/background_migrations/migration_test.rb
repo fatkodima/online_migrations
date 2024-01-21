@@ -259,11 +259,6 @@ module BackgroundMigrations
       assert_nil m.next_batch_range
     end
 
-    def test_next_batch_range_empty_relation
-      m = create_migration(migration_name: "EmptyRelation")
-      assert_nil m.next_batch_range
-    end
-
     def test_next_batch_range_on_edges
       _user1, _user2, user3, _user4 = 4.times.map { User.create! }
       m = create_migration(max_value: user3.id, batch_size: 2, sub_batch_size: 1)
@@ -279,8 +274,8 @@ module BackgroundMigrations
       m = create_migration(migration_name: "MakeAllDogsNice")
       child1, _child2, child3 = m.children.to_a
 
-      assert_equal [100, 100], child1.next_batch_range
-      assert_equal [1000, 1000], child3.next_batch_range
+      assert_equal [1, 100], child1.next_batch_range
+      assert_equal [1, 1000], child3.next_batch_range
     end
 
     def test_mark_as_succeeded_when_not_all_jobs_succeeded

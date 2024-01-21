@@ -19,37 +19,42 @@ module OnlineMigrations
       end
 
       relation = apply_limits(self.relation, column, start, finish, order)
+      base_relation = relation.reselect(column).reorder(column => order)
 
-      base_relation = relation.except(:select)
-        .select(column)
-        .reorder(column => order)
+      start_id = start || begin
+        start_row = base_relation.uncached { base_relation.first }
+        start_row[column] if start_row
+      end
 
-      start_row = base_relation.uncached { base_relation.first }
-
-      return if !start_row
-
-      start_id = start_row[column]
       arel_table = relation.arel_table
 
-      0.step do |index|
+      while start_id
         if order == :asc
           start_cond = arel_table[column].gteq(start_id)
         else
           start_cond = arel_table[column].lteq(start_id)
         end
 
-        stop_row = base_relation.uncached do
+        last_row, stop_row = base_relation.uncached do
           base_relation
             .where(start_cond)
-            .offset(of)
-            .first
+            .offset(of - 1)
+            .first(2)
+        end
+
+        if last_row.nil?
+          # We are at the end of the table.
+          last_row, stop_row = base_relation.uncached do
+            base_relation
+              .where(start_cond)
+              .last(2)
+          end
         end
 
         batch_relation = relation.where(start_cond)
 
         if stop_row
           stop_id = stop_row[column]
-          start_id = stop_id
 
           if order == :asc
             stop_cond = arel_table[column].lt(stop_id)
@@ -64,10 +69,14 @@ module OnlineMigrations
         # efficient UPDATE queries, hence we get rid of it.
         batch_relation = batch_relation.except(:order)
 
-        # Retaining the results in the query cache would undermine the point of batching.
-        batch_relation.uncached { yield batch_relation, index }
+        last_id = (last_row && last_row[column]) || start_id
 
-        break if !stop_row
+        # Retaining the results in the query cache would undermine the point of batching.
+        batch_relation.uncached { yield batch_relation, start_id, last_id }
+
+        break if stop_row.nil?
+
+        start_id = stop_id
       end
     end
 
