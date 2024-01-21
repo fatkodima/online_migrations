@@ -79,6 +79,9 @@ OnlineMigrations.configure do |config|
 
   # ==> Background migrations configuration
 
+  # The path where generated background migrations will be placed.
+  # config.background_migrations.migrations_path = "lib"
+
   # The module in which background migrations will be placed.
   # config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
 

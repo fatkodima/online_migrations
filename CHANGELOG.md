@@ -1,5 +1,12 @@
 ## master (unreleased)
 
+- Add ability to configure the path where generated background migrations will be placed
+
+    ```ruby
+    # It is placed in lib/ by default.
+    config.background_migrations.migrations_path = "app/lib"
+    ```
+
 - Reduce number of queries needed to calculate batch ranges for background migrations
 - Fix `finalize_column_type_change` to not recreate already existing indexes on the temporary column
 - Remove potentially heavy queries used to get the ranges of a background migration

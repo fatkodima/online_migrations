@@ -9,8 +9,11 @@ module OnlineMigrations
     desc "This generator creates a background migration file."
 
     def create_background_migration_file
+      migrations_module_file_path = migrations_module.underscore
+
       template_file = File.join(
-        "lib/#{migrations_module_file_path}",
+        config.migrations_path,
+        migrations_module_file_path,
         class_path,
         "#{file_name}.rb"
       )
@@ -18,12 +21,12 @@ module OnlineMigrations
     end
 
     private
-      def migrations_module_file_path
-        migrations_module.underscore
+      def migrations_module
+        config.migrations_module
       end
 
-      def migrations_module
-        OnlineMigrations.config.background_migrations.migrations_module
+      def config
+        OnlineMigrations.config.background_migrations
       end
   end
 end

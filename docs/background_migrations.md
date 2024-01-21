@@ -281,6 +281,18 @@ The error handler should be a lambda that accepts 2 arguments:
 * `error`: The exception that was raised.
 * `errored_job`: An `OnlineMigrations::BackgroundMigrations::MigrationJob` object that represents a failed batch.
 
+### Customizing the background migrations path
+
+`OnlineMigrations.config.background_migrations.migrations_path` can be configured to define where generated background migrations will be placed.
+
+```ruby
+# config/initializers/online_migrations.rb
+
+config.background_migrations.migrations_path = "app/lib"
+```
+
+If no value is specified, it will default to `"lib"`.
+
 ### Customizing the background migrations module
 
 `config.background_migrations.migrations_module` can be configured to define the module in which
@@ -292,7 +304,7 @@ background migrations will be placed.
 config.background_migrations.migrations_module = "BackgroundMigrationsModule"
 ```
 
-If no value is specified, it will default to `OnlineMigrations::BackgroundMigrations`.
+If no value is specified, it will default to `"OnlineMigrations::BackgroundMigrations"`.
 
 ### Customizing the backtrace cleaner
 

@@ -21,16 +21,24 @@ class BackgroundMigrationGeneratorTest < Rails::Generators::TestCase
     end
   end
 
-  def test_generator_uses_configured_migrations_module
-    previous_module = OnlineMigrations.config.background_migrations.migrations_module
-    OnlineMigrations.config.background_migrations.migrations_module = "Foo"
-    run_generator(["make_all_non_admins"])
+  def test_generator_uses_configured_migrations_path
+    OnlineMigrations.config.background_migrations.stub(:migrations_path, "app/lib") do
+      run_generator(["make_all_non_admins"])
 
-    assert_file("lib/foo/make_all_non_admins.rb") do |content|
-      assert_includes content, "module Foo"
+      assert_file("app/lib/background_migrations/make_all_non_admins.rb") do |content|
+        assert_includes content, "module BackgroundMigrations"
+      end
     end
-  ensure
-    OnlineMigrations.config.background_migrations.migrations_module = previous_module
+  end
+
+  def test_generator_uses_configured_migrations_module
+    OnlineMigrations.config.background_migrations.stub(:migrations_module, "Foo") do
+      run_generator(["make_all_non_admins"])
+
+      assert_file("lib/foo/make_all_non_admins.rb") do |content|
+        assert_includes content, "module Foo"
+      end
+    end
   end
 
   def test_generator_namespaces_properly

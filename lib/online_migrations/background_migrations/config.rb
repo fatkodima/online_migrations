@@ -4,6 +4,10 @@ module OnlineMigrations
   module BackgroundMigrations
     # Class representing configuration options for background migrations.
     class Config
+      # The path where generated background migrations will be placed
+      # @return [String] defaults to "lib"
+      attr_accessor :migrations_path
+
       # The module in which background migrations will be placed
       # @return [String] defaults to "OnlineMigrations::BackgroundMigrations"
       attr_accessor :migrations_module
@@ -75,6 +79,7 @@ module OnlineMigrations
       attr_accessor :error_handler
 
       def initialize
+        @migrations_path = "lib"
         @migrations_module = "OnlineMigrations::BackgroundMigrations"
         @batch_size = 20_000
         @sub_batch_size = 1000
