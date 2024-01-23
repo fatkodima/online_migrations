@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix calculation of batch ranges for background migration created with explicit ranges
+
 ## 0.13.0 (2024-01-22)
 
 - Add ability to configure the path where generated background migrations will be placed

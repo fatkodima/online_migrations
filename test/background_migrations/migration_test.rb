@@ -267,6 +267,16 @@ module BackgroundMigrations
       assert_equal [user3.id, user3.id], m.next_batch_range
     end
 
+    def test_next_batch_range_on_empty_table
+      m = create_migration(batch_size: 2, sub_batch_size: 1)
+      assert_equal [1, 1], m.next_batch_range
+    end
+
+    def test_next_batch_range_on_empty_table_and_explicit_ranges
+      m = create_migration(batch_size: 2, sub_batch_size: 1, min_value: 1000, max_value: 1_000_000)
+      assert_equal [1000, 1_000_000], m.next_batch_range
+    end
+
     def test_next_batch_range_on_composite_migration
       on_shard(:shard_one) { Dog.create!(id: 100) }
       on_shard(:shard_two) { Dog.create!(id: 1000) }

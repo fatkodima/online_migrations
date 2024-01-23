@@ -69,7 +69,7 @@ module OnlineMigrations
         # efficient UPDATE queries, hence we get rid of it.
         batch_relation = batch_relation.except(:order)
 
-        last_id = (last_row && last_row[column]) || start_id
+        last_id = (last_row && last_row[column]) || finish
 
         # Retaining the results in the query cache would undermine the point of batching.
         batch_relation.uncached { yield batch_relation, start_id, last_id }

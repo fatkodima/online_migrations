@@ -220,6 +220,32 @@ module BackgroundMigrations
       assert_no_admins
     end
 
+    def test_run_all_migration_jobs_on_empty_table
+      m = create_migration
+      run_all_migration_jobs(m)
+      assert_no_admins
+    end
+
+    def test_run_all_migration_jobs_on_empty_table_with_explicit_ranges
+      m = create_migration(min_value: 1, max_value: 100_000_000)
+      run_all_migration_jobs(m)
+      assert_no_admins
+    end
+
+    def test_run_all_migration_jobs_on_empty_relation
+      _user = User.create!(admin: false)
+      m = create_migration
+      run_all_migration_jobs(m)
+      assert_no_admins
+    end
+
+    def test_run_all_migration_jobs_on_empty_relation_with_explicit_ranges
+      _user = User.create!(admin: false)
+      m = create_migration(min_value: 1, max_value: 100_000_000)
+      run_all_migration_jobs(m)
+      assert_no_admins
+    end
+
     def test_run_all_migration_jobs_on_composite_migration
       on_each_shard { 2.times { Dog.create! } }
 
