@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.13.1 (2024-01-23)
+
 - Fix calculation of batch ranges for background migration created with explicit ranges
 
 ## 0.13.0 (2024-01-22)
