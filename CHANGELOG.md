@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.14.0 (2024-02-01)
+
 - Add ability to configure whether background migrations should be run inline
 
     The previous behavior of running inline in development and test environments is preserved, unless overriden.
