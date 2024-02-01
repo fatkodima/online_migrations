@@ -214,6 +214,17 @@ Add to an initializer file:
 config.auto_analyze = true
 ```
 
+### Running background migrations inline
+
+`config.run_background_migrations_inline` can be configured with a proc to decide whether background migrations should be run inline. For convenience defaults to true for development and test environments.
+
+```ruby
+# config/initializers/online_migrations.rb
+config.run_background_migrations_inline = -> { Rails.env.local? }
+```
+
+Set to `nil` to avoid running background migrations inline.
+
 ## Schema Sanity
 
 Columns can flip order in `db/schema.rb` when you have multiple developers. One way to prevent this is to [alphabetize them](https://www.pgrs.net/2008/03/12/alphabetize-schema-rb-columns/).

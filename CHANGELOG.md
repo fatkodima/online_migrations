@@ -1,5 +1,13 @@
 ## master (unreleased)
 
+- Add ability to configure whether background migrations should be run inline
+
+    The previous behavior of running inline in development and test environments is preserved, unless overriden.
+
+    ```ruby
+    config.run_background_migrations_inline = -> { Rails.env.local? }
+    ```
+
 ## 0.13.1 (2024-01-23)
 
 - Fix calculation of batch ranges for background migration created with explicit ranges

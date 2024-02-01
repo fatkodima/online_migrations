@@ -77,6 +77,10 @@ OnlineMigrations.configure do |config|
   #   end
   # end
 
+  # Decide whether background migrations should be run inline.
+  # Convenient for development and test environments.
+  config.run_background_migrations_inline = -> { Rails.env.local? }
+
   # ==> Background migrations configuration
 
   # The path where generated background migrations will be placed.

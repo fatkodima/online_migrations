@@ -170,6 +170,43 @@ module SchemaStatements
       assert_equal OnlineMigrations.config.background_migrations.batch_size, m.batch_size
     end
 
+    def test_run_background_migrations_inline_true_in_local
+      user = User.create!
+      assert_nil user.admin
+
+      @connection.enqueue_background_migration("MakeAllNonAdmins")
+
+      m = OnlineMigrations::BackgroundMigrations::Migration.last
+      assert m.succeeded?
+      assert_equal false, user.reload.admin
+    end
+
+    def test_run_background_migrations_inline_configured_to_nil
+      user = User.create!
+      assert_nil user.admin
+
+      OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
+        @connection.enqueue_background_migration("MakeAllNonAdmins")
+      end
+
+      m = OnlineMigrations::BackgroundMigrations::Migration.last
+      assert m.enqueued?
+      assert_nil user.reload.admin
+    end
+
+    def test_run_background_migrations_inline_configured_to_custom_proc
+      user = User.create!
+      assert_nil user.admin
+
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.enqueue_background_migration("MakeAllNonAdmins")
+      end
+
+      m = OnlineMigrations::BackgroundMigrations::Migration.last
+      assert m.enqueued?
+      assert_nil user.reload.admin
+    end
+
     def test_disable_statement_timeout
       prev_value = get_statement_timeout
       set_statement_timeout(10)

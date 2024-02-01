@@ -171,6 +171,16 @@ module OnlineMigrations
     #
     attr_accessor :verbose_sql_logs
 
+    # The proc which decides whether background migrations should be run inline.
+    # For convenience defaults to true for development and test environments.
+    #
+    # @example
+    #   OnlineMigrations.config.run_background_migrations_inline = -> { Rails.env.local? }
+    #
+    # @return [Proc]
+    #
+    attr_accessor :run_background_migrations_inline
+
     # Configuration object to configure background migrations
     #
     # @return [BackgroundMigrationsConfig]
@@ -202,6 +212,7 @@ module OnlineMigrations
       @alphabetize_schema = false
       @enabled_checks = @error_messages.keys.index_with({})
       @verbose_sql_logs = defined?(Rails.env) && (Rails.env.production? || Rails.env.staging?)
+      @run_background_migrations_inline = -> { Utils.developer_env? }
     end
 
     def lock_retrier=(value)

@@ -372,8 +372,8 @@ module OnlineMigrations
       def enqueue_background_migration(migration_name, *arguments, **options)
         migration = create_background_migration(migration_name, *arguments, **options)
 
-        # For convenience in dev/test environments
-        if Utils.developer_env?
+        run_inline = OnlineMigrations.config.run_background_migrations_inline
+        if run_inline && run_inline.call
           runner = MigrationRunner.new(migration)
           runner.run_all_migration_jobs
         end
