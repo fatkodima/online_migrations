@@ -71,10 +71,11 @@ module SchemaStatements
     def test_add_exclusion_constraint_is_idempotent
       skip if ar_version < 7.1
 
-      2.times do
-        @connection.add_exclusion_constraint(:invoices, "daterange(start_date, end_date) WITH &&", using: :gist)
+      assert_nothing_raised do
+        2.times do
+          @connection.add_exclusion_constraint(:invoices, "daterange(start_date, end_date) WITH &&", using: :gist)
+        end
       end
-      assert true # rubocop:disable Minitest/UselessAssertion
     end
 
     def test_swap_column_names

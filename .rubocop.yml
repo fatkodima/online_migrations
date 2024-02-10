@@ -78,6 +78,9 @@ Style/MapToHash:
 Style/FetchEnvVar:
   Enabled: false
 
+Style/RescueStandardError:
+  Enabled: false
+
 Style/DisableSyntax:
   DisableSyntax:
     - unless

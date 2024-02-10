@@ -6,6 +6,13 @@ module MinitestHelpers
     assert_match message, error.message
   end
 
+  def assert_nothing_raised
+    yield
+    assert true # rubocop:disable Minitest/UselessAssertion
+  rescue => e
+    raise Minitest::UnexpectedError.new(e) # rubocop:disable Style/RaiseArgs
+  end
+
   def migrate(migration, direction: :up, version: 1)
     connection = ActiveRecord::Base.connection
 

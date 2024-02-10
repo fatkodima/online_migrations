@@ -5,7 +5,7 @@ module OnlineMigrations
   module DatabaseTasks
     def migrate(*)
       super
-    rescue => e # rubocop:disable Style/RescueStandardError
+    rescue => e
       if e.cause.is_a?(OnlineMigrations::Error)
         # strip cause
         def e.cause
