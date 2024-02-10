@@ -307,7 +307,7 @@ module OnlineMigrations
       #     perform_action_on_relation_in_background("User", { invite_token: nil }, :generate_invite_token)
       #
       # @note This method is better suited for large tables (10/100s of millions of records).
-      #     For smaller tables it is probably better and easier to directly delete associated records.
+      #     For smaller tables it is probably better and easier to directly perform the action on associated records.
       #
       def perform_action_on_relation_in_background(model_name, conditions, action, updates: nil, **options)
         model_name = model_name.name if model_name.is_a?(Class)
