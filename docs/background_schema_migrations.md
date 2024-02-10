@@ -62,6 +62,10 @@ end
 
 `add_index_in_background`/`remove_index_in_background` accept additional configuration options which controls how the background schema migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_schema_migrations/migration_helpers.rb) for the list of all available configuration options.
 
+## Depending on schema changes
+
+You shouldn't depend on the schema until the background schema migration is finished. If having the schema migrated is a requirement, then the `ensure_background_schema_migration_succeeded` helper can be used to guarantee that the migration succeeded and the schema change applied.
+
 ## Instrumentation
 
 Background schema migrations use the [ActiveSupport::Notifications](http://api.rubyonrails.org/classes/ActiveSupport/Notifications.html) API.

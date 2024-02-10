@@ -36,6 +36,7 @@ module SchemaStatements
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
       @connection.drop_table(:users, if_exists: true)
       @connection.drop_table(:invoices, if_exists: true)
     end
@@ -222,6 +223,66 @@ module SchemaStatements
       @connection.enqueue_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
       @connection.remove_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
       assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+    end
+
+    def test_ensure_background_data_migration_succeeded
+      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      assert m.succeeded?
+      assert_nothing_raised do
+        @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins")
+      end
+    end
+
+    def test_ensure_background_data_migration_succeeded_with_arguments
+      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins", 1, { foo: "bar" }, 2)
+      assert m.succeeded?
+      assert_nothing_raised do
+        @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins", arguments: [1, { foo: "bar" }, 2])
+      end
+    end
+
+    def test_ensure_background_data_migration_succeeded_when_migration_not_found
+      out, = capture_io do
+        logger = ActiveSupport::Logger.new($stdout)
+        ActiveRecord::Base.stub(:logger, logger) do
+          @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins")
+        end
+      end
+      assert_match(/Could not find background data migration/i, out)
+    end
+
+    def test_ensure_background_data_migration_succeeded_when_migration_is_failed
+      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      m.update_column(:status, :failed)
+
+      assert_raises_with_message(RuntimeError, /to be marked as 'succeeded'/i) do
+        @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins")
+      end
+    end
+
+    def test_ensure_background_schema_migration_succeeded
+      m = @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      assert m.succeeded?
+      assert_nothing_raised do
+        @connection.ensure_background_schema_migration_succeeded(m.name)
+      end
+    end
+
+    def test_ensure_background_schema_migration_succeeded_when_migration_not_found
+      Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+        assert_raises_with_message(RuntimeError, /Could not find background schema migration/i) do
+          @connection.ensure_background_schema_migration_succeeded("index_users_on_name")
+        end
+      end
+    end
+
+    def test_ensure_background_schema_migration_succeeded_when_migration_is_failed
+      m = @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      m.update_column(:status, :failed)
+
+      assert_raises_with_message(RuntimeError, /to be marked as 'succeeded'/i) do
+        @connection.ensure_background_schema_migration_succeeded("index_users_on_name")
+      end
     end
 
     def test_disable_statement_timeout

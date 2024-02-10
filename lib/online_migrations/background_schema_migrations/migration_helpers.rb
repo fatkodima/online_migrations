@@ -35,6 +35,29 @@ module OnlineMigrations
         enqueue_background_schema_migration(name, table_name, definition: definition, **migration_options)
       end
 
+      # Ensures that the background schema migration with the provided migration name succeeded.
+      #
+      # If the enqueued migration was not found in development (probably when resetting a dev environment
+      # followed by `db:migrate`), then a log warning is printed.
+      # If enqueued migration was not found in production, then the error is raised.
+      # If enqueued migration was found but is not succeeded, then the error is raised.
+      #
+      # @param migration_name [String, Symbol] Background schema migration name
+      #
+      # @example
+      #   ensure_background_schema_migration_succeeded("index_users_on_email")
+      #
+      def ensure_background_schema_migration_succeeded(migration_name)
+        migration = Migration.parents.find_by(migration_name: migration_name)
+
+        if migration.nil?
+          Utils.raise_in_prod_or_say_in_dev("Could not find background schema migration: '#{migration_name}'")
+        elsif !migration.succeeded?
+          raise "Expected background schema migration '#{migration_name}' to be marked as 'succeeded', " \
+                "but it is '#{migration.status}'."
+        end
+      end
+
       def enqueue_background_schema_migration(name, table_name, **options)
         if options[:connection_class_name].nil? && Utils.multiple_databases?
           raise ArgumentError, "You must pass a :connection_class_name when using multiple databases."

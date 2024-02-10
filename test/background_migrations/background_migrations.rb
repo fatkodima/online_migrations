@@ -2,6 +2,8 @@
 
 module BackgroundMigrations
   class MakeAllNonAdmins < OnlineMigrations::BackgroundMigration
+    def initialize(*_dummy_args) end
+
     def relation
       User.all
     end

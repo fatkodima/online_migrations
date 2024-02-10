@@ -12,6 +12,7 @@ module OnlineMigrations
       super
     ensure
       VerboseSqlLogs.disable if verbose_sql_logs?
+      OnlineMigrations.current_migration = nil
     end
 
     # @private
