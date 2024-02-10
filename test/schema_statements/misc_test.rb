@@ -157,13 +157,12 @@ module SchemaStatements
 
     def test_enqueue_background_migration
       assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
-      @connection.enqueue_background_migration(
+      m = @connection.enqueue_background_migration(
         "MakeAllNonAdmins",
         batch_max_attempts: 3,
         sub_batch_pause_ms: 200
       )
 
-      m = OnlineMigrations::BackgroundMigrations::Migration.last
       assert_equal "MakeAllNonAdmins", m.migration_name
       assert_equal 3, m.batch_max_attempts
       assert_equal 200, m.sub_batch_pause_ms
@@ -174,9 +173,7 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      @connection.enqueue_background_migration("MakeAllNonAdmins")
-
-      m = OnlineMigrations::BackgroundMigrations::Migration.last
+      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
       assert m.succeeded?
       assert_equal false, user.reload.admin
     end
@@ -185,11 +182,10 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
+      m = OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
         @connection.enqueue_background_migration("MakeAllNonAdmins")
       end
 
-      m = OnlineMigrations::BackgroundMigrations::Migration.last
       assert m.enqueued?
       assert_nil user.reload.admin
     end
@@ -198,11 +194,10 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+      m = OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
         @connection.enqueue_background_migration("MakeAllNonAdmins")
       end
 
-      m = OnlineMigrations::BackgroundMigrations::Migration.last
       assert m.enqueued?
       assert_nil user.reload.admin
     end
