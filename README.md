@@ -206,7 +206,7 @@ end
    end
    ```
 
-4. Remove column ignoring from `User` model
+4. Remove column ignoring from step 1
 5. Deploy
 
 ### Adding a column with a default value
