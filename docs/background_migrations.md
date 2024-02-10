@@ -125,6 +125,10 @@ enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
 
 **Note**: These migration helpers should be run inside the migration against the database where background migrations tables are defined.
 
+## Depending on migrated data
+
+You shouldn't depend on the data until the background migration is finished. If having 100% of the data migrated is a requirement, then the `ensure_background_migration_succeeded` helper can be used to guarantee that the migration was succeeded and the data fully migrated.
+
 ## Testing
 
 At a minimum, it's recommended that the `#process_batch` method in your background migration is tested. You may also want to test the `#relation` and `#count` methods if they are sufficiently complex.

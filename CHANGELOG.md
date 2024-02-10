@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add `ensure_background_migration_succeeded` migration helper for background migrations
+
 ## 0.14.0 (2024-02-01)
 
 - Add ability to configure whether background migrations should be run inline

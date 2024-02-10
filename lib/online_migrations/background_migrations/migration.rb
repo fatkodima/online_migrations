@@ -20,6 +20,7 @@ module OnlineMigrations
       self.table_name = :background_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
+      scope :parents, -> { where(parent_id: nil) }
       scope :runnable, -> { where(composite: false) }
       scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
       scope :except_succeeded, -> { where.not(status: :succeeded) }

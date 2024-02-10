@@ -203,6 +203,42 @@ module SchemaStatements
       assert_nil user.reload.admin
     end
 
+    def test_ensure_background_migration_succeeded
+      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
+      assert m.succeeded?
+      assert_nothing_raised do
+        @connection.ensure_background_migration_succeeded("MakeAllNonAdmins")
+      end
+    end
+
+    def test_ensure_background_migration_succeeded_with_arguments
+      m = @connection.enqueue_background_migration("MakeAllNonAdmins", 1, { foo: "bar" }, 2)
+      assert m.succeeded?
+      assert_nothing_raised do
+        @connection.ensure_background_migration_succeeded("MakeAllNonAdmins", arguments: [1, { foo: "bar" }, 2])
+      end
+    end
+
+    def test_ensure_background_migration_succeeded_when_migration_not_found
+      out, = capture_io do
+        logger = ActiveSupport::Logger.new($stdout)
+        ActiveRecord::Base.stub(:logger, logger) do
+          @connection.ensure_background_migration_succeeded("MakeAllNonAdmins")
+        end
+      end
+      assert_match(/Could not find background migration/i, out)
+    end
+
+    def test_ensure_background_migration_succeeded_when_migration_is_failed
+      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
+      m.update_column(:status, :failed)
+
+      error = assert_raises(RuntimeError) do
+        @connection.ensure_background_migration_succeeded("MakeAllNonAdmins")
+      end
+      assert_match(/to be marked as 'succeeded'/i, error.message)
+    end
+
     def test_disable_statement_timeout
       prev_value = get_statement_timeout
       set_statement_timeout(10)

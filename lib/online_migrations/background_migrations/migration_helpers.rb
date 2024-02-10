@@ -381,6 +381,42 @@ module OnlineMigrations
         migration
       end
 
+      # Ensures that the background migration with provided configuration is succeeded.
+      #
+      # If the enqueued migration was not found (probably when resetting a dev environment
+      # followed by `db:migrate`) then a log warning is printed.
+      # If enqueued migration was found but is not succeeded, then the error is raised.
+      #
+      # @param migration_name [String, Class] Background migration job class name
+      # @param arguments [Array, nil] Arguments with which background migration was enqueued
+      #
+      # @example Without arguments
+      #   ensure_background_migration_succeeded("BackfillProjectIssuesCount")
+      #
+      # @example With arguments
+      #   ensure_background_migration_succeeded("CopyColumn", arguments: ["users", "id", "id_for_type_change"])
+      #
+      def ensure_background_migration_succeeded(migration_name, arguments: nil)
+        migration_name = migration_name.name if migration_name.is_a?(Class)
+
+        configuration = { migration_name: migration_name }
+
+        if arguments
+          arguments = Array(arguments)
+          migration = Migration.parents.for_configuration(migration_name, arguments).first
+          configuration[:arguments] = arguments.to_json
+        else
+          migration = Migration.parents.for_migration_name(migration_name).first
+        end
+
+        if migration.nil?
+          Utils.say("Could not find background migration for the given configuration: #{configuration}")
+        elsif !migration.succeeded?
+          raise "Expected background migration for the given configuration to be marked as 'succeeded', " \
+                "but it is '#{migration.status}': #{configuration}"
+        end
+      end
+
       # @private
       def create_background_migration(migration_name, *arguments, **options)
         options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
