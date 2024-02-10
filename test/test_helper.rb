@@ -36,10 +36,9 @@ if OnlineMigrations::Utils.ar_version < 7.1
   ActiveRecord::Base.legacy_connection_handling = false
 end
 
-# disallowed_warnings was added in Active Record 6.1
 # Disallow ActiveSupport deprecations sprouting from this gem
 if OnlineMigrations::Utils.ar_version >= 7.1
-  ActiveSupport::Deprecation._instance.disallowed_warnings = :all
+  ActiveRecord.deprecator.disallowed_warnings = :all
 else
   ActiveSupport::Deprecation.disallowed_warnings = :all
 end

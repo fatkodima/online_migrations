@@ -37,7 +37,12 @@ module OnlineMigrations
       scope :except_succeeded, -> { where.not(status: :succeeded) }
       scope :attempts_exceeded, -> { where("attempts >= max_attempts") }
 
-      enum status: STATUSES.index_with(&:to_s)
+      # Avoid deprecation warnings.
+      if Utils.ar_version >= 7
+        enum :status, STATUSES.index_with(&:to_s)
+      else
+        enum status: STATUSES.index_with(&:to_s)
+      end
 
       delegate :migration_class, :migration_object, :migration_relation, :batch_column_name,
         :arguments, :batch_pause, to: :migration
