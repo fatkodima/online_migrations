@@ -100,7 +100,7 @@ module OnlineMigrations
       end
 
       def set_statement_timeout
-        if !@statement_timeout_set
+        if !defined?(@statement_timeout_set)
           if (statement_timeout = OnlineMigrations.config.statement_timeout)
             # TODO: inline this method call after deprecated `disable_statement_timeout` method removal.
             connection.__set_statement_timeout(statement_timeout)
