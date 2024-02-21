@@ -51,7 +51,11 @@ module OnlineMigrations
       # @note This method should not be used in production environments
       #
       def run_all_migration_jobs
-        raise "This method is not intended for use in production environments" if !Utils.developer_env?
+        run_inline = OnlineMigrations.config.run_background_migrations_inline
+        if run_inline && !run_inline.call
+          raise "This method is not intended for use in production environments"
+        end
+
         return if migration.completed?
 
         mark_as_running

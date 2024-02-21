@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix `MigrationRunner` to consider `run_background_migrations_inline` proc
+
 ## 0.14.0 (2024-02-01)
 
 - Add ability to configure whether background migrations should be run inline
