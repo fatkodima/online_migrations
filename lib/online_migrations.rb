@@ -7,6 +7,7 @@ require "online_migrations/utils"
 require "online_migrations/change_column_type_helpers"
 require "online_migrations/background_migrations/migration_helpers"
 require "online_migrations/schema_statements"
+require "online_migrations/schema_cache"
 require "online_migrations/migration"
 require "online_migrations/migrator"
 require "online_migrations/schema_dumper"
@@ -28,11 +29,6 @@ module OnlineMigrations
   autoload :IndexesCollector
   autoload :CommandChecker
   autoload :BackgroundMigration
-
-  autoload_at "online_migrations/schema_cache" do
-    autoload :SchemaCache
-    autoload :SchemaCache7
-  end
 
   autoload_at "online_migrations/lock_retrier" do
     autoload :LockRetrier
@@ -102,8 +98,10 @@ module OnlineMigrations
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::Migration::CommandRecorder.include(OnlineMigrations::CommandRecorder)
 
-      if OnlineMigrations::Utils.ar_version >= 7.1
-        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache7)
+      if OnlineMigrations::Utils.ar_version >= 7.2
+        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache72)
+      elsif OnlineMigrations::Utils.ar_version >= 7.1
+        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache71)
       else
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
       end
