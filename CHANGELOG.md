@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.14.1 (2024-02-21)
+
 - Fix `MigrationRunner` to consider `run_background_migrations_inline` proc
 
 ## 0.14.0 (2024-02-01)
