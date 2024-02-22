@@ -38,7 +38,7 @@ module CommandChecker
         1. Ignore the column:
 
           class User < ApplicationRecord
-            self.ignored_columns = ["email"]
+            self.ignored_columns += ["email"]
           end
 
         2. Deploy
@@ -135,7 +135,7 @@ module CommandChecker
     end
 
     def test_remove_columns
-      assert_unsafe RemoveColumns, 'self.ignored_columns = ["name", "email"]'
+      assert_unsafe RemoveColumns, 'self.ignored_columns += ["name", "email"]'
     end
 
     class RemoveColumnsNewTable < TestMigration
@@ -174,7 +174,7 @@ module CommandChecker
     end
 
     def test_remove_timestamps
-      assert_unsafe RemoveTimestamps, 'self.ignored_columns = ["created_at", "updated_at"]'
+      assert_unsafe RemoveTimestamps, 'self.ignored_columns += ["created_at", "updated_at"]'
     end
 
     class RemoveTimestampsNewTable < TestMigration
@@ -209,7 +209,7 @@ module CommandChecker
     end
 
     def test_remove_reference
-      assert_unsafe RemoveReference, 'self.ignored_columns = ["user_id"]'
+      assert_unsafe RemoveReference, 'self.ignored_columns += ["user_id"]'
     end
 
     class RemovePolymorphicReference < TestMigration
@@ -219,7 +219,7 @@ module CommandChecker
     end
 
     def test_remove_polymorphic_reference
-      assert_unsafe RemovePolymorphicReference, 'self.ignored_columns = ["attachable_id", "attachable_type"]'
+      assert_unsafe RemovePolymorphicReference, 'self.ignored_columns += ["attachable_id", "attachable_type"]'
     end
 
     class RemoveReferenceNewTable < TestMigration

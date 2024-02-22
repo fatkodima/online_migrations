@@ -191,7 +191,7 @@ end
 
    ```ruby
    class User < ApplicationRecord
-     self.ignored_columns = ["name"]
+     self.ignored_columns += ["name"]
    end
    ```
 
@@ -488,7 +488,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
 
    ```ruby
    class User < ApplicationRecord
-     self.ignored_columns = ["name"]
+     self.ignored_columns += ["name"]
    end
    ```
 
@@ -1172,7 +1172,7 @@ A safer approach is to:
 
    ```ruby
    class User < ApplicationRecord
-     self.ignored_columns = ["type"]
+     self.ignored_columns += ["type"]
    end
    ```
 

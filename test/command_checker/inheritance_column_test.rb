@@ -32,7 +32,7 @@ module CommandChecker
         1. ignore the column:
 
           class User < ApplicationRecord
-            self.ignored_columns = ["type"]
+            self.ignored_columns += ["type"]
           end
 
         2. deploy
@@ -90,7 +90,7 @@ module CommandChecker
         1. ignore the column:
 
           class User < ApplicationRecord
-            self.ignored_columns = ["my_type_column"]
+            self.ignored_columns += ["my_type_column"]
           end
       MSG
     ensure

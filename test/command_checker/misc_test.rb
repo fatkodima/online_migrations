@@ -225,7 +225,7 @@ module CommandChecker
         assert_unsafe RenameColumn, <<~MSG
           5. Ignore old column
 
-            self.ignored_columns = [:name]
+            self.ignored_columns += [:name]
 
           6. Deploy
           7. Remove the column rename config from step 1

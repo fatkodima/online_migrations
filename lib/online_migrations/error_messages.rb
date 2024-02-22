@@ -110,7 +110,7 @@ A safer approach is to:
 1. ignore the column:
 
   class <%= model %> < ApplicationRecord
-    self.ignored_columns = [\"<%= column_name %>\"]
+    self.ignored_columns += [\"<%= column_name %>\"]
   end
 
 2. deploy
@@ -151,7 +151,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
 <% if enumerate_columns_in_select_statements %>
 5. Ignore old column
 
-  self.ignored_columns = [:<%= column_name %>]
+  self.ignored_columns += [:<%= column_name %>]
 
 6. Deploy
 7. Remove the column rename config from step 1
@@ -298,7 +298,7 @@ A safer approach is to:
 1. Ignore the column:
 
   class <%= model %> < ApplicationRecord
-    self.ignored_columns = <%= columns %>
+    self.ignored_columns += <%= columns %>
   end
 
 2. Deploy
