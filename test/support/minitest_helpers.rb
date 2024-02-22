@@ -16,7 +16,9 @@ module MinitestHelpers
   def migrate(migration, direction: :up, version: 1)
     connection = ActiveRecord::Base.connection
 
-    if OnlineMigrations::Utils.ar_version >= 7.1
+    if OnlineMigrations::Utils.ar_version >= 7.2
+      ActiveRecord::SchemaMigration.new(connection.pool).delete_all_versions
+    elsif OnlineMigrations::Utils.ar_version >= 7.1
       ActiveRecord::SchemaMigration.new(connection).delete_all_versions
     else
       ActiveRecord::SchemaMigration.delete_all
@@ -25,7 +27,9 @@ module MinitestHelpers
     migration.version ||= version
 
     if direction == :down
-      if OnlineMigrations::Utils.ar_version >= 7.1
+      if OnlineMigrations::Utils.ar_version >= 7.2
+        ActiveRecord::SchemaMigration.new(connection.pool).create_version(migration.version)
+      elsif OnlineMigrations::Utils.ar_version >= 7.1
         ActiveRecord::SchemaMigration.new(connection).create_version(migration.version)
       else
         ActiveRecord::SchemaMigration.create!(version: migration.version)
@@ -33,7 +37,9 @@ module MinitestHelpers
     end
 
     args =
-      if OnlineMigrations::Utils.ar_version >= 7.1
+      if OnlineMigrations::Utils.ar_version >= 7.2
+        [ActiveRecord::SchemaMigration.new(connection.pool), ActiveRecord::InternalMetadata.new(connection.pool)]
+      elsif OnlineMigrations::Utils.ar_version >= 7.1
         [ActiveRecord::SchemaMigration.new(connection), ActiveRecord::InternalMetadata.new(connection)]
       else
         [ActiveRecord::SchemaMigration]

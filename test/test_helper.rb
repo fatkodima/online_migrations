@@ -64,7 +64,9 @@ def prepare_database
     connection.drop_table(table_name, force: :cascade)
   end
 
-  if OnlineMigrations::Utils.ar_version >= 7.1
+  if OnlineMigrations::Utils.ar_version >= 7.2
+    ActiveRecord::SchemaMigration.new(connection.pool).create_table
+  elsif OnlineMigrations::Utils.ar_version >= 7.1
     ActiveRecord::SchemaMigration.new(connection).create_table
   else
     ActiveRecord::SchemaMigration.create_table
