@@ -68,6 +68,34 @@ module CommandChecker
       assert_safe AddReferenceIndexConcurrently
     end
 
+    class AddReferenceConcurrently < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_reference_concurrently :projects, :user
+      end
+    end
+
+    def test_add_reference_concurrently
+      assert_safe AddReferenceConcurrently
+    end
+
+    class AddReferenceConcurrentlyWithMismatchingType < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_reference_concurrently :projects, :user, type: :uuid
+      end
+    end
+
+    def test_add_reference_concurrently_with_mismatching_type
+      assert_not_equal :uuid, @connection.columns(:users).find { |c| c.name == "id" }.type
+      assert_unsafe AddReferenceConcurrentlyWithMismatchingType, <<~MSG
+        projects.user_id references a column of different type - foreign keys should be of the same type as the referenced primary key.
+        Otherwise, there's a risk of errors caused by IDs representable by one type but not the other.
+      MSG
+    end
+
     class AddReferenceForeignKey < TestMigration
       def change
         add_reference :projects, :user, index: false, foreign_key: true
