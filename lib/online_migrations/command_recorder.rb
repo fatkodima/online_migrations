@@ -77,6 +77,10 @@ module OnlineMigrations
 
       include StraightReversions
 
+      def invert_add_reference_concurrently(args)
+        [:remove_reference, args]
+      end
+
       def invert_swap_column_names(args)
         table_name, column1, column2 = args
         [:swap_column_names, [table_name, column2, column1]]

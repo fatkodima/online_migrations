@@ -527,6 +527,30 @@ module OnlineMigrations
       end
       alias add_belongs_to add_reference
 
+      def add_reference_concurrently(table_name, ref_name, **options)
+        # Always added by default in 5.0+
+        index = options.fetch(:index, true)
+
+        if index.is_a?(Hash) && index[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
+          raise_error :add_hash_index
+        end
+
+        foreign_key = options.fetch(:foreign_key, false)
+
+        if foreign_key
+          foreign_table_name = Utils.foreign_table_name(ref_name, options)
+          @foreign_key_tables << foreign_table_name.to_s
+        end
+
+        if !options[:polymorphic]
+          type = (options[:type] || :bigint).to_sym
+          column_name = "#{ref_name}_id"
+
+          foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
+          check_mismatched_foreign_key_type(table_name, column_name, type, **foreign_key_options)
+        end
+      end
+
       def add_index(table_name, column_name, **options)
         if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
           raise_error :add_hash_index
