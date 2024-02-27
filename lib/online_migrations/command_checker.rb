@@ -854,8 +854,14 @@ module OnlineMigrations
           if connection.table_exists?(foreign_table_name)
             primary_key = options[:primary_key] || connection.primary_key(foreign_table_name)
             primary_key_column = column_for(foreign_table_name, primary_key)
+            return if primary_key_column.nil?
 
-            if primary_key_column && type != primary_key_column.sql_type.to_sym
+            primary_key_type = primary_key_column.sql_type.to_sym
+            # Having bigint foreign keys is safe and people should
+            # detect integer primary keys via some other tools.
+            return if type == :bigint && primary_key_type == :integer
+
+            if type != primary_key_type
               raise_error :mismatched_foreign_key_type,
                 table_name: table_name, column_name: column_name
             end

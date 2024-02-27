@@ -96,6 +96,17 @@ module CommandChecker
       MSG
     end
 
+    class AddReferenceFromBigintToInteger < TestMigration
+      def change
+        add_reference :projects, :user, type: :bigint, index: false
+      end
+    end
+
+    def test_add_reference_from_bigint_to_integer
+      @connection.change_column(:users, :id, :integer)
+      assert_safe AddReferenceFromBigintToInteger
+    end
+
     class AddReferenceForeignKey < TestMigration
       def change
         add_reference :projects, :user, index: false, foreign_key: true

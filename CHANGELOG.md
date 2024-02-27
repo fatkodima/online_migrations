@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Allow adding bigint foreign keys referencing integer primary keys
 - Fix `add_reference_concurrently` to check for mismatched key types
 
 ## 0.14.1 (2024-02-21)
