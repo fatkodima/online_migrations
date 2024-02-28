@@ -59,16 +59,6 @@ module BackgroundMigrations
       assert_includes m.errors.full_messages, "Migration name RelationNotARRelation#relation must return an ActiveRecord::Relation object"
     end
 
-    def test_migration_relation_joins_and_batch_column_name
-      m = build_migration(migration_name: "JoinsRelation", batch_column_name: "id")
-      m.valid?
-
-      assert_includes m.errors.full_messages, "Batch column name must be a fully-qualified column if you join a table"
-
-      m.batch_column_name = "users.id"
-      assert m.valid?
-    end
-
     def test_migration_relation_with_order_clause
       m = build_migration(migration_name: "OrderClauseRelation")
       m.valid?

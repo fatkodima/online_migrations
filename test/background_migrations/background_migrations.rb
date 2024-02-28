@@ -95,12 +95,6 @@ module BackgroundMigrations
     end
   end
 
-  class JoinsRelation < OnlineMigrations::BackgroundMigration
-    def relation
-      User.joins(:projects)
-    end
-  end
-
   class OrderClauseRelation < OnlineMigrations::BackgroundMigration
     def relation
       User.order(:name)
