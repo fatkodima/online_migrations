@@ -15,7 +15,7 @@ module OnlineMigrations
     end
 
     def create_migration_file
-      migration_template("migration.rb", File.join(db_migrate_path, "install_online_migrations.rb"))
+      migration_template("install_migration.rb", File.join(db_migrate_path, "install_online_migrations.rb"))
     end
 
     private
