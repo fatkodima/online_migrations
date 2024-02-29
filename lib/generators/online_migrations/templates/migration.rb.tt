@@ -1,0 +1,10 @@
+class Enqueue<%= class_name %> < <%= migration_parent %>
+  def up
+    enqueue_background_migration("<%= class_name %>", ...args)
+  end
+
+  def down
+    # Make sure to pass the same arguments as in the "up" method, if any.
+    remove_background_migration("<%= class_name %>", ...args)
+  end
+end

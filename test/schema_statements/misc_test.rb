@@ -203,6 +203,24 @@ module SchemaStatements
       assert_nil user.reload.admin
     end
 
+    def test_remove_non_existing_background_migration
+      assert_nothing_raised do
+        @connection.remove_background_migration("NonExistent")
+      end
+    end
+
+    def test_remove_background_migration
+      @connection.enqueue_background_migration("MakeAllNonAdmins")
+      @connection.remove_background_migration("MakeAllNonAdmins")
+      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+    end
+
+    def test_remove_background_migration_with_arguments
+      @connection.enqueue_background_migration("MigrationWithArguments", 1, { "a" => 2 })
+      @connection.remove_background_migration("MigrationWithArguments", 1, { "a" => 2 })
+      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+    end
+
     def test_disable_statement_timeout
       prev_value = get_statement_timeout
       set_statement_timeout(10)

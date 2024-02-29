@@ -121,6 +121,20 @@ module BackgroundMigrations
     end
   end
 
+  class MigrationWithArguments < OnlineMigrations::BackgroundMigration
+    def initialize(_arg1, _arg2)
+      # no-op
+    end
+
+    def relation
+      User.none
+    end
+
+    def process_batch(_users)
+      # no-op
+    end
+  end
+
   class NotAMigration
     def relation; end
     def process_batch(*); end
