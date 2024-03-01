@@ -9,7 +9,7 @@ module SchemaStatements
     end
 
     class Invoice < ActiveRecord::Base
-      belongs_to :user
+      belongs_to :user, counter_cache: true
     end
 
     def setup
@@ -19,6 +19,7 @@ module SchemaStatements
         t.string :status
         t.boolean :admin
         t.boolean :banned
+        t.integer :invoices_count
         t.bigint :id_for_type_change
         t.string :name_for_type_change
       end
@@ -128,10 +129,10 @@ module SchemaStatements
     end
 
     def test_reset_counters_in_background
-      m = @connection.reset_counters_in_background(User.name, :projects, :friends, touch: true)
+      m = @connection.reset_counters_in_background(User.name, :invoices, touch: true)
 
       assert_equal "ResetCounters", m.migration_name
-      assert_equal [User.name, ["projects", "friends"], { "touch" => true }], m.arguments
+      assert_equal [User.name, ["invoices"], { "touch" => true }], m.arguments
     end
 
     def test_delete_orphaned_records_in_background
@@ -195,12 +196,14 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      m = OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
-        @connection.enqueue_background_migration("MakeAllNonAdmins")
-      end
+      prev = OnlineMigrations.config.run_background_migrations_inline
+      OnlineMigrations.config.run_background_migrations_inline = -> { false }
 
+      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
       assert m.enqueued?
       assert_nil user.reload.admin
+    ensure
+      OnlineMigrations.config.run_background_migrations_inline = prev
     end
 
     def test_remove_non_existing_background_migration

@@ -151,6 +151,11 @@ module OnlineMigrations
         db_config = ActiveRecord::Base.configurations.configs_for(env_name: env)
         db_config.reject(&:replica?).size > 1
       end
+
+      def run_background_migrations_inline?
+        run_inline = OnlineMigrations.config.run_background_migrations_inline
+        run_inline && run_inline.call
+      end
     end
   end
 end
