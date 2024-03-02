@@ -70,6 +70,9 @@ module BackgroundMigrations
       assert_equal 0, j.attempts
       assert_nil j.started_at
       assert_nil j.finished_at
+      assert_nil j.error_class
+      assert_nil j.error_message
+      assert_nil j.backtrace
     end
 
     private

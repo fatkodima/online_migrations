@@ -73,7 +73,10 @@ module OnlineMigrations
           status: self.class.statuses[:enqueued],
           attempts: 0,
           started_at: nil,
-          finished_at: nil
+          finished_at: nil,
+          error_class: nil,
+          error_message: nil,
+          backtrace: nil
         )
       end
 
