@@ -67,6 +67,26 @@ module OnlineMigrations
         end
       end
 
+      # Mark this migration as ready to be processed again.
+      #
+      # This is used to manually retrying failed migrations.
+      #
+      def retry
+        if composite?
+          children.failed.each(&:retry)
+        elsif failed?
+          update!(
+            status: self.class.statuses[:enqueued],
+            attempts: 0,
+            started_at: nil,
+            finished_at: nil,
+            error_class: nil,
+            error_message: nil,
+            backtrace: nil
+          )
+        end
+      end
+
       # @private
       def connection_class
         if connection_class_name && (klass = connection_class_name.safe_constantize)

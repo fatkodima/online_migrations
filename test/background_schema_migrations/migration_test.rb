@@ -144,6 +144,23 @@ module BackgroundSchemaMigrations
       assert_equal "shard_two", child3.shard
     end
 
+    def test_retry
+      m = create_migration(definition: "SOME INVALID SQL")
+      m.max_attempts.times { run_migration(m) }
+      assert m.failed?
+
+      m.retry
+
+      m.reload
+      assert m.enqueued?
+      assert_equal 0, m.attempts
+      assert_nil m.started_at
+      assert_nil m.finished_at
+      assert_nil m.error_class
+      assert_nil m.error_message
+      assert_nil m.backtrace
+    end
+
     private
       def create_migration(
         name: "index_users_on_email",
