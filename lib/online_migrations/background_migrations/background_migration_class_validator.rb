@@ -16,13 +16,6 @@ module OnlineMigrations
           return
         end
 
-        if relation.joins_values.present? && !record.batch_column_name.to_s.include?(".")
-          record.errors.add(
-            :batch_column_name,
-            "must be a fully-qualified column if you join a table"
-          )
-        end
-
         if relation.arel.orders.present? || relation.arel.taken.present?
           record.errors.add(
             :migration_name,

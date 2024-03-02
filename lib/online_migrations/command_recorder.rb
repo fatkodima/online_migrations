@@ -26,6 +26,7 @@ module OnlineMigrations
       :add_reference_concurrently,
       :change_column_type_in_background,
       :enqueue_background_migration,
+      :remove_background_migration,
 
       # column type change helpers
       :initialize_column_type_change,

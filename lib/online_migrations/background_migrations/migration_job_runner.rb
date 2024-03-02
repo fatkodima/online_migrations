@@ -46,6 +46,7 @@ module OnlineMigrations
         )
 
         ::OnlineMigrations.config.background_migrations.error_handler.call(e, migration_job)
+        raise if Utils.run_background_migrations_inline?
       end
 
       private

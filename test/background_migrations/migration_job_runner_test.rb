@@ -41,7 +41,10 @@ module BackgroundMigrations
 
       job = create_migration_job(migration_name: "EachBatchFails")
 
-      run_migration_job(job)
+      error = assert_raises(RuntimeError) do
+        run_migration_job(job)
+      end
+      assert_equal "Boom!", error.message
 
       assert job.failed?
       assert job.finished_at.present?
@@ -63,12 +66,41 @@ module BackgroundMigrations
         handled_job = errored_job
       end
 
-      run_migration_job(job)
+      error = assert_raises(RuntimeError) do
+        run_migration_job(job)
+      end
+      assert_equal "Boom!", error.message
 
       assert_instance_of RuntimeError, handled_error
       assert_equal job, handled_job
     ensure
       OnlineMigrations.config.background_migrations.error_handler = previous_error_handler
+    end
+
+    def test_run_reraises_error_when_running_background_migrations_inline
+      _user = User.create!
+      job = create_migration_job(migration_name: "EachBatchFails")
+
+      prev = OnlineMigrations.config.run_background_migrations_inline
+      OnlineMigrations.config.run_background_migrations_inline = -> { true }
+
+      error = assert_raises(RuntimeError) do
+        run_migration_job(job)
+      end
+      assert_equal "Boom!", error.message
+    ensure
+      OnlineMigrations.config.run_background_migrations_inline = prev
+    end
+
+    def test_run_do_not_reraise_error_when_running_background_migrations_in_background
+      _user = User.create!
+      job = create_migration_job(migration_name: "EachBatchFails")
+
+      OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
+        assert_nothing_raised do
+          run_migration_job(job)
+        end
+      end
     end
 
     def test_active_support_instrumentation
@@ -87,7 +119,11 @@ module BackgroundMigrations
         assert_kind_of OnlineMigrations::BackgroundMigrations::MigrationJob, payload[:background_migration_job]
       end
 
-      run_migration_job(job)
+      error = assert_raises(RuntimeError) do
+        run_migration_job(job)
+      end
+      assert_equal "Boom!", error.message
+
       assert_equal 0, retry_called
       assert_equal 1, process_batch_called
 

@@ -21,6 +21,16 @@ class BackgroundMigrationGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_creates_migration_file
+    run_generator(["make_all_non_admins"])
+
+    assert_migration("db/migrate/enqueue_make_all_non_admins.rb") do |content|
+      assert_includes content, "class EnqueueMakeAllNonAdmins < ActiveRecord::Migration"
+      assert_includes content, 'enqueue_background_migration("MakeAllNonAdmins"'
+      assert_includes content, 'remove_background_migration("MakeAllNonAdmins"'
+    end
+  end
+
   def test_generator_uses_configured_migrations_path
     OnlineMigrations.config.background_migrations.stub(:migrations_path, "app/lib") do
       run_generator(["make_all_non_admins"])

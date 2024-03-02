@@ -4,6 +4,8 @@
 
     See `docs/background_schema_migrations.md` for the feature description.
 
+- Reraise errors when running background migrations inline
+- Add `remove_background_migration` migration helper
 - Allow adding bigint foreign keys referencing integer primary keys
 - Fix `add_reference_concurrently` to check for mismatched key types
 

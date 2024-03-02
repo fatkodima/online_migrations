@@ -21,7 +21,7 @@ module OnlineMigrations
       end
 
       def process_batch(relation)
-        relation.delete_all(:delete_all)
+        relation.delete_all
       end
     end
   end

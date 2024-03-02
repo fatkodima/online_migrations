@@ -372,8 +372,7 @@ module OnlineMigrations
       def enqueue_background_migration(migration_name, *arguments, **options)
         migration = create_background_migration(migration_name, *arguments, **options)
 
-        run_inline = OnlineMigrations.config.run_background_migrations_inline
-        if run_inline && run_inline.call
+        if Utils.run_background_migrations_inline?
           runner = MigrationRunner.new(migration)
           runner.run_all_migration_jobs
         end
@@ -381,10 +380,25 @@ module OnlineMigrations
         migration
       end
 
+      # Removes the background migration for the given class name and arguments, if exists.
+      #
+      # @param migration_name [String, Class] Background migration job class name
+      # @param arguments [Array] Extra arguments the migration was originally created with
+      #
+      # @example
+      #   remove_background_migration("BackfillProjectIssuesCount")
+      #
+      def remove_background_migration(migration_name, *arguments)
+        migration_name = migration_name.name if migration_name.is_a?(Class)
+        Migration.for_configuration(migration_name, arguments).delete_all
+      end
+
       # @private
       def create_background_migration(migration_name, *arguments, **options)
         options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
             :batch_pause, :sub_batch_pause_ms, :batch_max_attempts)
+
+        migration_name = migration_name.name if migration_name.is_a?(Class)
 
         migration = Migration.new(
           migration_name: migration_name,

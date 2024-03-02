@@ -73,12 +73,6 @@ module BackgroundMigrations
     end
   end
 
-  class JoinsRelation < OnlineMigrations::BackgroundMigration
-    def relation
-      User.joins(:projects)
-    end
-  end
-
   class OrderClauseRelation < OnlineMigrations::BackgroundMigration
     def relation
       User.order(:name)
@@ -102,6 +96,20 @@ module BackgroundMigrations
 
     def count
       relation.count
+    end
+  end
+
+  class MigrationWithArguments < OnlineMigrations::BackgroundMigration
+    def initialize(_arg1, _arg2)
+      # no-op
+    end
+
+    def relation
+      User.none
+    end
+
+    def process_batch(_users)
+      # no-op
     end
   end
 

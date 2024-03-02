@@ -30,7 +30,8 @@ A generator is provided to create background migrations. Generate a new backgrou
 $ bin/rails generate online_migrations:background_migration backfill_project_issues_count
 ```
 
-This creates the background migration file `lib/online_migrations/background_migrations/backfill_project_issues_count.rb`.
+This creates the background migration file `lib/online_migrations/background_migrations/backfill_project_issues_count.rb`
+and the regular migration file `db/migrate/xxxxxxxxxxxxxx_enqueue_backfill_project_issues_count.rb` where we enqueue it.
 
 The generated class is a subclass of `OnlineMigrations::BackgroundMigration` that implements:
 
@@ -76,12 +77,16 @@ end
 You can enqueue your background migration to be run by the scheduler via:
 
 ```ruby
-# db/migrate/xxxxxxxxxxxxxx_backfill_project_issues_count.rb
-# ...
-def up
-  enqueue_background_migration("BackfillProjectIssuesCount")
+# db/migrate/xxxxxxxxxxxxxx_enqueue_backfill_project_issues_count.rb
+class EnqueueBackfillProjectIssuesCount < ActiveRecord::Migration[7.1]
+  def up
+    enqueue_background_migration("BackfillProjectIssuesCount")
+  end
+
+  def down
+    remove_background_migration("BackfillProjectIssuesCount")
+  end
 end
-# ...
 ```
 
 `enqueue_background_migration` accepts additional configuration options which controls how the background migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/migration_helpers.rb) for the list of all available configuration options.
@@ -106,7 +111,17 @@ end
 And pass them when enqueuing:
 
 ```ruby
-enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
+def up
+  enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
+end
+```
+
+Make sure to also pass the arguments inside the `down` method of the migration:
+
+```ruby
+def down
+  remove_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
+end
 ```
 
 ## Considerations when writing Background Migrations

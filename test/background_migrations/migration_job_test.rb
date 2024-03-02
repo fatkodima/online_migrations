@@ -59,7 +59,10 @@ module BackgroundMigrations
     def test_retry
       User.create!
       m = create_migration(migration_name: "EachBatchFails")
-      run_migration_job(m)
+      error = assert_raises(RuntimeError) do
+        run_migration_job(m)
+      end
+      assert_equal "Boom!", error.message
       j = m.last_job
 
       j.retry
