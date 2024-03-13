@@ -103,7 +103,7 @@ config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
 )
 ```
 
-When statement within transaction fails - the whole transaction is retried.
+When statement within transaction fails - the whole transaction is retried. Similarly if any statement fails when running outside a transaction then the whole migration is retried, e.g. using `disable_ddl_transaction!`.
 
 To permanently disable lock retries, you can set `lock_retrier` to `nil`.
 
