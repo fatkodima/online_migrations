@@ -69,7 +69,6 @@ config.statement_timeout = 1.hour
 
 and a lock timeout for migrations can be configured via the `lock_retrier`.
 
-**Note**: If you do not set a lock retrier the default `NullLockRetrier` is used and it has a `lock_timeout` value of `0` that [disables the timeout](https://www.postgresql.org/docs/16/runtime-config-client.html#GUC-LOCK-TIMEOUT).
 
 Or set the timeouts directly on the database user that runs migrations:
 
