@@ -101,13 +101,15 @@ config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
 )
 ```
 
-When statement within transaction fails - the whole transaction is retried.
+When a statement within transaction fails - the whole transaction is retried. If any statement fails when running outside a transaction (e.g. using `disable_ddl_transaction!`) then only that statement is retried.
 
-To permanently disable lock retries, you can set `lock_retrier` to `nil`.
+**Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
 
 To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable. This is useful when you are deploying a hotfix and do not want to wait too long while the lock retrier safely tries to acquire the lock, but try to acquire the lock immediately with the default configured lock timeout value.
 
-**Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
+To permanently disable lock retries, you can set `lock_retrier` to `nil`.
+
+Finally, if your lock retrier implementation does not have an explicit `lock_timeout` value configured, then the timeout behavior will fallback to the database configuration (`config/database.yml`) or the PostgreSQL server config value ([off by default](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-LOCK-TIMEOUT)). Take care configuring this value, as this fallback may result in your migrations running without a lock timeout!
 
 ## Existing Migrations
 
