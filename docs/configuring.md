@@ -69,7 +69,6 @@ config.statement_timeout = 1.hour
 
 and a lock timeout for migrations can be configured via the `lock_retrier`.
 
-
 Or set the timeouts directly on the database user that runs migrations:
 
 ```sql
@@ -102,13 +101,15 @@ config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
 )
 ```
 
-When statement within transaction fails - the whole transaction is retried. If any statement fails when running outside a transaction (e.g. using `disable_ddl_transaction!`) then only that statement is retried.
+When a statement within transaction fails - the whole transaction is retried. If any statement fails when running outside a transaction (e.g. using `disable_ddl_transaction!`) then only that statement is retried.
 
-To permanently disable lock retries, you can set `lock_retrier` to `nil`.
+**Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
 
 To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable. This is useful when you are deploying a hotfix and do not want to wait too long while the lock retrier safely tries to acquire the lock, but try to acquire the lock immediately with the default configured lock timeout value.
 
-**Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
+To permanently disable lock retries, you can set `lock_retrier` to `nil`, which [configures](https://github.com/fatkodima/online_migrations/blob/9cebfd00b870ab246e813d8109767ccaf10a7df6/lib/online_migrations/config.rb#L219) the `NullLockRetrier`. Please note that under this LockRetrier your migrations will be run with a [lock_timeout of 0](https://github.com/fatkodima/online_migrations/blob/9cebfd00b870ab246e813d8109767ccaf10a7df6/lib/online_migrations/lock_retrier.rb#L232) which doesn't enforce a lock timeout.
+
+Finally, if your LockRetrier implementation does not have a explicit `lock_timeout` value configured then the timeout behaviour will fallback to the database configuration (`config/database.yml`) or the postgresql sever config value ([off by default](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-LOCK-TIMEOUT)). Please take care configuring this value as this fallback may result in your migrations running without a lock timeout!
 
 ## Existing Migrations
 
