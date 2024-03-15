@@ -229,11 +229,9 @@ module OnlineMigrations
     end
 
     def lock_timeout(*)
-      0
     end
 
     def delay(*)
-      0
     end
 
     def with_lock_retries
