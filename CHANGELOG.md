@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.15.0 (2024-03-19)
+
 - Reraise errors when running background migrations inline
 - Add `remove_background_migration` migration helper
 - Allow adding bigint foreign keys referencing integer primary keys
