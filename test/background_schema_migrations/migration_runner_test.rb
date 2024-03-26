@@ -9,10 +9,13 @@ module BackgroundSchemaMigrations
       @connection.create_table(:users) do |t|
         t.string :email
       end
+
+      User.reset_column_information
     end
 
     def teardown
       @connection.drop_table(:users, if_exists: true)
+      on_each_shard { Dog.connection.remove_index(:dogs, :name) }
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
     end
 
@@ -63,18 +66,57 @@ module BackgroundSchemaMigrations
       assert m.reload.succeeded?
     end
 
-    def test_run_saves_error_when_failing
+    def test_recreates_invalid_indexes
+      # create duplicate users
+      2.times do
+        User.create!(email: "user@example.com")
+      end
+
+      # create invalid index
+      assert_raises(ActiveRecord::RecordNotUnique) do
+        @connection.add_index(:users, :email, unique: true, algorithm: :concurrently)
+      end
+
+      index = @connection.indexes(:users).find { |i| i.name == "index_users_on_email" }
+      assert index
+
+      if OnlineMigrations::Utils.ar_version >= 7.1
+        assert_not index.valid?
+      end
+
+      User.delete_all # we can now create a unique index
+
+      m = create_migration
+      run_migration(m)
+      assert m.reload.succeeded?
+
+      index = @connection.indexes(:users).find { |i| i.name == "index_users_on_email" }
+      assert index
+
+      if OnlineMigrations::Utils.ar_version >= 7.1
+        assert index.valid?
+      end
+    end
+
+    def test_adding_existing_index
+      @connection.add_index(:users, :email, unique: true)
+      m = create_migration
+      run_migration(m)
+      assert m.reload.succeeded?
+    end
+
+    def test_run_saves_error_when_failed
       m = create_migration(definition: "SOME INVALID SQL")
       run_migration(m)
 
-      assert m.failing?
+      assert m.failed?
       assert m.finished_at
       assert_equal "ActiveRecord::StatementInvalid", m.error_class
       assert_match(/PG::SyntaxError/, m.error_message)
       assert_not m.backtrace.empty?
     end
 
-    def test_run_calls_error_handler_when_failing
+    def test_run_calls_error_handler_when_failed
       previous = OnlineMigrations.config.background_schema_migrations.error_handler
       m = create_migration(definition: "SOME INVALID SQL")
 
@@ -89,20 +131,6 @@ module BackgroundSchemaMigrations
       assert_instance_of ActiveRecord::StatementInvalid, handled_error
     ensure
       OnlineMigrations.config.background_schema_migrations.error_handler = previous
-    end
-
-    def test_marked_as_failed_after_enough_failing
-      m = create_migration(definition: "SOME INVALID SQL")
-
-      run_migration(m)
-      assert m.failing?
-
-      max_attempts = OnlineMigrations.config.background_schema_migrations.max_attempts
-      max_attempts.times do
-        run_migration(m)
-      end
-
-      assert m.failed?
     end
 
     def test_uses_custom_statement_timeout
@@ -176,7 +204,7 @@ module BackgroundSchemaMigrations
       def create_migration(
         name: "index_users_on_email",
         table_name: "users",
-        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_users_on_email" ON "users" ("email")',
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")',
         **attributes
       )
         @connection.create_background_schema_migration(name, table_name, definition: definition, **attributes)
@@ -186,7 +214,7 @@ module BackgroundSchemaMigrations
         create_migration(
           name: "index_dogs_on_name",
           table_name: "dogs",
-          definition: 'CREATE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
+          definition: 'CREATE INDEX CONCURRENTLY "index_dogs_on_name" ON "dogs" ("name")',
           connection_class_name: "ShardRecord"
         )
       end

@@ -31,7 +31,7 @@ module OnlineMigrations
           return
         end
 
-        definition = "DROP INDEX CONCURRENTLY #{quote_column_name(name)}"
+        definition = "DROP INDEX CONCURRENTLY IF EXISTS #{quote_column_name(name)}"
         enqueue_background_schema_migration(name, table_name, definition: definition, **migration_options)
       end
 

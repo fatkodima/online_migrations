@@ -26,18 +26,18 @@ module BackgroundSchemaMigrations
       assert m.reload.succeeded?
     end
 
-    def test_run_retries_failing_migrations
+    def test_run_retries_failed_migrations
       m = create_migration
       child = m.children.first
 
       scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
       scheduler.run
 
-      # Emulate failing migration.
-      child.update_column(:status, :failing)
+      # Emulate failed migration.
+      child.update_columns(status: :failed, attempts: child.max_attempts - 1)
 
       assert m.reload.running?
-      assert child.reload.failing?
+      assert child.reload.failed?
 
       3.times { scheduler.run } # 2 children + 1 retry
 

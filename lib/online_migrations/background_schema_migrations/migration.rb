@@ -11,8 +11,7 @@ module OnlineMigrations
       STATUSES = [
         :enqueued,    # The migration has been enqueued by the user.
         :running,     # The migration is being performed by a migration executor.
-        :failing,     # The migration raised an exception during last run (or last retry) and will be retried.
-        :failed,      # The migration raises an exception when running and won't be retried anymore.
+        :failed,      # The migration raises an exception when running.
         :succeeded,   # The migration finished without error.
       ]
 
@@ -22,8 +21,29 @@ module OnlineMigrations
 
       scope :queue_order, -> { order(created_at: :asc) }
       scope :runnable, -> { where(composite: false) }
-      scope :retriable, -> { runnable.failing.where("attempts < max_attempts") }
+      scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
       scope :except_succeeded, -> { where.not(status: :succeeded) }
+
+      scope :stuck, -> do
+        runnable.active.where(<<~SQL)
+          updated_at <= NOW() - interval '1 second' * (COALESCE(statement_timeout, 60*60*24) + 60*10)
+        SQL
+      end
+
+      scope :retriable, -> do
+        failed_retriable = runnable.failed.where("attempts < max_attempts")
+
+        stuck_sql             = connection.unprepared_statement { stuck.to_sql }
+        failed_retriable_sql  = connection.unprepared_statement { failed_retriable.to_sql }
+
+        from(Arel.sql(<<~SQL))
+          (
+            (#{failed_retriable_sql})
+            UNION
+            (#{stuck_sql})
+          ) AS #{table_name}
+        SQL
+      end
 
       alias_attribute :name, :migration_name
 
@@ -102,9 +122,33 @@ module OnlineMigrations
       end
 
       # @private
-      def on_shard(&block)
-        shard = (self.shard || connection_class.default_shard).to_sym
-        connection_class.connected_to(shard: shard, role: :writing, &block)
+      def run
+        on_shard do
+          connection = connection_class.connection
+
+          connection.with_lock_retries do
+            statement_timeout = self.statement_timeout || OnlineMigrations.config.statement_timeout
+
+            with_statement_timeout(connection, statement_timeout) do
+              case definition
+              when /create (unique )?index/i
+                index = connection.indexes(table_name).find { |i| i.name == name }
+                if index
+                  # Use index validity from https://github.com/rails/rails/pull/45160
+                  # when switching to ActiveRecord >= 7.1.
+                  schema = connection.send(:__schema_for_table, table_name)
+                  if connection.send(:__index_valid?, name, schema: schema)
+                    return
+                  else
+                    connection.remove_index(table_name, name: name)
+                  end
+                end
+              end
+
+              connection.execute(definition)
+            end
+          end
+        end
       end
 
       private
@@ -140,6 +184,21 @@ module OnlineMigrations
           config = ::OnlineMigrations.config.background_schema_migrations
           self.max_attempts ||= config.max_attempts
           self.statement_timeout ||= config.statement_timeout
+        end
+
+        def on_shard(&block)
+          shard = (self.shard || connection_class.default_shard).to_sym
+          connection_class.connected_to(shard: shard, role: :writing, &block)
+        end
+
+        def with_statement_timeout(connection, timeout)
+          return yield if timeout.nil?
+
+          prev_value = connection.select_value("SHOW statement_timeout")
+          connection.execute("SET statement_timeout TO #{connection.quote(timeout.in_milliseconds)}")
+          yield
+        ensure
+          connection.execute("SET statement_timeout TO #{connection.quote(prev_value)}")
         end
     end
   end

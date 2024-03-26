@@ -8,15 +8,11 @@ module OnlineMigrations
         # enqueued -> running occurs when the migration starts performing.
         "enqueued" => ["running"],
         # running -> succeeded occurs when the migration completes successfully.
-        # running -> failing occurs when the migration raised an during last run (or retry).
         # running -> failed occurs when the migration raises an exception when running and retry attempts exceeded.
-        "running" => ["succeeded", "failing", "failed"],
+        "running" => ["succeeded", "failed"],
         # failed -> enqueued occurs when the failed migration is enqueued to be retried.
         # failed -> running occurs when the failed migration is retried.
         "failed" => ["enqueued", "running"],
-        # failing -> enqueued occurs when the failing migration is enqueued to be retried.
-        # failing -> running occurs when the failing migration is retried.
-        "failing" => ["enqueued", "running"],
       }
 
       def validate(record)

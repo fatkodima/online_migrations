@@ -19,10 +19,6 @@ module OnlineMigrations
 
       # Runs Scheduler
       def run
-        # Schema migrations (especially creating indexes) are very taxing on the database.
-        # So it is better to not run more than one migration at a time.
-        return if Migration.runnable.running.exists?
-
         migration = Migration.runnable.enqueued.queue_order.first || Migration.retriable.queue_order.first
         if migration
           runner = MigrationRunner.new(migration)

@@ -11,8 +11,6 @@ module OnlineMigrations
       end
 
       def run
-        return if migration.completed?
-
         mark_as_running if migration.enqueued? || migration.failed?
 
         if migration.composite?
@@ -58,17 +56,7 @@ module OnlineMigrations
           )
 
           ActiveSupport::Notifications.instrument("run.background_schema_migrations", migration_payload) do
-            migration.on_shard do
-              connection = migration.connection_class.connection
-
-              connection.with_lock_retries do
-                statement_timeout = migration.statement_timeout || OnlineMigrations.config.statement_timeout
-
-                with_statement_timeout(connection, statement_timeout) do
-                  connection.execute(migration.definition)
-                end
-              end
-            end
+            migration.run
           end
 
           migration.update!(status: :succeeded, finished_at: Time.current)
@@ -79,9 +67,8 @@ module OnlineMigrations
         rescue Exception => e # rubocop:disable Lint/RescueException
           backtrace_cleaner = ::OnlineMigrations.config.backtrace_cleaner
 
-          status = migration.attempts_exceeded? ? :failed : :failing
           migration.update!(
-            status: status,
+            status: :failed,
             finished_at: Time.current,
             error_class: e.class.name,
             error_message: e.message,
@@ -89,16 +76,6 @@ module OnlineMigrations
           )
 
           ::OnlineMigrations.config.background_schema_migrations.error_handler.call(e, migration)
-        end
-
-        def with_statement_timeout(connection, timeout)
-          return yield if timeout.nil?
-
-          prev_value = connection.select_value("SHOW statement_timeout")
-          connection.execute("SET statement_timeout TO #{connection.quote(timeout.in_milliseconds)}")
-          yield
-        ensure
-          connection.execute("SET statement_timeout TO #{connection.quote(prev_value)}")
         end
 
         def should_throttle?
