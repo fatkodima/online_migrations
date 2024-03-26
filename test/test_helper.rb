@@ -25,6 +25,11 @@ ActiveRecord::Base.configurations =
 
 ActiveRecord::Base.establish_connection(:test)
 
+if OnlineMigrations::Utils.ar_version >= 7.2
+  # https://github.com/rails/rails/pull/50284
+  ActiveRecord::Base.automatically_invert_plural_associations = true
+end
+
 if ENV["VERBOSE"]
   ActiveRecord::Base.logger = ActiveSupport::Logger.new($stdout)
 else
