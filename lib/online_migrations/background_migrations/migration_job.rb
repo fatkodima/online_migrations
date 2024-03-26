@@ -44,7 +44,7 @@ module OnlineMigrations
         enum status: STATUSES.index_with(&:to_s)
       end
 
-      delegate :migration_class, :migration_object, :migration_relation, :batch_column_name,
+      delegate :migration_name, :migration_class, :migration_object, :migration_relation, :batch_column_name,
         :arguments, :batch_pause, to: :migration
 
       belongs_to :migration

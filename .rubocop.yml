@@ -17,6 +17,9 @@ Style/RescueModifier:
 Style/IfUnlessModifier:
   Enabled: false
 
+Style/EmptyMethod:
+  Enabled: false
+
 Style/SymbolArray:
   EnforcedStyle: brackets
 
