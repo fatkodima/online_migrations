@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.16.1 (2024-03-29)
+
 - Improve error message when background schema migration name is already taken
 - Fix copying column background migration to work with primary keys added via `initialize_column_type_change`
 
