@@ -46,6 +46,14 @@ module BackgroundSchemaMigrations
       assert_includes m.errors.full_messages, "Connection class name is not an ActiveRecord::Base child class"
     end
 
+    def test_name_validation
+      create_migration
+      m = build_migration
+      assert_not m.valid?
+      assert_includes m.errors.full_messages, "Migration name (index_users_on_email) has already been taken. " \
+                                              "Consider enqueuing index creation with a different index name via a `:name` option."
+    end
+
     def test_status_transitions
       m = create_migration
 

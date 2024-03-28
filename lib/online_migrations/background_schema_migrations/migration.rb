@@ -57,9 +57,18 @@ module OnlineMigrations
       belongs_to :parent, class_name: name, optional: true
       has_many :children, class_name: name, foreign_key: :parent_id
 
-      validates :migration_name, presence: true, uniqueness: { scope: :shard }
       validates :table_name, presence: true, length: { maximum: MAX_IDENTIFIER_LENGTH }
       validates :definition, presence: true
+      validates :migration_name, presence: true, uniqueness: {
+        scope: :shard,
+        message: ->(object, data) do
+          message = "(#{data[:value]}) has already been taken."
+          if object.index_addition?
+            message += " Consider enqueuing index creation with a different index name via a `:name` option."
+          end
+          message
+        end,
+      }
 
       validate :validate_children_statuses, if: -> { composite? && status_changed? }
       validate :validate_connection_class, if: :connection_class_name?
@@ -107,6 +116,10 @@ module OnlineMigrations
         end
       end
 
+      def index_addition?
+        definition.match?(/create (unique )?index/i)
+      end
+
       # @private
       def connection_class
         if connection_class_name && (klass = connection_class_name.safe_constantize)
@@ -130,8 +143,7 @@ module OnlineMigrations
             statement_timeout = self.statement_timeout || OnlineMigrations.config.statement_timeout
 
             with_statement_timeout(connection, statement_timeout) do
-              case definition
-              when /create (unique )?index/i
+              if index_addition?
                 index = connection.indexes(table_name).find { |i| i.name == name }
                 if index
                   # Use index validity from https://github.com/rails/rails/pull/45160
