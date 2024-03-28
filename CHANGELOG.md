@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix copying column background migration to work with primary keys added via `initialize_column_type_change`
+
 ## 0.16.0 (2024-03-28)
 
 - Add support for asynchronous creation/removal of indexes

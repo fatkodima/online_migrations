@@ -33,6 +33,19 @@ module BackgroundMigrations
       assert_kind_of ActiveRecord::Relation, m.relation
     end
 
+    def test_relation_considers_all_rows
+      Project.update_all(id_for_type_change: 0) # is typically set via initialize_column_type_change
+
+      m = OnlineMigrations::BackgroundMigrations::CopyColumn.new(:projects, ["id"], ["id_for_type_change"])
+      m.process_batch(m.relation)
+
+      @project1.reload
+      @project2.reload
+
+      assert_equal @project1.id, @project1.id_for_type_change
+      assert_equal @project2.id, @project2.id_for_type_change
+    end
+
     def test_process_batch
       m = OnlineMigrations::BackgroundMigrations::CopyColumn.new(:projects, ["id"], ["id_for_type_change"], Project.name)
       m.process_batch(m.relation)

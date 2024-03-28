@@ -25,10 +25,7 @@ module OnlineMigrations
       end
 
       def relation
-        model
-          .unscoped
-          .where(copy_to.index_with(nil))
-          .where.not(copy_from.index_with(nil))
+        model.unscoped
       end
 
       def process_batch(relation)
