@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.16.0 (2024-03-28)
+
 - Add support for asynchronous creation/removal of indexes
 
     See `docs/background_schema_migrations.md` for the feature description.
