@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Reraise errors when running background schema migrations inline
+
 ## 0.16.1 (2024-03-29)
 
 - Improve error message when background schema migration name is already taken

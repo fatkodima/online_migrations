@@ -76,6 +76,7 @@ module OnlineMigrations
           )
 
           ::OnlineMigrations.config.background_schema_migrations.error_handler.call(e, migration)
+          raise if Utils.run_background_migrations_inline?
         end
 
         def should_throttle?

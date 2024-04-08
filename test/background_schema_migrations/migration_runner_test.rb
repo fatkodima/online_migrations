@@ -107,7 +107,9 @@ module BackgroundSchemaMigrations
 
     def test_run_saves_error_when_failed
       m = create_migration(definition: "SOME INVALID SQL")
-      run_migration(m)
+      assert_raises(ActiveRecord::StatementInvalid) do
+        run_migration(m)
+      end
 
       assert m.failed?
       assert m.finished_at
@@ -126,11 +128,36 @@ module BackgroundSchemaMigrations
         assert_equal m, errored_migration
       end
 
-      run_migration(m)
+      assert_raises(ActiveRecord::StatementInvalid) do
+        run_migration(m)
+      end
 
       assert_instance_of ActiveRecord::StatementInvalid, handled_error
     ensure
       OnlineMigrations.config.background_schema_migrations.error_handler = previous
+    end
+
+    def test_run_reraises_error_when_running_background_migrations_inline
+      m = create_migration(definition: "SOME INVALID SQL")
+
+      prev = OnlineMigrations.config.run_background_migrations_inline
+      OnlineMigrations.config.run_background_migrations_inline = -> { true }
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        run_migration(m)
+      end
+    ensure
+      OnlineMigrations.config.run_background_migrations_inline = prev
+    end
+
+    def test_run_do_not_reraise_error_when_running_background_migrations_in_background
+      m = create_migration(definition: "SOME INVALID SQL")
+
+      OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
+        assert_nothing_raised do
+          run_migration(m)
+        end
+      end
     end
 
     def test_uses_custom_statement_timeout

@@ -154,7 +154,9 @@ module BackgroundSchemaMigrations
 
     def test_retry
       m = create_migration(definition: "SOME INVALID SQL")
-      m.max_attempts.times { run_migration(m) }
+      assert_raises(ActiveRecord::StatementInvalid) do
+        m.max_attempts.times { run_migration(m) }
+      end
       assert m.failed?
 
       m.retry
