@@ -355,6 +355,8 @@ A safer approach can be accomplished in several steps:
      disable_ddl_transaction!
 
      def up
+       # You can use `backfill_column_for_type_change_in_background` if want to
+       # backfill using background migrations.
        backfill_column_for_type_change :files, :size
      end
 

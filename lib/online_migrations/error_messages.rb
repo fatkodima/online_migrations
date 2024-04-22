@@ -203,9 +203,9 @@ which will be passed to `add_column` when creating a new column, so you can over
     disable_ddl_transaction!
 
     def up
-      <%= backfill_code %>
       # You can use `backfill_column_for_type_change_in_background` if want to
       # backfill using background migrations.
+      <%= backfill_code %>
     end
 
     def down

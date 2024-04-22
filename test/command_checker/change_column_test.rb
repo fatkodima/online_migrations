@@ -52,9 +52,9 @@ module CommandChecker
             disable_ddl_transaction!
 
             def up
-              backfill_column_for_type_change :files, :cost_per_gb
               # You can use `backfill_column_for_type_change_in_background` if want to
               # backfill using background migrations.
+              backfill_column_for_type_change :files, :cost_per_gb
             end
 
             def down
