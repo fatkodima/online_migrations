@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Raise in development when background index creation/removal was not enqueued
 - Suggest two migrations for adding foreign keys
 - Reraise errors when running background schema migrations inline
 

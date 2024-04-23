@@ -32,6 +32,14 @@ module OnlineMigrations
         end
       end
 
+      def raise_or_say(message)
+        if developer_env?
+          raise message
+        else
+          say(message)
+        end
+      end
+
       def warn(message)
         Kernel.warn("[online_migrations] #{message}")
       end

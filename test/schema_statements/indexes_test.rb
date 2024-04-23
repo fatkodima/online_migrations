@@ -103,7 +103,9 @@ module SchemaStatements
 
     def test_add_index_in_background_when_index_already_exists
       @connection.add_index(:users, :name, unique: true)
-      @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+      assert_raises_with_message(RuntimeError, /Index creation was not enqueued/i) do
+        @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+      end
       assert @connection.index_exists?(:users, :name)
       assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
     end
@@ -129,7 +131,9 @@ module SchemaStatements
     end
 
     def test_remove_index_in_background_when_does_not_exist
-      @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", connection_class_name: "User")
+      assert_raises_with_message(RuntimeError, /Index deletion was not enqueued/i) do
+        @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", connection_class_name: "User")
+      end
 
       assert_not @connection.index_exists?(:users, :name)
       assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count

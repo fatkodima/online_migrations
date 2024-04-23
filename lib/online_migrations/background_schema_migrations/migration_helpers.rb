@@ -7,7 +7,7 @@ module OnlineMigrations
         migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
 
         if index_exists?(table_name, column_name, **options)
-          Utils.say("Index creation was not enqueued because the index already exists.")
+          Utils.raise_or_say("Index creation was not enqueued because the index already exists.")
           return
         end
 
@@ -27,7 +27,7 @@ module OnlineMigrations
         migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
 
         if !index_exists?(table_name, column_name, **options, name: name)
-          Utils.say("Index deletion was not enqueued because the index does not exist.")
+          Utils.raise_or_say("Index deletion was not enqueued because the index does not exist.")
           return
         end
 
