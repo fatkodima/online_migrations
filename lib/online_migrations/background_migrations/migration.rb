@@ -180,6 +180,20 @@ module OnlineMigrations
         end
       end
 
+      # Returns the time this migration started running.
+      def started_at
+        # To be precise, we should get the minimum of `started_at` amongst the children jobs
+        # (for simple migrations) and amongst the children migrations (for composite migrations).
+        # But we do not have an appropriate index on the jobs table and using this will lead to
+        # N+1 queries if used inside some dashboard, for example.
+        created_at
+      end
+
+      # Returns the time this migration finished running.
+      def finished_at
+        updated_at if completed?
+      end
+
       # @private
       def on_shard(&block)
         abstract_class = Utils.find_connection_class(migration_model)

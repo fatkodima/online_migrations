@@ -244,6 +244,19 @@ module BackgroundMigrations
       assert m.enqueued?
     end
 
+    def test_started_at
+      m = create_migration
+      assert_equal m.created_at, m.started_at
+    end
+
+    def test_finished_at
+      m = create_migration
+      assert_nil m.finished_at
+      2.times { run_migration_job(m) }
+      assert m.succeeded?
+      assert_equal m.updated_at, m.finished_at
+    end
+
     def test_next_batch_range
       user1, user2, user3 = 3.times.map { User.create! }
       m = create_migration(batch_size: 2, sub_batch_size: 1)
