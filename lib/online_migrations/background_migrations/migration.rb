@@ -126,7 +126,7 @@ module OnlineMigrations
 
             progresses.sum.round(2)
           end
-        elsif rows_count
+        elsif rows_count && rows_count > 0
           jobs_rows_count = migration_jobs.succeeded.sum(:batch_size)
           # The last migration job may need to process the amount of rows
           # less than the batch size, so we can get a value > 1.0.

@@ -85,6 +85,10 @@ module BackgroundMigrations
     def relation
       User.none
     end
+
+    def count
+      0
+    end
   end
 
   class MigrationWithCount < OnlineMigrations::BackgroundMigration

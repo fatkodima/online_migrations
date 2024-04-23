@@ -91,7 +91,14 @@ module OnlineMigrations
           100.0
         elsif composite?
           progresses = children.map(&:progress)
-          (progresses.sum.to_f / progresses.size).round(2)
+          # There should not be composite migrations without children,
+          # but children may be deleted for some reason, so we need to
+          # make a check to avoid 0 division error.
+          if progresses.any?
+            (progresses.sum.to_f / progresses.size).round(2)
+          else
+            0.0
+          end
         else
           0.0
         end

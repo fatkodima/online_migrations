@@ -187,6 +187,12 @@ module BackgroundMigrations
       assert_nil m.progress
     end
 
+    def test_progress_non_started_migration_without_records
+      assert_equal 0, EmptyRelation.new.count
+      m = create_migration(migration_name: "EmptyRelation")
+      assert_nil m.progress
+    end
+
     def test_migration_class
       m = build_migration
       assert_equal MakeAllNonAdmins, m.migration_class
