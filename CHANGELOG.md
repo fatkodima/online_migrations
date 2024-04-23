@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Suggest two migrations for adding foreign keys
 - Reraise errors when running background schema migrations inline
 
 ## 0.16.1 (2024-03-29)

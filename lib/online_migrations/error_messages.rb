@@ -393,14 +393,17 @@ end",
 A safer approach is to create the new index and then delete the old one.",
 
       add_foreign_key:
-"Adding a foreign key blocks writes on both tables. Add the foreign key without validating existing rows,
-and then validate them in a separate transaction.
+"Adding a foreign key blocks writes on both tables. Instead, add the foreign key without validating existing rows,
+then validate them in a separate migration.
 
 class <%= migration_name %> < <%= migration_parent %>
-  disable_ddl_transaction!
-
   def change
     <%= add_code %>
+  end
+end
+
+class Validate<%= migration_name %> < <%= migration_parent %>
+  def change
     <%= validate_code %>
   end
 end",

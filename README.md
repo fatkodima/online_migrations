@@ -862,20 +862,25 @@ end
 
 :white_check_mark: **Good**
 
-Add the foreign key without validating existing rows, and then validate them in a separate transaction.
+Add the foreign key without validating existing rows:
 
 ```ruby
 class AddForeignKeyToProjectsUser < ActiveRecord::Migration[7.1]
-  disable_ddl_transaction!
-
   def change
     add_foreign_key :projects, :users, validate: false
-    validate_foreign_key :projects, :users
   end
 end
 ```
 
-**Note**: If you forget `disable_ddl_transaction!`, the migration will fail.
+Then validate them in a separate migration:
+
+```ruby
+class ValidateForeignKeyOnProjectsUser < ActiveRecord::Migration[7.1]
+  def change
+    validate_foreign_key :projects, :users
+  end
+end
+```
 
 ### Adding an exclusion constraint
 

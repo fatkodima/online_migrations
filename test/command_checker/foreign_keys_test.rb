@@ -32,14 +32,17 @@ module CommandChecker
 
     def test_add_foreign_key
       assert_unsafe AddForeignKey, <<~MSG
-        Adding a foreign key blocks writes on both tables. Add the foreign key without validating existing rows,
-        and then validate them in a separate transaction.
+        Adding a foreign key blocks writes on both tables. Instead, add the foreign key without validating existing rows,
+        then validate them in a separate migration.
 
         class CommandChecker::ForeignKeysTest::AddForeignKey < #{migration_parent}
-          disable_ddl_transaction!
-
           def change
             add_foreign_key :projects, :users, validate: false
+          end
+        end
+
+        class ValidateCommandChecker::ForeignKeysTest::AddForeignKey < #{migration_parent}
+          def change
             validate_foreign_key :projects, :users
           end
         end
