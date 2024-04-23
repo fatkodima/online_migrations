@@ -157,9 +157,9 @@ module SchemaStatements
       assert_equal [User.name, { "banned" => true }, "delete_all", { "updates" => nil }], m.arguments
     end
 
-    def test_enqueue_background_migration
+    def test_enqueue_background_data_migration
       assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
-      m = @connection.enqueue_background_migration(
+      m = @connection.enqueue_background_data_migration(
         "MakeAllNonAdmins",
         batch_max_attempts: 3,
         sub_batch_pause_ms: 200
@@ -175,7 +175,7 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
+      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       assert m.succeeded?
       assert_equal false, user.reload.admin
     end
@@ -185,7 +185,7 @@ module SchemaStatements
       assert_nil user.admin
 
       m = OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
-        @connection.enqueue_background_migration("MakeAllNonAdmins")
+        @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       end
 
       assert m.enqueued?
@@ -199,7 +199,7 @@ module SchemaStatements
       prev = OnlineMigrations.config.run_background_migrations_inline
       OnlineMigrations.config.run_background_migrations_inline = -> { false }
 
-      m = @connection.enqueue_background_migration("MakeAllNonAdmins")
+      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       assert m.enqueued?
       assert_nil user.reload.admin
     ensure
@@ -208,19 +208,19 @@ module SchemaStatements
 
     def test_remove_non_existing_background_migration
       assert_nothing_raised do
-        @connection.remove_background_migration("NonExistent")
+        @connection.remove_background_data_migration("NonExistent")
       end
     end
 
-    def test_remove_background_migration
-      @connection.enqueue_background_migration("MakeAllNonAdmins")
-      @connection.remove_background_migration("MakeAllNonAdmins")
+    def test_remove_background_data_migration
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      @connection.remove_background_data_migration("MakeAllNonAdmins")
       assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
     end
 
-    def test_remove_background_migration_with_arguments
-      @connection.enqueue_background_migration("MigrationWithArguments", 1, { "a" => 2 })
-      @connection.remove_background_migration("MigrationWithArguments", 1, { "a" => 2 })
+    def test_remove_background_data_migration_with_arguments
+      @connection.enqueue_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
+      @connection.remove_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
       assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
     end
 

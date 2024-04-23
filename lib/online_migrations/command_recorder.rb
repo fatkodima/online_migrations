@@ -25,8 +25,8 @@ module OnlineMigrations
       :remove_text_limit_constraint,
       :add_reference_concurrently,
       :change_column_type_in_background,
-      :enqueue_background_migration,
-      :remove_background_migration,
+      :enqueue_background_data_migration,
+      :remove_background_data_migration,
 
       # column type change helpers
       :initialize_column_type_change,

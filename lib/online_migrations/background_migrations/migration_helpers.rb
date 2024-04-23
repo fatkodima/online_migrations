@@ -11,7 +11,7 @@ module OnlineMigrations
       # @param model_name [String] If Active Record multiple databases feature is used,
       #     the class name of the model to get connection from.
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -48,7 +48,7 @@ module OnlineMigrations
 
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "BackfillColumn",
           table_name,
           updates,
@@ -67,7 +67,7 @@ module OnlineMigrations
       #     For example when changing from `text` to `jsonb`. In this case, use the `type_cast_function` option.
       #     You need to make sure there is no bad data and the cast will always succeed
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -110,7 +110,7 @@ module OnlineMigrations
         tmp_columns = column_names.map { |column_name| "#{column_name}_for_type_change" }
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "CopyColumn",
           table_name,
           column_names,
@@ -132,7 +132,7 @@ module OnlineMigrations
       #     For example when changing from `text` to `jsonb`. In this case, use the `type_cast_function` option.
       #     You need to make sure there is no bad data and the cast will always succeed
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -167,7 +167,7 @@ module OnlineMigrations
 
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "CopyColumn",
           table_name,
           copy_from,
@@ -187,7 +187,7 @@ module OnlineMigrations
       #   - when `true` - will touch `updated_at` and/or `updated_on`
       #   - when `Symbol` or `Array` - will touch specific column(s)
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -208,7 +208,7 @@ module OnlineMigrations
       def reset_counters_in_background(model_name, *counters, touch: nil, **options)
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "ResetCounters",
           model_name,
           counters,
@@ -224,7 +224,7 @@ module OnlineMigrations
       # @param model_name [String]
       # @param associations [Array]
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -237,7 +237,7 @@ module OnlineMigrations
       def delete_orphaned_records_in_background(model_name, *associations, **options)
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "DeleteOrphanedRecords",
           model_name,
           associations,
@@ -253,7 +253,7 @@ module OnlineMigrations
       # @param record_id [Integer, String] parent record primary key's value
       # @param association [String, Symbol] association name for which records will be removed
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -266,7 +266,7 @@ module OnlineMigrations
       def delete_associated_records_in_background(model_name, record_id, association, **options)
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "DeleteAssociatedRecords",
           model_name,
           record_id,
@@ -284,7 +284,7 @@ module OnlineMigrations
       #     Relation-wide available actions: `:delete_all`, `:destroy_all`, and `:update_all`.
       # @param updates [Hash] updates to perform when `action` is set to `:update_all`
       # @param options [Hash] used to control the behavior of background migration.
-      #     See `#enqueue_background_migration`
+      #     See `#enqueue_background_data_migration`
       #
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
@@ -312,7 +312,7 @@ module OnlineMigrations
       def perform_action_on_relation_in_background(model_name, conditions, action, updates: nil, **options)
         model_name = model_name.name if model_name.is_a?(Class)
 
-        enqueue_background_migration(
+        enqueue_background_data_migration(
           "PerformActionOnRelation",
           model_name,
           conditions,
@@ -344,7 +344,7 @@ module OnlineMigrations
       # @return [OnlineMigrations::BackgroundMigrations::Migration]
       #
       # @example
-      #   enqueue_background_migration("BackfillProjectIssuesCount",
+      #   enqueue_background_data_migration("BackfillProjectIssuesCount",
       #       batch_size: 10_000, batch_max_attempts: 10)
       #
       #   # Given the background migration exists:
@@ -369,8 +369,8 @@ module OnlineMigrations
       # @note For convenience, the enqueued background migration is run inline
       #     in development and test environments
       #
-      def enqueue_background_migration(migration_name, *arguments, **options)
-        migration = create_background_migration(migration_name, *arguments, **options)
+      def enqueue_background_data_migration(migration_name, *arguments, **options)
+        migration = create_background_data_migration(migration_name, *arguments, **options)
 
         if Utils.run_background_migrations_inline?
           runner = MigrationRunner.new(migration)
@@ -379,6 +379,7 @@ module OnlineMigrations
 
         migration
       end
+      alias enqueue_background_migration enqueue_background_data_migration
 
       # Removes the background migration for the given class name and arguments, if exists.
       #
@@ -386,15 +387,16 @@ module OnlineMigrations
       # @param arguments [Array] Extra arguments the migration was originally created with
       #
       # @example
-      #   remove_background_migration("BackfillProjectIssuesCount")
+      #   remove_background_data_migration("BackfillProjectIssuesCount")
       #
-      def remove_background_migration(migration_name, *arguments)
+      def remove_background_data_migration(migration_name, *arguments)
         migration_name = migration_name.name if migration_name.is_a?(Class)
         Migration.for_configuration(migration_name, arguments).delete_all
       end
+      alias remove_background_migration remove_background_data_migration
 
       # @private
-      def create_background_migration(migration_name, *arguments, **options)
+      def create_background_data_migration(migration_name, *arguments, **options)
         options.assert_valid_keys(:batch_column_name, :min_value, :max_value, :batch_size, :sub_batch_size,
             :batch_pause, :sub_batch_pause_ms, :batch_max_attempts)
 

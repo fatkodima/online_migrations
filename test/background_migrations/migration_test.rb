@@ -398,7 +398,7 @@ module BackgroundMigrations
 
     private
       def create_migration(migration_name: "MakeAllNonAdmins", **attributes)
-        @connection.create_background_migration(migration_name, **attributes)
+        @connection.create_background_data_migration(migration_name, **attributes)
       end
 
       def build_migration(attributes = {})

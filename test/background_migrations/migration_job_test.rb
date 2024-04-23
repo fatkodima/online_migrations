@@ -77,7 +77,7 @@ module BackgroundMigrations
 
     private
       def create_migration(migration_name: "EachBatchCalled", **attributes)
-        @connection.create_background_migration(migration_name, **attributes)
+        @connection.create_background_data_migration(migration_name, **attributes)
       end
 
       def run_migration_job(migration)

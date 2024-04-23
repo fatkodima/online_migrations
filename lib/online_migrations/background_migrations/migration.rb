@@ -5,7 +5,7 @@ module OnlineMigrations
     # Class representing background data migration.
     #
     # @note The records of this class should not be created manually, but via
-    #   `enqueue_background_migration` helper inside migrations.
+    #   `enqueue_background_data_migration` helper inside migrations.
     #
     class Migration < ApplicationRecord
       STATUSES = [

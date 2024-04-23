@@ -80,16 +80,16 @@ You can enqueue your background migration to be run by the scheduler via:
 # db/migrate/xxxxxxxxxxxxxx_enqueue_backfill_project_issues_count.rb
 class EnqueueBackfillProjectIssuesCount < ActiveRecord::Migration[7.1]
   def up
-    enqueue_background_migration("BackfillProjectIssuesCount")
+    enqueue_background_data_migration("BackfillProjectIssuesCount")
   end
 
   def down
-    remove_background_migration("BackfillProjectIssuesCount")
+    remove_background_data_migration("BackfillProjectIssuesCount")
   end
 end
 ```
 
-`enqueue_background_migration` accepts additional configuration options which controls how the background migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/migration_helpers.rb) for the list of all available configuration options.
+`enqueue_background_data_migration` accepts additional configuration options which controls how the background migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_migrations/migration_helpers.rb) for the list of all available configuration options.
 
 ## Custom Background Migration Arguments
 
@@ -112,7 +112,7 @@ And pass them when enqueuing:
 
 ```ruby
 def up
-  enqueue_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
+  enqueue_background_data_migration("MyMigrationWithArgs", arg1, arg2, ...)
 end
 ```
 
@@ -120,7 +120,7 @@ Make sure to also pass the arguments inside the `down` method of the migration:
 
 ```ruby
 def down
-  remove_background_migration("MyMigrationWithArgs", arg1, arg2, ...)
+  remove_background_data_migration("MyMigrationWithArgs", arg1, arg2, ...)
 end
 ```
 

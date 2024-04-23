@@ -26,8 +26,8 @@ class BackgroundMigrationGeneratorTest < Rails::Generators::TestCase
 
     assert_migration("db/migrate/enqueue_make_all_non_admins.rb") do |content|
       assert_includes content, "class EnqueueMakeAllNonAdmins < ActiveRecord::Migration"
-      assert_includes content, 'enqueue_background_migration("MakeAllNonAdmins"'
-      assert_includes content, 'remove_background_migration("MakeAllNonAdmins"'
+      assert_includes content, 'enqueue_background_data_migration("MakeAllNonAdmins"'
+      assert_includes content, 'remove_background_data_migration("MakeAllNonAdmins"'
     end
   end
 

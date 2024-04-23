@@ -11,7 +11,7 @@ module OnlineMigrations
     source_root File.expand_path("templates", __dir__)
     desc "This generator creates a background migration related files."
 
-    def create_background_migration_file
+    def create_background_data_migration_file
       migrations_module_file_path = migrations_module.underscore
 
       template_file = File.join(
@@ -20,7 +20,7 @@ module OnlineMigrations
         class_path,
         "#{file_name}.rb"
       )
-      template("background_migration.rb", template_file)
+      template("background_data_migration.rb", template_file)
     end
 
     def create_migration_file
