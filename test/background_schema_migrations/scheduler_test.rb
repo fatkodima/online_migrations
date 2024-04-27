@@ -6,6 +6,7 @@ module BackgroundSchemaMigrations
   class SchedulerTest < Minitest::Test
     def teardown
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
+      on_each_shard { Dog.connection.remove_index(:dogs, :name) }
     end
 
     def test_run

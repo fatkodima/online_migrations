@@ -33,7 +33,7 @@ module OnlineMigrations
       end
 
       def raise_or_say(message)
-        if developer_env?
+        if developer_env? && !multiple_databases?
           raise message
         else
           say(message)

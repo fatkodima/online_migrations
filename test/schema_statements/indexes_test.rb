@@ -104,10 +104,32 @@ module SchemaStatements
     def test_add_index_in_background_when_index_already_exists
       @connection.add_index(:users, :name, unique: true)
       assert_raises_with_message(RuntimeError, /Index creation was not enqueued/i) do
-        @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+        OnlineMigrations::Utils.stub(:multiple_databases?, false) do
+          @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+        end
       end
       assert @connection.index_exists?(:users, :name)
       assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
+    def test_add_index_in_background_when_using_multiple_databases
+      # Enulate migration run on a primary shard. Now index exists on both tables.
+      on_shard(:shard_one) do
+        connection = Dog.connection
+        assert_not connection.index_exists?(:dogs, :name)
+        connection.add_index_in_background(:dogs, :name, unique: true, connection_class_name: "ShardRecord")
+        assert connection.index_exists?(:dogs, :name)
+      end
+
+      on_shard(:shard_two) do
+        # Emulate migration running on the second shard.
+        connection = Dog.connection
+        assert connection.index_exists?(:dogs, :name)
+        connection.add_index_in_background(:dogs, :name, unique: true, connection_class_name: "ShardRecord")
+        assert connection.index_exists?(:dogs, :name)
+      end
+    ensure
+      on_each_shard { Dog.connection.remove_index(:dogs, :name) }
     end
 
     def test_add_index_in_background_custom_attributes
@@ -132,7 +154,9 @@ module SchemaStatements
 
     def test_remove_index_in_background_when_does_not_exist
       assert_raises_with_message(RuntimeError, /Index deletion was not enqueued/i) do
-        @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", connection_class_name: "User")
+        OnlineMigrations::Utils.stub(:multiple_databases?, false) do
+          @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", connection_class_name: "User")
+        end
       end
 
       assert_not @connection.index_exists?(:users, :name)

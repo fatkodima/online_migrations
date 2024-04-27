@@ -16,8 +16,8 @@ module BackgroundSchemaMigrations
 
     def teardown
       @connection.drop_table(:users, if_exists: true)
+      on_each_shard { Dog.connection.remove_index(:dogs, :name) }
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
-      # on_each_shard { Dog.delete_all }
     end
 
     def test_table_name_length_validation

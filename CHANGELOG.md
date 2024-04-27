@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix raising in development when using sharding and background index creation/removal was not enqueued
+
 ## 0.17.0 (2024-04-23)
 
 - Fix background migrations `#progress` possibility to fail with zero division error
