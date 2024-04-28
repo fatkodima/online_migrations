@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.17.1 (2024-04-28)
+
 - Fix raising in development when using sharding and background index creation/removal was not enqueued
 
 ## 0.17.0 (2024-04-23)
