@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Do not run multiple background schema migrations on the same table at the same time
+
 ## 0.17.1 (2024-04-28)
 
 - Fix raising in development when using sharding and background index creation/removal was not enqueued

@@ -10,7 +10,12 @@ module BackgroundSchemaMigrations
     end
 
     def test_run
-      m = create_migration
+      m = create_migration(
+        name: "index_dogs_on_name",
+        table_name: "dogs",
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
+        connection_class_name: "ShardRecord"
+      )
       child1, child2, child3 = m.children.to_a
 
       scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
@@ -28,7 +33,12 @@ module BackgroundSchemaMigrations
     end
 
     def test_run_retries_failed_migrations
-      m = create_migration
+      m = create_migration(
+        name: "index_dogs_on_name",
+        table_name: "dogs",
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
+        connection_class_name: "ShardRecord"
+      )
       child = m.children.first
 
       scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
@@ -46,14 +56,39 @@ module BackgroundSchemaMigrations
       assert m.children.all?(&:succeeded?)
     end
 
+    def test_run_when_on_the_same_table_already_running
+      connection = ActiveRecord::Base.connection
+      connection.create_table(:users, force: true) do |t|
+        t.string :email
+        t.string :name
+      end
+
+      m1 = create_migration(
+        name: "index_users_on_email",
+        table_name: "users",
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")'
+      )
+      m1.update_column(:status, :running) # emulate running migration
+
+      _m2 = create_migration(
+        name: "index_users_on_name",
+        table_name: "users",
+        definition: 'CREATE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("name")'
+      )
+
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
+
+      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
+      scheduler.run
+
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
+    ensure
+      connection.drop_table(:users)
+    end
+
     private
-      def create_migration
-        ActiveRecord::Base.connection.create_background_schema_migration(
-          "index_dogs_on_name",
-          "dogs",
-          definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
-          connection_class_name: "ShardRecord"
-        )
+      def create_migration(name:, table_name:, **options)
+        ActiveRecord::Base.connection.create_background_schema_migration(name, table_name, **options)
       end
   end
 end
