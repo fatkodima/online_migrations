@@ -25,7 +25,8 @@ module OnlineMigrations
         # paused -> running occurs when the migration is resumed after being paused.
         "paused" => ["running"],
         # failed -> enqueued occurs when the failed migration jobs are retried after being failed.
-        "failed" => ["enqueued"],
+        # failed -> running occurs when the failed migration is retried.
+        "failed" => ["enqueued", "running"],
       }
 
       def validate(record)

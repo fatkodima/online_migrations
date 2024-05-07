@@ -221,18 +221,41 @@ module BackgroundMigrations
       end
     end
 
-    def test_retry_failed_jobs
+    def test_retry
       2.times { User.create! }
       m = create_migration(batch_size: 1, sub_batch_size: 1)
       3.times { run_migration_job(m) }
       assert m.succeeded?
+      assert_equal false, m.retry
 
       m.update_column(:status, "failed")
       m.migration_jobs.update_all(status: "failed")
 
-      m.retry_failed_jobs
+      assert m.retry
       assert m.migration_jobs.all?(&:enqueued?)
-      assert m.enqueued?
+      assert m.running?
+    end
+
+    def test_retry_composite
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2, child3 = m.children.to_a
+      run_all_migration_jobs(m)
+
+      migrations = [m, child1, child2, child3]
+      assert migrations.all?(&:succeeded?)
+      assert_equal false, m.retry
+
+      m.update_column(:status, "failed")
+      child1.update_column(:status, "failed")
+      child1.migration_jobs.update_all(status: "failed")
+
+      assert m.retry
+
+      migrations.each(&:reload)
+      assert m.running?
+      assert child1.running?
+      assert child3.succeeded?
+      assert child1.migration_jobs.all?(&:enqueued?)
     end
 
     def test_started_at

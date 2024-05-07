@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Improve retrying of failed sharded background migrations
 - Fix a bug when retried background data migration can not start
 - Do not run multiple background schema migrations on the same table at the same time
 

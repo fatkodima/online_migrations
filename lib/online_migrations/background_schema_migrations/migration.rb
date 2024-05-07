@@ -55,8 +55,8 @@ module OnlineMigrations
         enum status: STATUSES.index_with(&:to_s)
       end
 
-      belongs_to :parent, class_name: name, optional: true
-      has_many :children, class_name: name, foreign_key: :parent_id
+      belongs_to :parent, class_name: name, optional: true, inverse_of: :children
+      has_many :children, class_name: name, foreign_key: :parent_id, inverse_of: :parent
 
       validates :table_name, presence: true, length: { maximum: MAX_IDENTIFIER_LENGTH }
       validates :definition, presence: true
@@ -109,8 +109,10 @@ module OnlineMigrations
       # This is used to manually retrying failed migrations.
       #
       def retry
-        if composite?
+        if composite? && failed?
           children.failed.each(&:retry)
+          running!
+          true
         elsif failed?
           update!(
             status: self.class.statuses[:enqueued],
@@ -121,6 +123,9 @@ module OnlineMigrations
             error_message: nil,
             backtrace: nil
           )
+          true
+        else
+          false
         end
       end
 

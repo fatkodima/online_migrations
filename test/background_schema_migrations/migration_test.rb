@@ -159,7 +159,7 @@ module BackgroundSchemaMigrations
       end
       assert m.failed?
 
-      m.retry
+      assert m.retry
 
       m.reload
       assert m.enqueued?
@@ -169,6 +169,27 @@ module BackgroundSchemaMigrations
       assert_nil m.error_class
       assert_nil m.error_message
       assert_nil m.backtrace
+    end
+
+    def test_retry_composite
+      m = create_sharded_migration
+      run_migration(m)
+      assert m.succeeded?
+
+      child1, child2, child3 = m.children.to_a
+      migrations = [m, child1, child2, child3]
+      assert migrations.all?(&:succeeded?)
+      assert_equal false, m.retry
+
+      m.update_column(:status, "failed")
+      child1.update_column(:status, "failed")
+
+      assert m.retry
+
+      migrations.each(&:reload)
+      assert m.running?
+      assert child1.enqueued?
+      assert child3.succeeded?
     end
 
     private

@@ -38,9 +38,9 @@ module OnlineMigrations
         enum status: STATUSES.index_with(&:to_s)
       end
 
-      belongs_to :parent, class_name: name, optional: true
-      has_many :children, class_name: name, foreign_key: :parent_id, dependent: :delete_all
-      has_many :migration_jobs, dependent: :delete_all
+      belongs_to :parent, class_name: name, optional: true, inverse_of: :children
+      has_many :children, class_name: name, foreign_key: :parent_id, dependent: :delete_all, inverse_of: :parent
+      has_many :migration_jobs, dependent: :delete_all, inverse_of: :migration
 
       validates :migration_name, :batch_column_name, presence: true
 
@@ -156,20 +156,28 @@ module OnlineMigrations
         last_job.enqueued? || (last_job.updated_at + batch_pause <= Time.current)
       end
 
-      # Manually retry failed jobs.
+      # Mark this migration as ready to be processed again.
       #
       # This method marks failed jobs as ready to be processed again, and
       # they will be picked up on the next Scheduler run.
       #
-      def retry_failed_jobs
-        iterator = BatchIterator.new(migration_jobs.failed)
-        iterator.each_batch(of: 100) do |batch|
-          transaction do
+      def retry
+        if composite? && failed?
+          children.failed.each(&:retry)
+          running!
+          true
+        elsif failed?
+          iterator = BatchIterator.new(migration_jobs.failed)
+          iterator.each_batch(of: 100) do |batch|
             batch.each(&:retry)
-            enqueued!
           end
+          running!
+          true
+        else
+          false
         end
       end
+      alias retry_failed_jobs retry
 
       # Returns the time this migration started running.
       def started_at

@@ -66,6 +66,17 @@ end
 
 You shouldn't depend on the schema until the background schema migration is finished. If having the schema migrated is a requirement, then the `ensure_background_schema_migration_succeeded` helper can be used to guarantee that the migration succeeded and the schema change applied.
 
+## Retrying a failed migration
+
+To retry a failed migration, run:
+
+```ruby
+migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.find(id)
+migration.retry # => `true` if scheduled to be retried, `false` - if not
+```
+
+The migration will be retried on the next Scheduler run.
+
 ## Instrumentation
 
 Background schema migrations use the [ActiveSupport::Notifications](http://api.rubyonrails.org/classes/ActiveSupport/Notifications.html) API.

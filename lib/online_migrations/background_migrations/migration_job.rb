@@ -47,7 +47,7 @@ module OnlineMigrations
       delegate :migration_name, :migration_class, :migration_object, :migration_relation, :batch_column_name,
         :arguments, :batch_pause, to: :migration
 
-      belongs_to :migration
+      belongs_to :migration, inverse_of: :migration_jobs
 
       validates :min_value, :max_value, presence: true, numericality: { greater_than: 0 }
       validate :values_in_migration_range, if: :min_value?
@@ -69,15 +69,23 @@ module OnlineMigrations
       # This is used when retrying failed jobs.
       #
       def retry
-        update!(
-          status: self.class.statuses[:enqueued],
-          attempts: 0,
-          started_at: nil,
-          finished_at: nil,
-          error_class: nil,
-          error_message: nil,
-          backtrace: nil
-        )
+        if failed?
+          transaction do
+            update!(
+              status: self.class.statuses[:enqueued],
+              attempts: 0,
+              started_at: nil,
+              finished_at: nil,
+              error_class: nil,
+              error_message: nil,
+              backtrace: nil
+            )
+            migration.running! if migration.failed?
+          end
+          true
+        else
+          false
+        end
       end
 
       private

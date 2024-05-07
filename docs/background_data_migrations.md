@@ -247,6 +247,17 @@ migration.progress # value from 0 to 100.0
 
 **Note**: It will be easier to work with background migrations through some kind of Web UI, but until it is implemented, we can work with them only manually.
 
+## Retrying a failed migration
+
+To retry a failed migration, run:
+
+```ruby
+migration = OnlineMigrations::BackgroundMigrations::Migration.find(id)
+migration.retry # => `true` if scheduled to be retried, `false` - if not
+```
+
+The migration will be retried on the next Scheduler run.
+
 ## Configuring
 
 There are a few configurable options for the Background Migrations. Custom configurations should be placed in a `online_migrations.rb` initializer.

@@ -65,7 +65,9 @@ module BackgroundMigrations
       assert_equal "Boom!", error.message
       j = m.last_job
 
-      j.retry
+      assert j.failed?
+      assert j.retry
+      assert m.running?
       assert j.enqueued?
       assert_equal 0, j.attempts
       assert_nil j.started_at
