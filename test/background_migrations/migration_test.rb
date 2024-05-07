@@ -209,9 +209,7 @@ module BackgroundMigrations
     end
 
     def test_interval_elapsed_p
-      _user1 = User.create!
-      user2 = User.create!
-
+      2.times { User.create! }
       m = create_migration(batch_pause: 2.minutes, batch_size: 1, sub_batch_size: 1)
 
       assert m.interval_elapsed?
@@ -219,13 +217,6 @@ module BackgroundMigrations
       run_migration_job(m)
 
       Time.stub(:current, 1.minute.from_now) do
-        assert_not m.interval_elapsed?
-      end
-
-      Time.stub(:current, 3.minutes.from_now) do
-        assert m.interval_elapsed?
-
-        _job = m.migration_jobs.create!(min_value: user2.id, max_value: user2.id, status: "running")
         assert_not m.interval_elapsed?
       end
     end

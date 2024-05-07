@@ -102,10 +102,6 @@ module OnlineMigrations
         migration_jobs.order(:max_value).last
       end
 
-      def last_completed_job
-        migration_jobs.completed.order(:finished_at).last
-      end
-
       # Returns the progress of the background migration.
       #
       # @return [Float, nil]
@@ -154,15 +150,10 @@ module OnlineMigrations
       # @return [Boolean]
       #
       def interval_elapsed?
-        last_active_job = migration_jobs.active.order(:updated_at).last
+        last_job = migration_jobs.order(:updated_at).last
+        return true if last_job.nil?
 
-        if last_active_job && !last_active_job.stuck?
-          false
-        elsif batch_pause > 0 && (job = last_completed_job)
-          job.finished_at + batch_pause <= Time.current
-        else
-          true
-        end
+        last_job.enqueued? || (last_job.updated_at + batch_pause <= Time.current)
       end
 
       # Manually retry failed jobs.
