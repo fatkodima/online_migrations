@@ -143,6 +143,11 @@ module BackgroundMigrations
       assert_in_delta 100.0, m.progress
     end
 
+    def test_progress_enqueued_migration
+      m = build_migration(status: :enqueued)
+      assert_in_delta 0.0, m.progress
+    end
+
     def test_progress_succeded_sharded_migration
       m = build_migration(migration_name: "MakeAllDogsNice", status: :succeeded)
       assert_in_delta 100.0, m.progress
@@ -187,10 +192,11 @@ module BackgroundMigrations
       assert_nil m.progress
     end
 
-    def test_progress_non_started_migration_without_records
+    def test_progress_running_migration_without_records
       assert_equal 0, EmptyRelation.new.count
       m = create_migration(migration_name: "EmptyRelation")
-      assert_nil m.progress
+      m.update_column(:status, :running)
+      assert_in_delta 0.0, m.progress
     end
 
     def test_migration_class
