@@ -175,6 +175,8 @@ module BackgroundSchemaMigrations
       m = create_sharded_migration
       run_migration(m)
       assert m.succeeded?
+      assert m.started_at
+      assert m.finished_at
 
       child1, child2, child3 = m.children.to_a
       migrations = [m, child1, child2, child3]
@@ -185,6 +187,8 @@ module BackgroundSchemaMigrations
       child1.update_column(:status, "failed")
 
       assert m.retry
+      assert m.started_at
+      assert_nil m.finished_at
 
       migrations.each(&:reload)
       assert m.running?

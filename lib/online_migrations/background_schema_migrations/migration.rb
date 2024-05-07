@@ -111,7 +111,10 @@ module OnlineMigrations
       def retry
         if composite? && failed?
           children.failed.each(&:retry)
-          running!
+          update!(
+            status: self.class.statuses[:running],
+            finished_at: nil
+          )
           true
         elsif failed?
           update!(

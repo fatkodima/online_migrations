@@ -27,7 +27,12 @@ module BackgroundSchemaMigrations
 
       run_migration(child)
       assert child.reload.succeeded?
+      assert child.started_at
+      assert child.finished_at
+
       assert m.reload.running?
+      assert m.started_at
+      assert_nil m.finished_at
     end
 
     def test_run_runs_migration
