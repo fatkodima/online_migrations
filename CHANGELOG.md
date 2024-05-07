@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.18.0 (2024-05-07)
+
 - Fix setting `started_at`/`finished_at` for parents of sharded background schema migrations
 - Improve retrying of failed sharded background migrations
 - Fix a bug when retried background data migration can not start
