@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.19.0 (2024-05-21)
+
 - Add ability to cancel background migrations
 
 ## 0.18.0 (2024-05-07)
