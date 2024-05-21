@@ -7,7 +7,7 @@ module OnlineMigrations
       VALID_STATUS_TRANSITIONS = {
         # enqueued -> running occurs when the migration starts performing.
         # enqueued -> paused occurs when the migration is paused before starting.
-        "enqueued" => ["running", "paused"],
+        "enqueued" => ["running", "paused", "cancelled"],
         # running -> paused occurs when a user pauses the migration as
         #   it's performing.
         # running -> finishing occurs when a user manually finishes the migration.
@@ -18,15 +18,16 @@ module OnlineMigrations
           "finishing",
           "succeeded",
           "failed",
+          "cancelled",
         ],
         # finishing -> succeeded occurs when the migration completes successfully.
         # finishing -> failed occurs when the migration raises an exception when running.
-        "finishing" => ["succeeded", "failed"],
+        "finishing" => ["succeeded", "failed", "cancelled"],
         # paused -> running occurs when the migration is resumed after being paused.
-        "paused" => ["running"],
+        "paused" => ["running", "cancelled"],
         # failed -> enqueued occurs when the failed migration jobs are retried after being failed.
         # failed -> running occurs when the failed migration is retried.
-        "failed" => ["enqueued", "running"],
+        "failed" => ["enqueued", "running", "cancelled"],
       }
 
       def validate(record)

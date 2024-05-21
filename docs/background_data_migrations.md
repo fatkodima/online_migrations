@@ -237,6 +237,7 @@ Background Migrations can be in various states during its execution:
   Note: In normal circumstances, this should not be used since background migrations should be run and finished by the scheduler.
 * **failed**: A migration raises an exception when running.
 * **succeeded**: A migration finished without error.
+* **cancelled**: A migration was cancelled by the user.
 
 To get the progress (assuming `#count` method on background migration class was defined):
 
@@ -257,6 +258,15 @@ migration.retry # => `true` if scheduled to be retried, `false` - if not
 ```
 
 The migration will be retried on the next Scheduler run.
+
+## Cancelling a migration
+
+To cancel an existing migration from future performing, run:
+
+```ruby
+migration = OnlineMigrations::BackgroundMigrations::Migration.find(id)
+migration.cancel
+```
 
 ## Configuring
 

@@ -8,6 +8,7 @@ module OnlineMigrations
         :running,
         :failed,
         :succeeded,
+        :cancelled,
       ]
 
       self.table_name = :background_migration_jobs

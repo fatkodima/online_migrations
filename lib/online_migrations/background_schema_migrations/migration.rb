@@ -13,6 +13,7 @@ module OnlineMigrations
         :running,     # The migration is being performed by a migration executor.
         :failed,      # The migration raises an exception when running.
         :succeeded,   # The migration finished without error.
+        :cancelled,   # The migration was cancelled by the user.
       ]
 
       MAX_IDENTIFIER_LENGTH = 63
@@ -81,6 +82,17 @@ module OnlineMigrations
       def completed?
         succeeded? || failed?
       end
+
+      # Overwrite enum's generated method to correctly work for composite migrations.
+      def cancelled!
+        return super if !composite?
+
+        transaction do
+          super
+          children.each { |child| child.cancelled! if !child.succeeded? }
+        end
+      end
+      alias cancel cancelled!
 
       # Returns the progress of the background schema migration.
       #

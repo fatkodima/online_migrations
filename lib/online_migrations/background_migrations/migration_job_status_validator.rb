@@ -5,9 +5,9 @@ module OnlineMigrations
     # @private
     class MigrationJobStatusValidator < ActiveModel::Validator
       VALID_STATUS_TRANSITIONS = {
-        "enqueued" => ["running"],
-        "running" => ["succeeded", "failed"],
-        "failed" => ["enqueued", "running"],
+        "enqueued" => ["running", "cancelled"],
+        "running" => ["succeeded", "failed", "cancelled"],
+        "failed" => ["enqueued", "running", "cancelled"],
       }
 
       def validate(record)

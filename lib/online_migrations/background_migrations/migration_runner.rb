@@ -13,6 +13,7 @@ module OnlineMigrations
       # Runs one background migration job.
       def run_migration_job
         raise "Should not be called on a composite (with sharding) migration" if migration.composite?
+        return if migration.cancelled?
 
         mark_as_running if migration.enqueued?
         migration_payload = notifications_payload(migration)
@@ -56,7 +57,7 @@ module OnlineMigrations
           raise "This method is not intended for use in production environments"
         end
 
-        return if migration.completed?
+        return if migration.completed? || migration.cancelled?
 
         mark_as_running
 
@@ -77,7 +78,7 @@ module OnlineMigrations
       # Keep running until the migration is finished.
       #
       def finish
-        return if migration.completed?
+        return if migration.completed? || migration.cancelled?
 
         if migration.composite?
           migration.children.each do |child_migration|

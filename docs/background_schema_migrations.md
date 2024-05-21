@@ -77,6 +77,15 @@ migration.retry # => `true` if scheduled to be retried, `false` - if not
 
 The migration will be retried on the next Scheduler run.
 
+## Cancelling a migration
+
+To cancel an existing migration from future performing, run:
+
+```ruby
+migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.find(id)
+migration.cancel
+```
+
 ## Instrumentation
 
 Background schema migrations use the [ActiveSupport::Notifications](http://api.rubyonrails.org/classes/ActiveSupport/Notifications.html) API.
@@ -121,6 +130,7 @@ Background Schema Migrations can be in various states during its execution:
 * **running**: A migration is being performed by a migration executor.
 * **failed**: A migration raises an exception when running.
 * **succeeded**: A migration finished without error.
+* **cancelled**: A migration was cancelled by the user.
 
 ## Configuring
 

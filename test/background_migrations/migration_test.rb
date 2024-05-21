@@ -131,6 +131,23 @@ module BackgroundMigrations
       assert child2.running?
     end
 
+    def test_cancelled_bang_cancells_migration
+      m = create_migration
+      m.cancelled!
+      assert m.cancelled?
+    end
+
+    def test_cancelled_bang_cancells_composite_migration
+      m = create_migration(migration_name: "MakeAllDogsNice")
+      child1, child2 = m.children.to_a
+      run_all_migration_jobs(child1)
+      m.cancelled!
+
+      assert m.cancelled?
+      assert child1.reload.succeeded?
+      assert child2.reload.cancelled?
+    end
+
     def test_empty_relation
       m = create_migration(migration_name: "EmptyRelation")
       assert_equal 1, m.min_value

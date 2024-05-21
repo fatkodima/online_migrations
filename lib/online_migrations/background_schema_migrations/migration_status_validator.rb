@@ -6,13 +6,13 @@ module OnlineMigrations
     class MigrationStatusValidator < ActiveModel::Validator
       VALID_STATUS_TRANSITIONS = {
         # enqueued -> running occurs when the migration starts performing.
-        "enqueued" => ["running"],
+        "enqueued" => ["running", "cancelled"],
         # running -> succeeded occurs when the migration completes successfully.
         # running -> failed occurs when the migration raises an exception when running and retry attempts exceeded.
-        "running" => ["succeeded", "failed"],
+        "running" => ["succeeded", "failed", "cancelled"],
         # failed -> enqueued occurs when the failed migration is enqueued to be retried.
         # failed -> running occurs when the failed migration is retried.
-        "failed" => ["enqueued", "running"],
+        "failed" => ["enqueued", "running", "cancelled"],
       }
 
       def validate(record)

@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add ability to cancel background migrations
+
 ## 0.18.0 (2024-05-07)
 
 - Fix setting `started_at`/`finished_at` for parents of sharded background schema migrations

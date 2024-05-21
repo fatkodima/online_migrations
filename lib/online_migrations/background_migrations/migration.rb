@@ -15,6 +15,7 @@ module OnlineMigrations
         :finishing,   # The migration is being manually finishing inline by the user.
         :failed,      # The migration raises an exception when running.
         :succeeded,   # The migration finished without error.
+        :cancelled,   # The migration was cancelled by the user.
       ]
 
       self.table_name = :background_migrations
@@ -97,6 +98,17 @@ module OnlineMigrations
           children.each { |child| child.running! if child.paused? }
         end
       end
+
+      # Overwrite enum's generated method to correctly work for composite migrations.
+      def cancelled!
+        return super if !composite?
+
+        transaction do
+          super
+          children.each { |child| child.cancelled! if !child.succeeded? }
+        end
+      end
+      alias cancel cancelled!
 
       def last_job
         migration_jobs.order(:max_value).last
