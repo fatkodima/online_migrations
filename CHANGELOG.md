@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix `add_index_in_background` to be idempotent
+
 ## 0.19.0 (2024-05-21)
 
 - Add ability to cancel background migrations

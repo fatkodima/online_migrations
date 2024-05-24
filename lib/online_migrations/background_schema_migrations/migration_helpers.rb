@@ -6,13 +6,23 @@ module OnlineMigrations
       def add_index_in_background(table_name, column_name, **options)
         migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
 
+        options[:algorithm] = :concurrently
+        index, algorithm, if_not_exists = add_index_options(table_name, column_name, **options)
+
+        # Need to check this first, because `index_exists?` does not check for `:where`s.
+        if index_name_exists?(table_name, index.name)
+          Utils.raise_or_say(<<~MSG)
+            Index creation was not enqueued because the index with name '#{index.name}' already exists.
+            This can be due to an aborted migration or you need to explicitly provide another name
+            via `:name` option.
+          MSG
+          return
+        end
+
         if index_exists?(table_name, column_name, **options)
           Utils.raise_or_say("Index creation was not enqueued because the index already exists.")
           return
         end
-
-        options[:algorithm] = :concurrently
-        index, algorithm, if_not_exists = add_index_options(table_name, column_name, **options)
 
         create_index = ActiveRecord::ConnectionAdapters::CreateIndexDefinition.new(index, algorithm, if_not_exists)
         schema_creation = ActiveRecord::ConnectionAdapters::PostgreSQL::SchemaCreation.new(self)
@@ -77,22 +87,21 @@ module OnlineMigrations
       # @private
       def create_background_schema_migration(migration_name, table_name, **options)
         options.assert_valid_keys(:definition, :max_attempts, :statement_timeout, :connection_class_name)
-        migration = Migration.new(migration_name: migration_name, table_name: table_name, **options)
 
-        shards = Utils.shard_names(migration.connection_class)
-        if shards.size > 1
-          migration.children = shards.map do |shard|
-            child = migration.dup
-            child.shard = shard
-            child
+        Migration.find_or_create_by!(migration_name: migration_name, shard: nil) do |migration|
+          migration.assign_attributes(**options, table_name: table_name)
+
+          shards = Utils.shard_names(migration.connection_class)
+          if shards.size > 1
+            migration.children = shards.map do |shard|
+              child = migration.dup
+              child.shard = shard
+              child
+            end
+
+            migration.composite = true
           end
-
-          migration.composite = true
         end
-
-        # This will save all the records using a transaction.
-        migration.save!
-        migration
       end
     end
   end

@@ -11,7 +11,7 @@ module OnlineMigrations
       end
 
       def run
-        return if migration.cancelled?
+        return if migration.cancelled? || migration.succeeded?
 
         mark_as_running if migration.enqueued? || migration.failed?
 

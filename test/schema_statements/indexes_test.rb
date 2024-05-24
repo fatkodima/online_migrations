@@ -101,11 +101,34 @@ module SchemaStatements
       assert_equal 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("name")', m.definition
     end
 
-    def test_add_index_in_background_when_index_already_exists
+    def test_add_index_in_background_is_idempotent
+      # Emulate created, but not yet executed, schema migration.
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      end
+
+      @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
+    def test_add_index_in_background_when_different_index_with_same_name_already_exists
       @connection.add_index(:users, :name, unique: true)
-      assert_raises_with_message(RuntimeError, /Index creation was not enqueued/i) do
-        OnlineMigrations::Utils.stub(:multiple_databases?, false) do
-          @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
+
+      OnlineMigrations::Utils.stub(:multiple_databases?, false) do
+        assert_raises_with_message(RuntimeError, /index with name 'index_users_on_name' already exists/i) do
+          @connection.add_index_in_background(:users, :name, unique: true, where: "company_id", connection_class_name: "User")
+        end
+      end
+      assert @connection.index_exists?(:users, :name)
+      assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
+    def test_add_index_in_background_when_unfinished_migration_exists
+      @connection.add_index(:users, :name, unique: true)
+
+      OnlineMigrations::Utils.stub(:multiple_databases?, false) do
+        assert_raises_with_message(RuntimeError, /index with name 'index_users_on_name' already exists/i) do
+          @connection.add_index_in_background(:users, :name, unique: true, where: "company_id", connection_class_name: "User")
         end
       end
       assert @connection.index_exists?(:users, :name)
