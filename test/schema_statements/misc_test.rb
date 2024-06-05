@@ -172,6 +172,12 @@ module SchemaStatements
       assert_equal OnlineMigrations.config.background_migrations.batch_size, m.batch_size
     end
 
+    def test_enqueue_background_data_migration_is_idempotent
+      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+      2.times { @connection.enqueue_background_data_migration("MakeAllNonAdmins") }
+      assert_equal 1, OnlineMigrations::BackgroundMigrations::Migration.count
+    end
+
     def test_run_background_migrations_inline_true_in_local
       user = User.create!
       assert_nil user.admin

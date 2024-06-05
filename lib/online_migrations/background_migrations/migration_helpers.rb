@@ -440,26 +440,22 @@ module OnlineMigrations
 
         migration_name = migration_name.name if migration_name.is_a?(Class)
 
-        migration = Migration.new(
-          migration_name: migration_name,
-          arguments: arguments,
-          **options
-        )
+        # Can't use `find_or_create_by` or hash syntax here, because it does not correctly work with json `arguments`.
+        existing_migration = Migration.find_by("migration_name = ? AND arguments = ? AND shard IS NULL", migration_name, arguments.to_json)
+        return existing_migration if existing_migration
 
-        shards = Utils.shard_names(migration.migration_model)
-        if shards.size > 1
-          migration.children = shards.map do |shard|
-            child = migration.dup
-            child.shard = shard
-            child
+        Migration.create!(**options, migration_name: migration_name, arguments: arguments, shard: nil) do |migration|
+          shards = Utils.shard_names(migration.migration_model)
+          if shards.size > 1
+            migration.children = shards.map do |shard|
+              child = migration.dup
+              child.shard = shard
+              child
+            end
+
+            migration.composite = true
           end
-
-          migration.composite = true
         end
-
-        # This will save all the records using a transaction.
-        migration.save!
-        migration
       end
     end
   end

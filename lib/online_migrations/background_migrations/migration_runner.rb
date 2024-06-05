@@ -13,7 +13,7 @@ module OnlineMigrations
       # Runs one background migration job.
       def run_migration_job
         raise "Should not be called on a composite (with sharding) migration" if migration.composite?
-        return if migration.cancelled?
+        return if migration.cancelled? || migration.succeeded?
 
         mark_as_running if migration.enqueued?
         migration_payload = notifications_payload(migration)
