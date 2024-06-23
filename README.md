@@ -169,7 +169,7 @@ Config-specific checks:
 
 - [changing the default value of a column](#changing-the-default-value-of-a-column)
 
-You can also add [custom checks](#custom-checks) or [disable specific checks](#disable-checks).
+You can also add [custom checks](docs/configuring.md#custom-checks) or [disable specific checks](docs/configuring.md#disable-checks).
 
 ### Removing a column
 
