@@ -138,6 +138,18 @@ module CommandChecker
       assert_safe AddReferenceForeignKeyNoValidate
     end
 
+    class AddReferenceForeignKeyNoValidatePluralizeName < TestMigration
+      disable_ddl_transaction!
+
+      def change
+        add_reference :projects, :users, index: false, foreign_key: { validate: false }
+      end
+    end
+
+    def test_add_reference_foreign_key_no_validate_with_pluralized_table_name
+      assert_safe AddReferenceForeignKeyNoValidatePluralizeName
+    end
+
     class AddReferenceForeignKeyValidate < TestMigration
       def change
         add_reference :projects, :user, index: false, foreign_key: { validate: true }

@@ -69,6 +69,15 @@ module CommandChecker
       assert_safe AddForeignKeyNoValidate
     end
 
+    def test_add_foreign_key_no_validate_is_idempotent
+      assert_empty @connection.foreign_keys(:projects)
+
+      migrate AddForeignKeyNoValidate
+      migrate AddForeignKeyNoValidate
+
+      assert_equal 1, @connection.foreign_keys(:projects).size
+    end
+
     class AddForeignKeyFromNewTable < TestMigration
       def change
         create_table :posts_new do |t|
