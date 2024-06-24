@@ -69,6 +69,31 @@ module CommandChecker
       assert_safe AddForeignKeyNoValidate
     end
 
+    def test_add_foreign_key_no_validate_is_idempotent
+      assert_empty @connection.foreign_keys(:projects)
+
+      migrate AddForeignKeyNoValidate
+      migrate AddForeignKeyNoValidate
+      migrate AddForeignKeyNoValidate
+      
+      assert_equal 1, @connection.foreign_keys(:projects).size
+    ensure
+      migrate AddForeignKeyNoValidate, direction: :down
+      assert_empty @connection.foreign_keys(:projects)
+    end
+
+    class AddForeignKeySingularToTable < TestMigration
+      def change
+        add_foreign_key :projects, :user, validate: false
+      end
+    end
+
+    def test_add_foreign_key_no_validate
+      assert_raises_with_message(StandardError, /PG::UndefinedTable: ERROR:  relation "user" does not exist/i) do
+        assert_safe AddForeignKeySingularToTable
+      end
+    end
+
     class AddForeignKeyFromNewTable < TestMigration
       def change
         create_table :posts_new do |t|

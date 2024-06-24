@@ -71,6 +71,35 @@ module SchemaStatements
       end
     end
 
+    def test_add_reference_concurrently_with_foreign_key_is_idempotent
+      assert_empty connection.foreign_keys(:milestones)
+
+      connection.add_reference_concurrently :milestones, :project, foreign_key: true
+      connection.add_reference_concurrently :milestones, :project, foreign_key: true
+      connection.add_reference_concurrently :milestones, :project, foreign_key: true
+
+      assert_equal 1, connection.foreign_keys(:milestones).size
+    end
+
+    def test_add_reference_concurrently_with_foreign_key_with_pluralized_table_name
+      assert_sql(
+        'REFERENCES "projects" ("id") NOT VALID',
+        'ALTER TABLE "milestones" VALIDATE CONSTRAINT'
+      ) do
+        connection.add_reference_concurrently :milestones, :projects, foreign_key: true
+      end
+    end
+
+    def test_add_reference_concurrently_with_foreign_key_is_idempotent_with_pluralized_table_name
+      assert_empty connection.foreign_keys(:milestones)
+
+      connection.add_reference_concurrently :milestones, :projects, foreign_key: true
+      connection.add_reference_concurrently :milestones, :projects, foreign_key: true
+      connection.add_reference_concurrently :milestones, :projects, foreign_key: true
+
+      assert_equal 1, connection.foreign_keys(:milestones).size
+    end
+
     def test_add_reference_concurrently_with_unvalidated_foreign_key
       refute_sql("VALIDATE CONSTRAINT") do
         connection.add_reference_concurrently :milestones, :project, foreign_key: { validate: false }
