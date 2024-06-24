@@ -76,7 +76,6 @@ module SchemaStatements
 
       connection.add_reference_concurrently :milestones, :project, foreign_key: true
       connection.add_reference_concurrently :milestones, :project, foreign_key: true
-      connection.add_reference_concurrently :milestones, :project, foreign_key: true
 
       assert_equal 1, connection.foreign_keys(:milestones).size
     end

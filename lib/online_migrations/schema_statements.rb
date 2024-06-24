@@ -773,7 +773,8 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key
     #
     def add_foreign_key(from_table, to_table, **options)
-      if foreign_key_exists?(from_table, to_table, **options)
+      # Do not consider validation for idempotency.
+      if foreign_key_exists?(from_table, to_table, **options.except(:validate))
         message = +"Foreign key was not created because it already exists " \
                    "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}"
         message << ", #{options.inspect}" if options.any?

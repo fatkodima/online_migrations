@@ -138,18 +138,6 @@ module CommandChecker
       assert_safe AddReferenceForeignKeyNoValidate
     end
 
-    def test_add_reference_foreign_key_no_validate_is_not_idempotent
-      assert_empty @connection.foreign_keys(:projects)
-
-      migrate AddReferenceForeignKeyNoValidate
-      assert_raises_with_message(StandardError, /column "user_id" of relation "projects" already exists/) do
-        migrate AddReferenceForeignKeyNoValidate
-      end
-    ensure
-      migrate AddReferenceForeignKeyNoValidate, direction: :down
-      assert_empty @connection.foreign_keys(:projects)
-    end
-
     class AddReferenceForeignKeyNoValidatePluralizeName < TestMigration
       disable_ddl_transaction!
 

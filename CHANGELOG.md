@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `add_reference_concurrently` to be idempotent when adding a foreign key
 - Fix `enqueue_background_data_migration` to be idempotent
 
 ## 0.19.1 (2024-05-24)
