@@ -544,7 +544,7 @@ The technique is built on top of database views, using the following steps:
 2. Create a VIEW using the old table name by pointing to the new table name
 3. Add a workaround for Active Record's schema cache
 
-For the previous example, to rename `name` column to `first_name` of the `users` table, we can run:
+For the previous example, to rename `clients` table to `users`, we can run:
 
 ```sql
 BEGIN;
