@@ -734,7 +734,7 @@ module OnlineMigrations
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
           # and some "ALTER TABLE"s.
-          super(table_name, column_name, **options)
+          super
         else
           OnlineMigrations.deprecator.warn(<<~MSG)
             Running `remove_index` without a statement timeout is deprecated.
@@ -744,7 +744,7 @@ module OnlineMigrations
           MSG
 
           disable_statement_timeout do
-            super(table_name, column_name, **options)
+            super
           end
         end
       else
