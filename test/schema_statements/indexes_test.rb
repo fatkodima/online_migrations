@@ -62,6 +62,15 @@ module SchemaStatements
       assert @connection.index_exists?(:users, [:name, :company_id], name: "index_users_on_name_and_company_id")
     end
 
+    def test_add_index_with_complex_expression
+      expression = "(NAME::text)"
+      @connection.add_index(:users, expression)
+      assert_equal 1, @connection.indexes(:users).size
+
+      @connection.add_index(:users, expression)
+      assert_equal 1, @connection.indexes(:users).size
+    end
+
     def test_remove_index
       @connection.add_index(:users, :name)
       assert @connection.index_exists?(:users, :name)
@@ -92,6 +101,15 @@ module SchemaStatements
     def test_remove_non_existing_index
       @connection.remove_index(:users, :name)
       assert_not @connection.index_exists?(:users, :name)
+    end
+
+    def test_remove_index_with_complex_expression
+      expression = "(NAME::text)"
+      @connection.add_index(:users, expression)
+      assert_equal 1, @connection.indexes(:users).size
+
+      @connection.remove_index(:users, expression)
+      assert_empty @connection.indexes(:users)
     end
 
     def test_add_index_in_background

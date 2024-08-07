@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix idempotency for `add_index`/`remove_index` for expression indexes
+
 ## 0.19.2 (2024-07-09)
 
 - Fix `add_reference_concurrently` to be idempotent when adding a foreign key

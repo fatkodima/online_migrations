@@ -684,9 +684,17 @@ module OnlineMigrations
     def add_index(table_name, column_name, **options)
       __ensure_not_in_transaction! if options[:algorithm] == :concurrently
 
-      # Rewrite this with `IndexDefinition#defined_for?` when Active Record >= 7.1 is supported.
-      # See https://github.com/rails/rails/pull/45160.
-      index = indexes(table_name).find { |i| __index_defined_for?(i, column_name, **options) }
+      index =
+        if column_name.is_a?(String) && column_name.match?(/\W/)
+          # Use only name to check if index exists, because it does not work for complex expressions.
+          index_name = (options[:name] || index_name(table_name, column_name)).to_s
+          indexes(table_name).find { |i| i.name == index_name }
+        else
+          # Rewrite this with `IndexDefinition#defined_for?` when Active Record >= 7.1 is supported.
+          # See https://github.com/rails/rails/pull/45160.
+          indexes(table_name).find { |i| __index_defined_for?(i, column_name, **options) }
+        end
+
       if index
         schema = __schema_for_table(table_name)
 
@@ -729,7 +737,17 @@ module OnlineMigrations
 
       __ensure_not_in_transaction! if options[:algorithm] == :concurrently
 
-      if index_exists?(table_name, column_name, **options)
+      column = column_name || options[:column]
+      index_exists =
+        if column.is_a?(String) && column.match?(/\W/)
+          # Use only name to check if index exists, because it does not work for complex expressions.
+          index_name = options[:name] || index_name(table_name, column)
+          index_name_exists?(table_name, index_name)
+        else
+          index_exists?(table_name, column_name, **options)
+        end
+
+      if index_exists
         if OnlineMigrations.config.statement_timeout
           # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
           # It only conflicts with constraint validations, other creating/removing indexes,
