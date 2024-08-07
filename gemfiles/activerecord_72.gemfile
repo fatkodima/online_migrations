@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+
+@ar_gem_requirement = "~> 7.2.0.rc1"
+
+eval_gemfile "../Gemfile"
