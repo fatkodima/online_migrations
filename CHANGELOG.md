@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.19.3 (2024-08-09)
+
 - Fix idempotency for `add_index`/`remove_index` for expression indexes
 
 ## 0.19.2 (2024-07-09)
