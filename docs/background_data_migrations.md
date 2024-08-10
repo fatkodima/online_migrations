@@ -78,7 +78,7 @@ You can enqueue your background migration to be run by the scheduler via:
 
 ```ruby
 # db/migrate/xxxxxxxxxxxxxx_enqueue_backfill_project_issues_count.rb
-class EnqueueBackfillProjectIssuesCount < ActiveRecord::Migration[7.1]
+class EnqueueBackfillProjectIssuesCount < ActiveRecord::Migration[7.2]
   def up
     enqueue_background_data_migration("BackfillProjectIssuesCount")
   end
