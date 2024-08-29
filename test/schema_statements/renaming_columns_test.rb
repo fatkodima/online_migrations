@@ -204,6 +204,24 @@ module SchemaStatements
       end
     end
 
+    def test_rename_column_in_table_with_long_name
+      # For ActiveRecord 7.1 use @connection.max_identifier_length, because older versions
+      # does not correctly generate pkey names when renaming, so need to use a shorter identifier.
+      table_name = "a" * 55
+      @connection.create_table(table_name, force: true) do |t|
+        t.string :foo
+      end
+
+      @connection.initialize_column_rename(table_name, :foo, :bar)
+      @connection.finalize_column_rename(table_name, :foo, :bar)
+
+      column_names = @connection.columns(table_name).map(&:name)
+
+      assert_equal ["id", "bar"], column_names
+    ensure
+      @connection.drop_table(table_name, if_exists: true)
+    end
+
     # Test that it is properly reset in rails tests using fixtures.
     def test_initialize_column_rename_and_resetting_sequence
       column_renames("fname" => "first_name")

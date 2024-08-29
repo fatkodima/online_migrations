@@ -179,7 +179,7 @@ module OnlineMigrations
     #
     def initialize_columns_rename(table_name, old_new_column_hash)
       transaction do
-        rename_table_create_view(table_name, old_new_column_hash)
+        __rename_table_and_create_view(table_name, old_new_column_hash)
       end
     end
 
@@ -214,7 +214,9 @@ module OnlineMigrations
     def revert_initialize_columns_rename(table_name, _old_new_column_hash = nil)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
-        rename_table("#{table_name}_column_rename", table_name)
+
+        tmp_table = __tmp_table_name_for_column_rename(table_name)
+        rename_table(tmp_table, table_name)
       end
     end
 
@@ -241,7 +243,9 @@ module OnlineMigrations
     def finalize_columns_rename(table_name, old_new_column_hash)
       transaction do
         execute("DROP VIEW #{quote_table_name(table_name)}")
-        rename_table("#{table_name}_column_rename", table_name)
+
+        tmp_table = __tmp_table_name_for_column_rename(table_name)
+        rename_table(tmp_table, table_name)
         old_new_column_hash.each do |column_name, new_column_name|
           rename_column(table_name, column_name, new_column_name)
         end
@@ -273,7 +277,7 @@ module OnlineMigrations
         old_new_column_hash.each do |column_name, new_column_name|
           rename_column(table_name, new_column_name, column_name)
         end
-        rename_table_create_view(table_name, old_new_column_hash)
+        __rename_table_and_create_view(table_name, old_new_column_hash)
       end
     end
 
@@ -906,7 +910,8 @@ module OnlineMigrations
       if renamed_tables.key?(table)
         super(renamed_tables[table])
       elsif renamed_columns.key?(table)
-        super("#{table}_column_rename")
+        tmp_table = __tmp_table_name_for_column_rename(table)
+        super(tmp_table)
       else
         super
       end
@@ -1046,8 +1051,9 @@ module OnlineMigrations
         schema ? quote(schema) : "current_schema()"
       end
 
-      def rename_table_create_view(table_name, old_new_column_hash)
-        tmp_table = "#{table_name}_column_rename"
+      def __rename_table_and_create_view(table_name, old_new_column_hash)
+        tmp_table = __tmp_table_name_for_column_rename(table_name)
+
         rename_table(table_name, tmp_table)
         column_mapping = old_new_column_hash.map do |column_name, new_column_name|
           "#{quote_column_name(column_name)} AS #{quote_column_name(new_column_name)}"
@@ -1058,6 +1064,17 @@ module OnlineMigrations
             SELECT *, #{column_mapping}
             FROM #{quote_table_name(tmp_table)}
         SQL
+      end
+
+      def __tmp_table_name_for_column_rename(table_name)
+        suffix = "_column_rename"
+
+        # On ActiveRecord 7.1 can use table_name_length instead of max_identifier_length,
+        # see https://github.com/rails/rails/pull/45136.
+        # Also we need to account for "_pkey", because older versions does not correctly rename
+        # tables with long names. Remove when supporting newer versions only.
+        prefix_length = max_identifier_length - "_pkey".size - suffix.length
+        table_name[0, prefix_length] + suffix
       end
   end
 end

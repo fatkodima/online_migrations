@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix renaming columns for tables with long names
+
 ## 0.19.3 (2024-08-09)
 
 - Fix idempotency for `add_index`/`remove_index` for expression indexes
