@@ -68,6 +68,13 @@ module OnlineMigrations
             migration.run
           end
 
+          # Background schema migrations could take a while to run. It is possible, that the process
+          # never reaches this (or the rescue below) line of code. E.g., when it is force quitted
+          # (SIGKILL etc.) and so the migration will end up in the "running" state and the query is
+          # still executing (or already finished) in the database. This migration can either be safely
+          # manually retried or will be picked up in the future by scheduler when it decides that
+          # this migration is stuck.
+
           migration.update!(status: :succeeded, finished_at: Time.current)
 
           ActiveSupport::Notifications.instrument("completed.background_schema_migrations", migration_payload)
