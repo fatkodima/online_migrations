@@ -28,6 +28,12 @@ module OnlineMigrations
           migrations << "create_background_schema_migrations"
         end
 
+        indexes = connection.indexes(BackgroundSchemaMigrations::Migration.table_name)
+        unique_index = indexes.find { |i| i.unique && i.columns.sort == ["connection_class_name", "migration_name", "shard"] }
+        if !unique_index
+          migrations << "background_schema_migrations_change_unique_index"
+        end
+
         migrations
       end
 

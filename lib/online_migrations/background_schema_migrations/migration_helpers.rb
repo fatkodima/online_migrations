@@ -85,10 +85,15 @@ module OnlineMigrations
       end
 
       # @private
-      def create_background_schema_migration(migration_name, table_name, **options)
-        options.assert_valid_keys(:definition, :max_attempts, :statement_timeout, :connection_class_name)
+      def create_background_schema_migration(migration_name, table_name, connection_class_name: nil, **options)
+        options.assert_valid_keys(:definition, :max_attempts, :statement_timeout)
 
-        Migration.find_or_create_by!(migration_name: migration_name, shard: nil) do |migration|
+        if connection_class_name
+          connection_class_name = __normalize_connection_class_name(connection_class_name)
+        end
+
+        Migration.find_or_create_by!(migration_name: migration_name, shard: nil,
+                                     connection_class_name: connection_class_name) do |migration|
           migration.assign_attributes(**options, table_name: table_name)
 
           shards = Utils.shard_names(migration.connection_class)
@@ -103,6 +108,17 @@ module OnlineMigrations
           end
         end
       end
+
+      private
+        def __normalize_connection_class_name(connection_class_name)
+          if connection_class_name
+            klass = connection_class_name.safe_constantize
+            if klass
+              connection_class = Utils.find_connection_class(klass)
+              connection_class.name if connection_class
+            end
+          end
+        end
     end
   end
 end

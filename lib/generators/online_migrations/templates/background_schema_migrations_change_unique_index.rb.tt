@@ -1,0 +1,9 @@
+class BackgroundSchemaMigrationsChangeUniqueIndex < <%= migration_parent %>
+  def change
+    safety_assured do
+      remove_index :background_schema_migrations, name: :index_background_schema_migrations_on_unique_configuration
+      add_index :background_schema_migrations, [:migration_name, :shard, :connection_class_name], unique: true,
+        name: :index_background_schema_migrations_on_unique_configuration
+    end
+  end
+end

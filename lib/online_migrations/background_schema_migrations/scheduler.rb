@@ -34,7 +34,8 @@ module OnlineMigrations
 
           runnable_migrations.find do |runnable_migration|
             active_migrations.none? do |active_migration|
-              active_migration.shard == runnable_migration.shard &&
+              active_migration.connection_class_name == runnable_migration.connection_class_name &&
+                active_migration.shard == runnable_migration.shard &&
                 active_migration.table_name == runnable_migration.table_name
             end
           end

@@ -62,7 +62,7 @@ module OnlineMigrations
       validates :table_name, presence: true, length: { maximum: MAX_IDENTIFIER_LENGTH }
       validates :definition, presence: true
       validates :migration_name, presence: true, uniqueness: {
-        scope: :shard,
+        scope: [:connection_class_name, :shard],
         message: ->(object, data) do
           message = "(#{data[:value]}) has already been taken."
           if object.index_addition?
@@ -190,7 +190,7 @@ module OnlineMigrations
                   if connection.send(:__index_valid?, name, schema: schema)
                     return
                   else
-                    connection.remove_index(table_name, name: name)
+                    connection.remove_index(table_name, name: name, algorithm: :concurrently)
                   end
                 end
               end
@@ -214,7 +214,7 @@ module OnlineMigrations
 
         def validate_connection_class
           klass = connection_class_name.safe_constantize
-          if !(klass < ActiveRecord::Base)
+          if !(klass <= ActiveRecord::Base)
             errors.add(:connection_class_name, "is not an ActiveRecord::Base child class")
           end
         end

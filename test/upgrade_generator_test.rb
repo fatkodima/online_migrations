@@ -32,6 +32,17 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_changes_background_schema_migrations_unique_index
+    simulate_transactional_test do
+      load_schema(2)
+      run_generator
+
+      assert_migration("db/migrate/background_schema_migrations_change_unique_index.rb") do |content|
+        assert_includes content, "add_index :background_schema_migrations, [:migration_name, :shard, :connection_class_name]"
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do

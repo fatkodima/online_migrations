@@ -1,5 +1,13 @@
 ## master (unreleased)
 
+- Fix an edge case for background schema migrations
+
+    If you use background schema migrations, you need to run
+    ```
+    bin/rails generate online_migrations:upgrade
+    bin/rails db:migrate
+    ```
+
 - Fix retrying running stuck background schema migrations
 - Fix renaming columns for tables with long names
 
