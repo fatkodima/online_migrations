@@ -116,6 +116,16 @@ module OnlineMigrations
         end
       end
 
+      # Whether the migration is considered stuck (is running for some configured time).
+      #
+      def stuck?
+        # Composite migrations are not considered stuck.
+        return false if composite?
+
+        stuck_timeout = (statement_timeout || 1.day) + 10.minutes
+        (enqueued? || running?) && updated_at <= stuck_timeout.seconds.ago
+      end
+
       # Mark this migration as ready to be processed again.
       #
       # This is used to manually retrying failed migrations.

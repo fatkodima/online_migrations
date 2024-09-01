@@ -56,11 +56,34 @@ module BackgroundSchemaMigrations
       assert m.children.all?(&:succeeded?)
     end
 
+    def test_run_retries_stuck_migrations
+      connection = ActiveRecord::Base.connection
+      connection.create_table(:users, force: true) do |t|
+        t.string :email
+      end
+
+      m = create_migration(
+        name: "index_users_on_email",
+        table_name: "users",
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")',
+        statement_timeout: 1.hour
+      )
+      m.update(status: :running, updated_at: 2.hours.ago) # emulate stuck migration
+
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
+
+      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
+      scheduler.run
+
+      assert m.reload.succeeded?
+    ensure
+      connection.drop_table(:users)
+    end
+
     def test_run_when_on_the_same_table_already_running
       connection = ActiveRecord::Base.connection
       connection.create_table(:users, force: true) do |t|
         t.string :email
-        t.string :name
       end
 
       m1 = create_migration(

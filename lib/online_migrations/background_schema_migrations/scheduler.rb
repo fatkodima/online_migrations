@@ -29,7 +29,7 @@ module OnlineMigrations
 
       private
         def find_migration
-          active_migrations = Migration.running.select(:table_name, :shard).to_a
+          active_migrations = Migration.running.reject(&:stuck?)
           runnable_migrations = Migration.runnable.enqueued.queue_order.to_a + Migration.retriable.queue_order.to_a
 
           runnable_migrations.find do |runnable_migration|

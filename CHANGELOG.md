@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix retrying running stuck background schema migrations
 - Fix renaming columns for tables with long names
 
 ## 0.19.3 (2024-08-09)
