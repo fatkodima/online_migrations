@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.19.4 (2024-09-02)
+
 - Fix an edge case for background schema migrations
 
     If you use background schema migrations, you need to run
