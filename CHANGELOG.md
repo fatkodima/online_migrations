@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.19.5 (2024-09-20)
+
 - Fix `add_reference_concurrently` when adding polymorphic references
 
 ## 0.19.4 (2024-09-02)
