@@ -647,10 +647,17 @@ module OnlineMigrations
       __ensure_not_in_transaction!
 
       column_name = "#{ref_name}_id"
+      type_column_name = "#{ref_name}_type"
+
       if !column_exists?(table_name, column_name)
         type = options[:type] || :bigint
         allow_null = options.fetch(:null, true)
         add_column(table_name, column_name, type, null: allow_null)
+      end
+
+      if !column_exists?(table_name, type_column_name)
+        allow_null = options[:polymorphic].is_a?(Hash) ? options[:polymorphic][:null] : true
+        add_column(table_name, type_column_name, :string, null: allow_null)
       end
 
       # Always added by default in 5.0+
@@ -659,9 +666,10 @@ module OnlineMigrations
       if index
         index = {} if index == true
         index_columns = [column_name]
+
         if options[:polymorphic]
+          index_columns.unshift(type_column_name)
           index[:name] ||= "index_#{table_name}_on_#{ref_name}"
-          index_columns.unshift("#{ref_name}_type")
         end
 
         add_index(table_name, index_columns, **index.merge(algorithm: :concurrently))

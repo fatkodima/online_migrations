@@ -113,5 +113,20 @@ module SchemaStatements
 
       assert_equal 2, connection.foreign_keys(:milestones).size
     end
+
+    def test_polymorphic_add_reference_concurrently
+      connection.create_table(:images)
+      connection.add_reference_concurrently(:images, :imageable, polymorphic: true, index: true)
+
+      columns = connection.columns(:images).map(&:name)
+      assert_includes columns, "imageable_id"
+      assert_includes columns, "imageable_type"
+
+      index = connection.indexes(:images).first
+      assert_equal "index_images_on_imageable", index.name
+      assert_equal ["imageable_type", "imageable_id"], index.columns
+    ensure
+      connection.drop_table(:images)
+    end
   end
 end

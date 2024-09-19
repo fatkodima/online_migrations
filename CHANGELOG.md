@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix `add_reference_concurrently` when adding polymorphic references
+
 ## 0.19.4 (2024-09-02)
 
 - Fix an edge case for background schema migrations
