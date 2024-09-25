@@ -81,7 +81,7 @@ module OnlineMigrations
               error_message: nil,
               backtrace: nil
             )
-            migration.running! if migration.failed?
+            migration.enqueued! if migration.failed?
           end
           true
         else

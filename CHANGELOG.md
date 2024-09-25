@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix progress for background migrations with small number of records
+
 ## 0.19.5 (2024-09-20)
 
 - Fix `add_reference_concurrently` when adding polymorphic references

@@ -256,7 +256,7 @@ module BackgroundMigrations
 
       assert m.retry
       assert m.migration_jobs.all?(&:enqueued?)
-      assert m.running?
+      assert m.enqueued?
     end
 
     def test_retry_composite
@@ -275,8 +275,8 @@ module BackgroundMigrations
       assert m.retry
 
       migrations.each(&:reload)
-      assert m.running?
-      assert child1.running?
+      assert m.enqueued?
+      assert child1.enqueued?
       assert child3.succeeded?
       assert child1.migration_jobs.all?(&:enqueued?)
     end
