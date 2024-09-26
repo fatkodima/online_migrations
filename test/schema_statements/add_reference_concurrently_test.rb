@@ -32,6 +32,7 @@ module SchemaStatements
 
       Milestone.reset_column_information
       assert_includes Milestone.column_names, "project_id"
+      assert_not_includes Milestone.column_names, "project_type"
     end
 
     def test_add_reference_concurrently_adds_index
