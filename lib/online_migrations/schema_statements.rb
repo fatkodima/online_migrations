@@ -655,7 +655,7 @@ module OnlineMigrations
         add_column(table_name, column_name, type, null: allow_null)
       end
 
-      if !column_exists?(table_name, type_column_name)
+      if options[:polymorphic] && !column_exists?(table_name, type_column_name)
         allow_null = options[:polymorphic].is_a?(Hash) ? options[:polymorphic][:null] : true
         add_column(table_name, type_column_name, :string, null: allow_null)
       end
