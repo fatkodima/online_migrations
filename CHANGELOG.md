@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Do not wait before running retried background migrations
+
 ## 0.19.6 (2024-09-26)
 
 - Fix `add_refernce_concurrently` when adding non polymorphic references

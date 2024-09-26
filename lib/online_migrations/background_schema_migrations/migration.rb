@@ -123,7 +123,7 @@ module OnlineMigrations
         return false if composite?
 
         stuck_timeout = (statement_timeout || 1.day) + 10.minutes
-        (enqueued? || running?) && updated_at <= stuck_timeout.seconds.ago
+        running? && updated_at <= stuck_timeout.seconds.ago
       end
 
       # Mark this migration as ready to be processed again.
@@ -134,7 +134,7 @@ module OnlineMigrations
         if composite? && failed?
           children.failed.each(&:retry)
           update!(
-            status: self.class.statuses[:running],
+            status: self.class.statuses[:enqueued],
             finished_at: nil
           )
           true

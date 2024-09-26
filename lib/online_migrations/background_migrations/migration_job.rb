@@ -17,7 +17,7 @@ module OnlineMigrations
       scope :completed, -> { where(status: [:failed, :succeeded]) }
       scope :stuck, -> do
         timeout = OnlineMigrations.config.background_migrations.stuck_jobs_timeout
-        active.where("updated_at <= ?", timeout.seconds.ago)
+        running.where("updated_at <= ?", timeout.seconds.ago)
       end
 
       scope :retriable, -> do

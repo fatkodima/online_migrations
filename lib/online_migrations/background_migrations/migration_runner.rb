@@ -115,7 +115,7 @@ module OnlineMigrations
           if min_value && max_value
             create_migration_job!(min_value, max_value)
           else
-            migration.migration_jobs.retriable.first
+            migration.migration_jobs.enqueued.first || migration.migration_jobs.retriable.first
           end
         end
 

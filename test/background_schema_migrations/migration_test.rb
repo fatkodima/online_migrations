@@ -191,7 +191,7 @@ module BackgroundSchemaMigrations
       assert_nil m.finished_at
 
       migrations.each(&:reload)
-      assert m.running?
+      assert m.enqueued?
       assert child1.enqueued?
       assert child3.succeeded?
     end
