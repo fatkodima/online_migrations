@@ -40,6 +40,9 @@ jobs:
           - ruby-version: 2.7
             gemfile: activerecord_71.gemfile
 
+          - ruby-version: 3.3
+            gemfile: activerecord_80.gemfile
+
           # Test against latest versions just in case.
           - ruby-version: 3.3
             gemfile: activerecord_head.gemfile
