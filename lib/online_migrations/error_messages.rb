@@ -279,8 +279,8 @@ end",
 
       remove_column:
 "<% if !small_table && indexes.any? %>
-Removing a column will automatically remove all of the indexes that involved the removed column.
-But the indexes would be removed non-concurrently, so you need to safely remove the indexes first:
+Removing a column will automatically remove all the indexes that include this column.
+Indexes will be removed non-concurrently, so you need to safely remove them first:
 
 class <%= migration_name %>RemoveIndexes < <%= migration_parent %>
   disable_ddl_transaction!

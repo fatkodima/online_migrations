@@ -77,8 +77,8 @@ module CommandChecker
 
     def test_remove_column_with_index
       assert_unsafe RemoveColumnWithIndex, <<~MSG
-        Removing a column will automatically remove all of the indexes that involved the removed column.
-        But the indexes would be removed non-concurrently, so you need to safely remove the indexes first:
+        Removing a column will automatically remove all the indexes that include this column.
+        Indexes will be removed non-concurrently, so you need to safely remove them first:
 
         class CommandChecker::RemovingColumnsTest::RemoveColumnWithIndexRemoveIndexes < #{migration_parent}
           disable_ddl_transaction!
