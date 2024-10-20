@@ -120,6 +120,38 @@ module CommandChecker
         "remove_index :users, name: :index_users_on_lower_email, algorithm: :concurrently"
     end
 
+    class RemoveColumnWithPartialIndex < TestMigration
+      def change
+        safety_assured do
+          add_index :users, :email, where: "created_at > '2000-01-01'"
+        end
+
+        remove_column :users, :created_at
+      end
+    end
+
+    def test_remove_column_with_partial_index
+      assert_unsafe RemoveColumnWithPartialIndex,
+        "remove_index :users, name: :index_users_on_email, algorithm: :concurrently"
+    end
+
+    class RemoveColumnWithIncludeIndex < TestMigration
+      def change
+        safety_assured do
+          add_index :users, :email, include: :name
+        end
+
+        remove_column :users, :name
+      end
+    end
+
+    def test_remove_column_with_include_index
+      skip if ar_version < 7.1
+
+      assert_unsafe RemoveColumnWithIncludeIndex,
+        "remove_index :users, name: :index_users_on_email, algorithm: :concurrently"
+    end
+
     def test_remove_column_with_index_small_table
       OnlineMigrations.config.small_tables = [:users]
 

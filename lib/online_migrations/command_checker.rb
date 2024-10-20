@@ -453,13 +453,7 @@ module OnlineMigrations
 
         if !new_table?(table_name)
           indexes = connection.indexes(table_name).select do |index|
-            case index.columns
-            when String
-              # Expression index
-              columns.any? { |column| index.columns.include?(column) }
-            else
-              (index.columns & columns).any?
-            end
+            columns.any? { |column| index_include_column?(index, column) }
           end
 
           raise_error :remove_column,
@@ -890,6 +884,14 @@ module OnlineMigrations
       def index_corruption?
         postgresql_version >= Gem::Version.new("14.0") &&
           postgresql_version < Gem::Version.new("14.4")
+      end
+
+      def index_include_column?(index, column)
+        # Expression index
+        (index.columns.is_a?(String) && index.columns.include?(column)) ||
+          index.columns.include?(column) ||
+          (Utils.ar_version >= 7.1 && index.include && index.include.include?(column)) ||
+          (index.where && index.where.include?(column))
       end
 
       def run_custom_checks(method, args)
