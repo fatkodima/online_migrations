@@ -51,7 +51,7 @@ config.check_down = true
 You can customize specific error messages:
 
 ```ruby
-config.error_messages[:add_column_default] = "Your custom instructions"
+config.error_messages[:add_column_with_default] = "Your custom instructions"
 ```
 
 Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
