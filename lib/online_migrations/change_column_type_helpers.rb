@@ -118,7 +118,7 @@ module OnlineMigrations
           type_cast_functions[column_name] = type_cast_function if type_cast_function
           tmp_column_name = conversions[column_name]
 
-          if raw_connection.server_version >= 11_00_00
+          if database_version >= 11_00_00
             if primary_key(table_name) == column_name.to_s && old_col.type == :integer
               # For PG < 11 and Primary Key conversions, setting a column as the PK
               # converts even check constraints to NOT NULL column constraints
@@ -497,7 +497,7 @@ module OnlineMigrations
       def __set_not_null(table_name, column_name)
         # For PG >= 12 we can "promote" CHECK constraint to NOT NULL constraint:
         # https://github.com/postgres/postgres/commit/bbb96c3704c041d139181c6601e5bc770e045d26
-        if raw_connection.server_version >= 12_00_00
+        if database_version >= 12_00_00
           execute(<<~SQL)
             ALTER TABLE #{quote_table_name(table_name)}
             ALTER #{quote_column_name(column_name)}
