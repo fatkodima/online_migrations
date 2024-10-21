@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.20.0 (2024-10-21)
+
 - Enhance columns removal check to check indexes `where` and `include` options
 - Do not wait before running retried background migrations
 
