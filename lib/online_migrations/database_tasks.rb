@@ -3,7 +3,7 @@
 module OnlineMigrations
   # @private
   module DatabaseTasks
-    def migrate(*)
+    def migrate(*, **)
       super
     rescue => e
       if e.cause.is_a?(OnlineMigrations::Error)
