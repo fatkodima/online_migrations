@@ -19,7 +19,8 @@ module OnlineMigrations
       end
 
       relation = apply_limits(self.relation, column, start, finish, order)
-      base_relation = relation.reselect(column).reorder(column => order)
+      unscopes = Utils.ar_version < 7.1 ? [:includes] : [:includes, :preload, :eager_load]
+      base_relation = relation.unscope(*unscopes).reselect(column).reorder(column => order)
 
       start_id = start || begin
         start_row = base_relation.uncached { base_relation.first }

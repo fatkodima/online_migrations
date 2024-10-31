@@ -4,9 +4,6 @@ require "test_helper"
 
 module BackgroundMigrations
   class MigrationTest < Minitest::Test
-    class User < ActiveRecord::Base
-    end
-
     def setup
       @connection = ActiveRecord::Base.connection
       @connection.create_table(:users, force: true) do |t|
@@ -18,10 +15,17 @@ module BackgroundMigrations
         t.bigint :user_id
       end
 
+      @connection.create_table(:commits, force: true) do |t|
+        t.bigint :user_id
+      end
+
       User.reset_column_information
+      Project.reset_column_information
+      Commit.reset_column_information
     end
 
     def teardown
+      @connection.drop_table(:commits, if_exists: true)
       @connection.drop_table(:projects, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
@@ -153,6 +157,15 @@ module BackgroundMigrations
       assert_equal 1, m.min_value
       assert_equal 1, m.max_value
       assert m.enqueued?
+    end
+
+    def test_relation_with_includes
+      user = User.create!
+      _project = user.projects.create!
+      m = create_migration(migration_name: "RelationWithIncludes")
+
+      run_all_migration_jobs(m)
+      assert m.succeeded?
     end
 
     def test_progress_succeded_migration

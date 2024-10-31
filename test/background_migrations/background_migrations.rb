@@ -91,6 +91,16 @@ module BackgroundMigrations
     end
   end
 
+  class RelationWithIncludes < OnlineMigrations::BackgroundMigration
+    def relation
+      Project.includes(user: :commits)
+    end
+
+    def process_batch(_users)
+      # no-op
+    end
+  end
+
   class MigrationWithCount < OnlineMigrations::BackgroundMigration
     def relation
       User.all

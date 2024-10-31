@@ -2,9 +2,16 @@
 
 class User < ActiveRecord::Base
   has_many :projects
+  has_many :commits
 end
 
 class Project < ActiveRecord::Base
+  belongs_to :user
+  has_many :commits
+end
+
+class Commit < ActiveRecord::Base
+  belongs_to :user
 end
 
 class ShardRecord < ActiveRecord::Base
