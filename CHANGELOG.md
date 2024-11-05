@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.20.1 (2024-11-05)
+
 - Fix background data migrations to work with `includes`/`eager_load` on relation
 - Fix problem with running migrations for `activerecord` 8.0.0.rc2
 
