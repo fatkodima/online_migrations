@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix running background migrations over relations with duplicate records
+
 ## 0.20.1 (2024-11-05)
 
 - Fix background data migrations to work with `includes`/`eager_load` on relation

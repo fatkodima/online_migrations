@@ -168,6 +168,15 @@ module BackgroundMigrations
       assert m.succeeded?
     end
 
+    def test_relation_with_duplicate_records
+      user = User.create!
+      3.times { user.projects.create! }
+      m = create_migration(migration_name: "RelationWithJoins", batch_size: 2, sub_batch_size: 2)
+
+      run_all_migration_jobs(m)
+      assert m.succeeded?
+    end
+
     def test_progress_succeded_migration
       m = build_migration(status: :succeeded)
       assert_in_delta 100.0, m.progress

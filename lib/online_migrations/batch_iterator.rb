@@ -75,9 +75,10 @@ module OnlineMigrations
         # Retaining the results in the query cache would undermine the point of batching.
         batch_relation.uncached { yield batch_relation, start_id, last_id }
 
-        break if stop_row.nil?
+        break if last_id == finish
 
         start_id = stop_id
+        stop_id = nil
       end
     end
 
