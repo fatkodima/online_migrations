@@ -451,7 +451,7 @@ module OnlineMigrations
                     "or similar) table_name: #{table_name}, column_name: #{column_name}")
         else
           transaction do
-            add_column(table_name, column_name, type, **options.merge(default: nil, null: true))
+            add_column(table_name, column_name, type, **options, default: nil, null: true)
             change_column_default(table_name, column_name, default)
           end
         end
@@ -672,7 +672,7 @@ module OnlineMigrations
           index[:name] ||= "index_#{table_name}_on_#{ref_name}"
         end
 
-        add_index(table_name, index_columns, **index.merge(algorithm: :concurrently))
+        add_index(table_name, index_columns, **index, algorithm: :concurrently)
       end
 
       foreign_key = options[:foreign_key]
@@ -681,7 +681,7 @@ module OnlineMigrations
         foreign_key = {} if foreign_key == true
 
         foreign_table_name = Utils.foreign_table_name(ref_name, foreign_key)
-        add_foreign_key(table_name, foreign_table_name, **foreign_key.merge(column: column_name, validate: false))
+        add_foreign_key(table_name, foreign_table_name, **foreign_key, column: column_name, validate: false)
 
         if foreign_key[:validate] != false
           validate_foreign_key(table_name, foreign_table_name, **foreign_key)

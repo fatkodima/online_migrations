@@ -126,15 +126,15 @@ module OnlineMigrations
               # To avoid this, we instead set it to `NOT NULL DEFAULT 0` and we'll
               # copy the correct values when backfilling.
               add_column(table_name, tmp_column_name, new_type,
-                **old_col_options.merge(column_options).merge(default: old_col.default || 0, null: false))
+                **old_col_options, **column_options, default: old_col.default || 0, null: false)
             else
               if !old_col.default.nil?
                 old_col_options = old_col_options.merge(default: old_col.default, null: old_col.null)
               end
-              add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
+              add_column(table_name, tmp_column_name, new_type, **old_col_options, **column_options)
             end
           else
-            add_column(table_name, tmp_column_name, new_type, **old_col_options.merge(column_options))
+            add_column(table_name, tmp_column_name, new_type, **old_col_options, **column_options)
             change_column_default(table_name, tmp_column_name, old_col.default) if !old_col.default.nil?
           end
         end
@@ -434,7 +434,7 @@ module OnlineMigrations
             options[:opclass] = opclasses
           end
 
-          add_index(table_name, new_columns, **options.merge(algorithm: :concurrently))
+          add_index(table_name, new_columns, **options, algorithm: :concurrently)
         end
       end
 

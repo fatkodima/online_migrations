@@ -553,7 +553,7 @@ module OnlineMigrations
         if !new_or_small_table?(table_name)
           if options[:algorithm] != :concurrently
             raise_error :add_index,
-              command: command_str(:add_index, table_name, column_name, **options.merge(algorithm: :concurrently))
+              command: command_str(:add_index, table_name, column_name, **options, algorithm: :concurrently)
           end
 
           if options[:algorithm] == :concurrently && index_corruption?
@@ -585,7 +585,7 @@ module OnlineMigrations
 
         if options[:algorithm] != :concurrently && !new_or_small_table?(table_name)
           raise_error :remove_index,
-            command: command_str(:remove_index, table_name, **options.merge(algorithm: :concurrently))
+            command: command_str(:remove_index, table_name, **options, algorithm: :concurrently)
         end
 
         index_def = connection.indexes(table_name).find do |index|
@@ -608,7 +608,7 @@ module OnlineMigrations
 
           if validate
             raise_error :add_foreign_key,
-              add_code: command_str(:add_foreign_key, from_table, to_table, **options.merge(validate: false)),
+              add_code: command_str(:add_foreign_key, from_table, to_table, **options, validate: false),
               validate_code: command_str(:validate_foreign_key, from_table, to_table)
           end
         end
@@ -633,7 +633,7 @@ module OnlineMigrations
           name = options[:name] || check_constraint_name(table_name, expression)
 
           raise_error :add_check_constraint,
-            add_code: command_str(:add_check_constraint, table_name, expression, **options.merge(validate: false)),
+            add_code: command_str(:add_check_constraint, table_name, expression, **options, validate: false),
             validate_code: command_str(:validate_check_constraint, table_name, name: name)
         end
       end
@@ -645,7 +645,7 @@ module OnlineMigrations
 
         raise_error :add_unique_constraint,
           add_index_code: command_str(:add_index, table_name, column_name, unique: true, name: index_name, algorithm: :concurrently),
-          add_code: command_str(:add_unique_constraint, table_name, **options.merge(using_index: index_name)),
+          add_code: command_str(:add_unique_constraint, table_name, **options, using_index: index_name),
           remove_code: command_str(:remove_unique_constraint, table_name, column_name)
       end
 
@@ -661,7 +661,7 @@ module OnlineMigrations
       def add_not_null_constraint(table_name, column_name, **options)
         if !new_or_small_table?(table_name) && options[:validate] != false
           raise_error :add_not_null_constraint,
-            add_code: command_str(:add_not_null_constraint, table_name, column_name, **options.merge(validate: false)),
+            add_code: command_str(:add_not_null_constraint, table_name, column_name, **options, validate: false),
             validate_code: command_str(:validate_not_null_constraint, table_name, column_name, **options.except(:validate))
         end
       end
@@ -669,7 +669,7 @@ module OnlineMigrations
       def add_text_limit_constraint(table_name, column_name, limit, **options)
         if !new_or_small_table?(table_name) && options[:validate] != false
           raise_error :add_text_limit_constraint,
-            add_code: command_str(:add_text_limit_constraint, table_name, column_name, limit, **options.merge(validate: false)),
+            add_code: command_str(:add_text_limit_constraint, table_name, column_name, limit, **options, validate: false),
             validate_code: command_str(:validate_text_limit_constraint, table_name, column_name, **options.except(:validate))
         end
       end
