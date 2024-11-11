@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.20.2 (2024-11-11)
+
 - Fix running background migrations over relations with duplicate records
 
 ## 0.20.1 (2024-11-05)
