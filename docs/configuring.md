@@ -156,7 +156,7 @@ This is useful to demystify `online_migrations` inner workings, and to better in
 Consider migration, running on PostgreSQL < 11:
 
 ```ruby
-class AddAdminToUsers < ActiveRecord::Migration[7.2]
+class AddAdminToUsers < ActiveRecord::Migration[8.0]
   disable_ddl_transaction!
 
   def change
