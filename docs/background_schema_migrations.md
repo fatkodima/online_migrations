@@ -34,33 +34,39 @@ or run it manually when the deployment is finished, from the rails console:
 
 ## Enqueueing a Background Schema Migration
 
-Currently, only helpers for adding/removing indexes are provided.
+Currently, only helpers for adding/removing indexes and validating constraints are provided.
 
-Background schema migrations should be performed in 2 steps:
+Background schema migrations should be performed in 2 steps (e.g. for index creation):
 
-1. Create a PR that schedules the index to be created/removed
-2. Verify that the PR was deployed and that the index was actually created/removed on production.
-  Create a follow-up PR with a regular migration that creates/removes an index synchronously (will be a no op when run on production) and commit the schema changes for `schema.rb`/`structure.sql`
+1. Create a PR that schedules the index to be created
+2. Verify that the PR was deployed and that the index was actually created on production.
+  Create a follow-up PR with a regular migration that creates an index synchronously (will be a no op when run on production) and commit the schema changes for `schema.rb`/`structure.sql`
 
 To schedule an index creation:
 
 ```ruby
-# db/migrate/xxxxxxxxxxxxxx_add_index_to_users_email_in_background.rb
-def up
-  add_index_in_background(:users, :email, unique: true)
-end
+add_index_in_background(:users, :email, unique: true)
 ```
 
 To schedule an index removal:
 
 ```ruby
-# db/migrate/xxxxxxxxxxxxxx_remove_index_from_users_email_in_background.rb
-def up
-  remove_index_in_background(:users, name: "index_users_on_email")
-end
+remove_index_in_background(:users, name: "index_users_on_email")
 ```
 
-`add_index_in_background`/`remove_index_in_background` accept additional configuration options which controls how the background schema migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_schema_migrations/migration_helpers.rb) for the list of all available configuration options.
+To schedule a foreign key validation:
+
+```ruby
+validate_foreign_key_in_background(:users, :companies)
+```
+
+To schedule a constraint (`CHECK` constraint, `FOREIGN KEY` constraint) validation:
+
+```ruby
+validate_constraint_in_background(:users, "first_name_not_null")
+```
+
+All the helpers accept additional configuration options which controls how the background schema migration is run. Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/background_schema_migrations/migration_helpers.rb) for the list of all available configuration options.
 
 ## Depending on schema changes
 

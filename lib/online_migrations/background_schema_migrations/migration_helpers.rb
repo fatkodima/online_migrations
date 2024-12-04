@@ -45,6 +45,26 @@ module OnlineMigrations
         enqueue_background_schema_migration(name, table_name, definition: definition, **migration_options)
       end
 
+      def validate_foreign_key_in_background(from_table, to_table = nil, **options)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
+
+        if !foreign_key_exists?(from_table, to_table, **options)
+          Utils.raise_or_say("Foreign key validation was not enqueued because the foreign key does not exist.")
+          return
+        end
+
+        fk_name_to_validate = foreign_key_for!(from_table, to_table: to_table, **options).name
+        validate_constraint_in_background(from_table, fk_name_to_validate, **migration_options)
+      end
+
+      def validate_constraint_in_background(table_name, constraint_name, **options)
+        definition = <<~SQL.squish
+          ALTER TABLE #{quote_table_name(table_name)}
+          VALIDATE CONSTRAINT #{quote_table_name(constraint_name)}
+        SQL
+        enqueue_background_schema_migration(constraint_name, table_name, definition: definition, **options)
+      end
+
       # Ensures that the background schema migration with the provided migration name succeeded.
       #
       # If the enqueued migration was not found in development (probably when resetting a dev environment

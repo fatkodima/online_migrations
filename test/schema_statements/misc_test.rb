@@ -25,7 +25,7 @@ module SchemaStatements
       end
 
       @connection.create_table(:invoices, force: :cascade) do |t|
-        t.belongs_to :user
+        t.belongs_to :user, foreign_key: false
         t.date :start_date
         t.date :end_date
       end
@@ -37,8 +37,8 @@ module SchemaStatements
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
-      @connection.drop_table(:users, if_exists: true)
       @connection.drop_table(:invoices, if_exists: true)
+      @connection.drop_table(:users, if_exists: true)
     end
 
     def test_schema
@@ -289,6 +289,15 @@ module SchemaStatements
       assert_raises_with_message(RuntimeError, /to be marked as 'succeeded'/i) do
         @connection.ensure_background_schema_migration_succeeded("index_users_on_name")
       end
+    end
+
+    def test_validate_constraint_in_background
+      @connection.add_foreign_key(:invoices, :users, name: "fk_invoices_user_id", validate: false)
+
+      m = @connection.validate_constraint_in_background(:invoices, "fk_invoices_user_id", connection_class_name: "Invoice")
+      assert_equal "fk_invoices_user_id", m.name
+      assert_equal "invoices", m.table_name
+      assert_equal 'ALTER TABLE "invoices" VALIDATE CONSTRAINT "fk_invoices_user_id"', m.definition
     end
 
     def test_disable_statement_timeout

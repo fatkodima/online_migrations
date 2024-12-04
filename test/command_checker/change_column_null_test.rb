@@ -43,6 +43,8 @@ module CommandChecker
 
             def change
               add_not_null_constraint :users, :name, name: "users_name_null", validate: false
+              # You can use `validate_constraint_in_background` if you have a very large table
+              # and want to validate the constraint using background schema migrations.
               validate_not_null_constraint :users, :name, name: "users_name_null"
             end
           end

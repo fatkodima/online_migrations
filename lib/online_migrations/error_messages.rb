@@ -268,6 +268,8 @@ class <%= migration_name %> < <%= migration_parent %>
     end
 
 <% end %>
+    # You can use `validate_constraint_in_background` if you have a very large table
+    # and want to validate the constraint using background schema migrations.
     <%= validate_constraint_code %>
 <% if remove_constraint_code %>
 
@@ -404,6 +406,8 @@ end
 
 class Validate<%= migration_name %> < <%= migration_parent %>
   def change
+    # You can use `validate_foreign_key_in_background` if you have a very large table
+    # and want to validate the foreign key using background schema migrations.
     <%= validate_code %>
   end
 end",

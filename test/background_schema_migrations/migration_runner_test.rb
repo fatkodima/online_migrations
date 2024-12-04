@@ -10,10 +10,16 @@ module BackgroundSchemaMigrations
         t.string :email
       end
 
+      @connection.create_table(:projects) do |t|
+        t.integer :user_id
+      end
+
       User.reset_column_information
+      Project.reset_column_information
     end
 
     def teardown
+      @connection.drop_table(:projects, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
       on_each_shard { Dog.connection.remove_index(:dogs, :name) }
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
@@ -108,6 +114,15 @@ module BackgroundSchemaMigrations
       m = create_migration
       run_migration(m)
       assert m.reload.succeeded?
+    end
+
+    def test_validating_foreign_key
+      @connection.add_foreign_key(:projects, :users, validate: false)
+      m = @connection.validate_foreign_key_in_background(:projects, :users, connection_class_name: "Project")
+      run_migration(m)
+      assert m.reload.succeeded?
+      foreign_key = @connection.foreign_keys(:projects).first
+      assert foreign_key.validated?
     end
 
     def test_run_saves_error_when_failed

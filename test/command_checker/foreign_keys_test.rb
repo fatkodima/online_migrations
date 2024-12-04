@@ -43,6 +43,8 @@ module CommandChecker
 
         class ValidateCommandChecker::ForeignKeysTest::AddForeignKey < #{migration_parent}
           def change
+            # You can use `validate_foreign_key_in_background` if you have a very large table
+            # and want to validate the foreign key using background schema migrations.
             validate_foreign_key :projects, :users
           end
         end

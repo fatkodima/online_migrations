@@ -1,5 +1,12 @@
 ## master (unreleased)
 
+- Add helpers for validating constraints in background
+
+    ```ruby
+    validate_foreign_key_in_background(:users, :companies)
+    validate_constraint_in_background(:users, "first_name_not_null")
+    ```
+
 ## 0.20.2 (2024-11-11)
 
 - Fix running background migrations over relations with duplicate records

@@ -35,5 +35,34 @@ module SchemaStatements
         connection.validate_foreign_key :milestones, :non_existing
       end
     end
+
+    def test_validate_foreign_key_in_background
+      connection.add_foreign_key(:milestones, :projects, validate: false)
+
+      m = connection.validate_foreign_key_in_background(:milestones, :projects, connection_class_name: "User")
+      assert_equal "fk_rails_9bd0a0c791", m.name
+      assert_equal "milestones", m.table_name
+      assert_equal 'ALTER TABLE "milestones" VALIDATE CONSTRAINT "fk_rails_9bd0a0c791"', m.definition
+    end
+
+    def test_validate_foreign_key_in_background_raises_when_does_not_exist
+      assert_raises_with_message(RuntimeError, /the foreign key does not exist/i) do
+        # For multiple databases it just warns, but we need a raise.
+        OnlineMigrations::Utils.stub(:multiple_databases?, false) do
+          connection.validate_foreign_key_in_background(:milestones, :projects, connection_class_name: "User")
+        end
+      end
+    end
+
+    def test_validate_foreign_key_in_background_custom_attributes
+      connection.add_foreign_key(:milestones, :projects, name: "my_foreign_key", validate: false)
+
+      m = connection.validate_foreign_key_in_background(
+        :milestones, :projects, name: "my_foreign_key",
+        max_attempts: 15, connection_class_name: "User"
+      )
+      assert_equal "my_foreign_key", m.name
+      assert_equal 15, m.max_attempts
+    end
   end
 end
