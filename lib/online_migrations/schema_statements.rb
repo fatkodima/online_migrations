@@ -520,7 +520,17 @@ module OnlineMigrations
     #
     def validate_not_null_constraint(table_name, column_name, name: nil)
       name ||= __not_null_constraint_name(table_name, column_name)
-      validate_check_constraint(table_name, name: name)
+      column = column_for(table_name, column_name)
+
+      if column.null == false &&
+         !__not_null_constraint_exists?(table_name, column_name, name: name)
+        Utils.say(<<~MSG.squish)
+          NOT NULL constraint was not validated: it does not exist and
+          column #{table_name}.#{column_name} is already defined as `NOT NULL`
+        MSG
+      else
+        validate_check_constraint(table_name, name: name)
+      end
     end
 
     # Removes a NOT NULL constraint from the column
@@ -844,6 +854,22 @@ module OnlineMigrations
       end
     end
 
+    # Extends default method to be idempotent.
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_foreign_key
+    #
+    def remove_foreign_key(from_table, to_table = nil, **options)
+      # Do not consider validation for idempotency.
+      if foreign_key_exists?(from_table, to_table, **options.except(:validate))
+        super
+      else
+        Utils.say(<<~MSG.squish)
+          Foreign key was not removed because it does not exist (this may be due to an aborted migration or similar).
+          from_table: #{from_table}, to_table: #{to_table}, options: #{options.inspect}
+        MSG
+      end
+    end
+
     # Extends default method to be idempotent
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
@@ -885,6 +911,21 @@ module OnlineMigrations
         disable_statement_timeout do
           super
         end
+      end
+    end
+
+    # Extends default method to be idempotent
+    #
+    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
+    #
+    def remove_check_constraint(table_name, expression = nil, **options)
+      if __check_constraint_exists?(table_name, expression: expression, **options)
+        super
+      else
+        Utils.say(<<~MSG.squish)
+          Check constraint was not removed because it does not exist (this may be due to an aborted migration or similar).
+          table_name: #{table_name}, expression: #{expression}, options: #{options.inspect}
+        MSG
       end
     end
 

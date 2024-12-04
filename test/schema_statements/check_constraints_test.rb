@@ -92,6 +92,21 @@ module SchemaStatements
       end
     end
 
+    def test_remove_check_constraint
+      connection.add_check_constraint :milestones, "points >= 0"
+      assert_equal 1, connection.check_constraints(:milestones).size
+      connection.remove_check_constraint :milestones, "points >= 0"
+      assert_empty connection.check_constraints(:milestones)
+    end
+
+    def test_remove_check_constraint_when_not_exists
+      assert_empty connection.check_constraints(:milestones)
+
+      assert_nothing_raised do
+        connection.remove_check_constraint :milestones, "points >= 0"
+      end
+    end
+
     def test_add_not_null_constraint
       milestone = Milestone.create!(name: nil)
 
@@ -182,6 +197,14 @@ module SchemaStatements
 
     def test_validate_non_existing_not_null_constraint_raises
       assert_raises(ArgumentError, "has no check constraint") do
+        connection.validate_not_null_constraint :milestones, :name, name: "non_existing"
+      end
+    end
+
+    def test_validate_non_existing_not_null_constraint_and_already_not_null_column_passes
+      connection.change_column_null :milestones, :name, false
+
+      assert_nothing_raised do
         connection.validate_not_null_constraint :milestones, :name, name: "non_existing"
       end
     end

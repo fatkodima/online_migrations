@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Make `validate_not_null_constraint`, `remove_foreign_key` and `remove_check_constraint` idempotent
+
 - Add helpers for validating constraints in background
 
     ```ruby

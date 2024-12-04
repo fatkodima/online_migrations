@@ -36,6 +36,22 @@ module SchemaStatements
       end
     end
 
+    def test_remove_foreign_key
+      connection.add_foreign_key :milestones, :projects
+      assert connection.foreign_key_exists?(:milestones, :projects)
+
+      connection.remove_foreign_key :milestones, :projects
+      assert_not connection.foreign_key_exists?(:milestones, :projects)
+    end
+
+    def test_remove_foreign_key_when_not_exists
+      assert_empty connection.foreign_keys(:milestones)
+
+      assert_nothing_raised do
+        connection.remove_foreign_key :milestones, :projects
+      end
+    end
+
     def test_validate_foreign_key_in_background
       connection.add_foreign_key(:milestones, :projects, validate: false)
 
