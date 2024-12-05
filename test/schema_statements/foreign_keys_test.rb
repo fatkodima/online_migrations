@@ -15,6 +15,7 @@ module SchemaStatements
       @connection.create_table(:milestones, force: true) do |t|
         t.bigint :owner_id
         t.bigint :project_id
+        t.bigint :parent_project_id
       end
     end
 
@@ -28,6 +29,14 @@ module SchemaStatements
       connection.add_foreign_key :milestones, :projects
       connection.add_foreign_key :milestones, :projects # once again
       assert connection.foreign_key_exists?(:milestones, :projects)
+    end
+
+    def test_add_foreign_key_referencing_same_table_by_different_columns
+      connection.add_foreign_key :milestones, :projects, column: :parent_project_id
+      assert_equal 1, connection.foreign_keys(:milestones).size
+
+      connection.add_foreign_key :milestones, :projects
+      assert_equal 2, connection.foreign_keys(:milestones).size
     end
 
     def test_validate_non_existing_foreign_key

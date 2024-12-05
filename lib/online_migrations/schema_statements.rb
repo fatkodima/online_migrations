@@ -813,13 +813,13 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_foreign_key
     #
     def add_foreign_key(from_table, to_table, **options)
-      # Do not consider validation for idempotency.
-      if foreign_key_exists?(from_table, to_table, **options.except(:validate))
-        message = +"Foreign key was not created because it already exists " \
-                   "(this can be due to an aborted migration or similar): from_table: #{from_table}, to_table: #{to_table}"
-        message << ", #{options.inspect}" if options.any?
+      options = foreign_key_options(from_table, to_table, options)
 
-        Utils.say(message)
+      if foreign_key_exists?(from_table, to_table, **options.slice(:column, :primary_key))
+        Utils.say(<<~MSG.squish)
+          Foreign key was not created because it already exists (this can be due to an aborted migration or similar).
+          from_table: #{from_table}, to_table: #{to_table}, options: #{options.inspect}
+        MSG
       else
         super
       end
@@ -859,8 +859,7 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_foreign_key
     #
     def remove_foreign_key(from_table, to_table = nil, **options)
-      # Do not consider validation for idempotency.
-      if foreign_key_exists?(from_table, to_table, **options.except(:validate))
+      if foreign_key_exists?(from_table, to_table, **options.slice(:name, :to_table, :column))
         super
       else
         Utils.say(<<~MSG.squish)

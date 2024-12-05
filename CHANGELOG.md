@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `add_foreign_key` when referencing same table via different columns
 - Make `validate_not_null_constraint`, `remove_foreign_key` and `remove_check_constraint` idempotent
 
 - Add helpers for validating constraints in background
