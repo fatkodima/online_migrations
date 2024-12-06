@@ -176,7 +176,7 @@ module OnlineMigrations
   #   # This will attempt 30 retries starting with delay of 10ms between each unsuccessful try, increasing exponentially
   #   # up to the maximum delay of 1 minute and 200ms set as lock timeout for each try:
   #
-  #   config.retrier = OnlineMigrations::ConstantLockRetrier.new(attempts: 30,
+  #   config.retrier = OnlineMigrations::ExponentialLockRetrier.new(attempts: 30,
   #       base_delay: 0.01.seconds, max_delay: 1.minute, lock_timeout: 0.2.seconds)
   #
   class ExponentialLockRetrier < LockRetrier
