@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.21.0 (2024-12-09)
+
 - Fix `add_foreign_key` when referencing same table via different columns
 - Make `validate_not_null_constraint`, `remove_foreign_key` and `remove_check_constraint` idempotent
 
