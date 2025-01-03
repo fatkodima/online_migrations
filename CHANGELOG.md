@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.22.0 (2025-01-03)
+
 - Make background data migrations scheduler run a single migration at a time
 
     This is similar to background schema migrations scheduler's behavior.
