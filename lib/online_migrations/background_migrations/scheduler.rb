@@ -3,9 +3,10 @@
 module OnlineMigrations
   module BackgroundMigrations
     # Class responsible for scheduling background migrations.
-    # It selects runnable background migrations and runs them one step (one batch) at a time.
+    #
+    # It selects a single runnable background migration and runs it one step (one batch) at a time.
     # A migration is considered runnable if it is not completed and the time interval between
-    #   successive runs has passed.
+    # successive runs has passed.
     #
     # Scheduler should be configured to run periodically, for example, via cron.
     # @example Run via whenever
@@ -22,18 +23,13 @@ module OnlineMigrations
       # Runs Scheduler
       def run
         active_migrations = Migration.runnable.active.queue_order
-        runnable_migrations = active_migrations.select(&:interval_elapsed?)
+        runnable_migration = active_migrations.select(&:interval_elapsed?).first
 
-        runnable_migrations.each do |migration|
-          run_migration_job(migration)
-        end
-      end
-
-      private
-        def run_migration_job(migration)
-          runner = MigrationRunner.new(migration)
+        if runnable_migration
+          runner = MigrationRunner.new(runnable_migration)
           runner.run_migration_job
         end
+      end
     end
   end
 end
