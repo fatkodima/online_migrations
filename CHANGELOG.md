@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add `#can_be_cancelled?` and `#can_be_paused?` helpers to background migrations
+
 ## 0.21.0 (2024-12-09)
 
 - Fix `add_foreign_key` when referencing same table via different columns

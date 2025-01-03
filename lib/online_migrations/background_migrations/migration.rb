@@ -110,6 +110,14 @@ module OnlineMigrations
       end
       alias cancel cancelled!
 
+      def can_be_paused?
+        enqueued? || running?
+      end
+
+      def can_be_cancelled?
+        !succeeded? && !cancelled?
+      end
+
       def last_job
         migration_jobs.order(:max_value).last
       end

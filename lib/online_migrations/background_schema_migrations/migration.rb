@@ -94,6 +94,14 @@ module OnlineMigrations
       end
       alias cancel cancelled!
 
+      def can_be_paused?
+        false
+      end
+
+      def can_be_cancelled?
+        !succeeded? && !cancelled?
+      end
+
       # Returns the progress of the background schema migration.
       #
       # @return [Float] value in range from 0.0 to 100.0
