@@ -110,6 +110,10 @@ module OnlineMigrations
       end
       alias cancel cancelled!
 
+      def pausable?
+        true
+      end
+
       def can_be_paused?
         enqueued? || running?
       end

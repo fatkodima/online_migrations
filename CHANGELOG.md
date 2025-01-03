@@ -5,7 +5,7 @@
     This is similar to background schema migrations scheduler's behavior.
     Running multiple migrations at a time can cause unneeded database load and other bad effects.
 
-- Add `#can_be_cancelled?` and `#can_be_paused?` helpers to background migrations
+- Add `#pausable?`, `#can_be_cancelled?` and `#can_be_paused?` helpers to background migrations
 
 ## 0.21.0 (2024-12-09)
 
