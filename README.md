@@ -18,7 +18,7 @@ See [comparison to `strong_migrations`](#comparison-to-strong_migrations)
 
 - Ruby 3.0+
 - Rails 7.0+
-- PostgreSQL 9.6+
+- PostgreSQL 12+
 
 For older Ruby and Rails versions you can use older versions of this gem.
 

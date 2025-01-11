@@ -15,39 +15,41 @@ module CommandChecker
 
     class AddTimestampsDefault < TestMigration
       def change
-        add_timestamps :users, null: false, default: 3.days.ago # -> { "NOW()" }
+        add_timestamps :users, null: false, default: -> { "NOW()" }
       end
     end
 
     def test_add_timestamps_default
-      with_target_version(11) do
-        assert_safe AddTimestampsDefault
+      assert_safe AddTimestampsDefault
+    end
+
+    class AddTimestampsVolatileDefault < TestMigration
+      def change
+        add_timestamps :users, null: false, default: -> { "NOW() + (random() * (interval '90 days'))" }
       end
     end
 
-    def test_add_timestamps_default_before_11
-      with_target_version(10) do
-        assert_unsafe AddTimestampsDefault, <<~MSG
-          Adding timestamps columns with non-null defaults blocks reads and writes while the entire table is rewritten.
+    def test_add_timestamps_volatile_default
+      assert_unsafe AddTimestampsVolatileDefault, <<~MSG
+        Adding timestamp columns with volatile defaults blocks reads and writes while the entire table is rewritten.
 
-          A safer approach is to, for both timestamps columns:
-          1. add the column without a default value
-          2. change the column default
-          3. backfill existing rows with the new value
-          4. add the NOT NULL constraint
+        A safer approach is to, for both timestamps columns:
+        1. add the column without a default value
+        2. change the column default
+        3. backfill existing rows with the new value
+        4. add the NOT NULL constraint
 
-          add_column_with_default takes care of all this steps:
+        add_column_with_default takes care of all this steps:
 
-          class CommandChecker::AddTimestampsTest::AddTimestampsDefault < #{migration_parent}
-            disable_ddl_transaction!
+        class CommandChecker::AddTimestampsTest::AddTimestampsVolatileDefault < #{migration_parent}
+          disable_ddl_transaction!
 
-            def change
-              add_column_with_default :users, :created_at, :datetime, null: false, <paste value here>
-              add_column_with_default :users, :updated_at, :datetime, null: false, <paste value here>
-            end
+          def change
+            add_column_with_default :users, :created_at, :datetime, null: false, <paste value here>
+            add_column_with_default :users, :updated_at, :datetime, null: false, <paste value here>
           end
-        MSG
-      end
+        end
+      MSG
     end
 
     class AddTimestampsNoDefault < TestMigration
@@ -63,14 +65,12 @@ module CommandChecker
     class AddTimestampsDefaultNewTable < TestMigration
       def change
         create_table :users_new
-        add_timestamps :users_new, default: 3.days.ago
+        add_timestamps :users_new, default: -> { "NOW()" }
       end
     end
 
     def test_add_timestamps_default_new_table
-      with_target_version(10) do
-        assert_safe AddTimestampsDefaultNewTable
-      end
+      assert_safe AddTimestampsDefaultNewTable
     end
   end
 end

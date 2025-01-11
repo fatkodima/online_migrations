@@ -439,9 +439,7 @@ module OnlineMigrations
     def add_column_with_default(table_name, column_name, type, **options)
       default = options.fetch(:default)
 
-      if database_version >= 11_00_00 && !Utils.volatile_default?(self, type, default)
-        add_column(table_name, column_name, type, **options)
-      else
+      if Utils.volatile_default?(self, type, default)
         __ensure_not_in_transaction!
 
         batch_options = options.extract!(:batch_size, :batch_column_name, :progress, :pause_ms)
@@ -465,12 +463,12 @@ module OnlineMigrations
           add_not_null_constraint(table_name, column_name, validate: false)
           validate_not_null_constraint(table_name, column_name)
 
-          if database_version >= 12_00_00
-            # In PostgreSQL 12+ it is safe to "promote" a CHECK constraint to `NOT NULL` for the column
-            change_column_null(table_name, column_name, false)
-            remove_not_null_constraint(table_name, column_name)
-          end
+          # In PostgreSQL 12+ it is safe to "promote" a CHECK constraint to `NOT NULL` for the column
+          change_column_null(table_name, column_name, false)
+          remove_not_null_constraint(table_name, column_name)
         end
+      else
+        add_column(table_name, column_name, type, **options)
       end
     end
 

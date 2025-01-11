@@ -119,11 +119,6 @@ module MinitestHelpers
     ActiveRecord::Base.stub(:partial_inserts, value, &block)
   end
 
-  def with_postgres(major_version, &block)
-    connection = ActiveRecord::Base.connection
-    connection.stub(:database_version, major_version * 1_00_00, &block)
-  end
-
   def ar_version
     OnlineMigrations::Utils.ar_version
   end

@@ -28,7 +28,6 @@ module OnlineMigrations
   autoload :VerboseSqlLogs
   autoload :ForeignKeysCollector
   autoload :IndexDefinition
-  autoload :IndexesCollector
   autoload :CommandChecker
   autoload :BackgroundMigration
 

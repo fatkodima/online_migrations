@@ -222,26 +222,14 @@ module CommandChecker
     end
 
     def test_timestamp_to_timestamptz_no_utc
-      with_postgres(12) do
-        with_time_zone("Europe/Kyiv") do
-          assert_unsafe TimestampToTimestamptz
-        end
+      with_time_zone("Europe/Kyiv") do
+        assert_unsafe TimestampToTimestamptz
       end
     end
 
     def test_timestamp_to_timestamptz_utc
-      with_postgres(12) do
-        with_time_zone("UTC") do
-          assert_safe TimestampToTimestamptz
-        end
-      end
-    end
-
-    def test_timestamp_to_timestamptz_utc_before_12
-      with_postgres(11) do
-        with_time_zone("UTC") do
-          assert_unsafe TimestampToTimestamptz
-        end
+      with_time_zone("UTC") do
+        assert_safe TimestampToTimestamptz
       end
     end
 

@@ -9,11 +9,19 @@ class ConfigTest < Minitest::Test
     connection.create_table(:users, force: :cascade) do |t|
       t.string :name
     end
+
+    OnlineMigrations.config.add_check do |method|
+      target_version = OnlineMigrations.config.target_version
+      if method == :add_column && target_version && target_version < 13
+        stop!("Unsafe operation")
+      end
+    end
   end
 
   def teardown
     connection = ActiveRecord::Base.connection
     connection.drop_table(:users, if_exists: true)
+    OnlineMigrations.config.checks.clear
   end
 
   class RemoveNameFromUsers < TestMigration
@@ -102,30 +110,30 @@ class ConfigTest < Minitest::Test
   end
 
   def test_target_version_safe
-    with_target_version(11) do
+    with_target_version(13) do
       assert_safe AddColumnDefault
     end
   end
 
   def test_target_version_unsafe
-    with_target_version(10) do
+    with_target_version(12) do
       assert_unsafe AddColumnDefault
     end
   end
 
   def test_target_version_multiple_dbs
-    with_target_version({ primary: 11 }) do
+    with_target_version({ primary: 13 }) do
       assert_safe AddColumnDefault
     end
 
-    with_target_version({ primary: 10 }) do
+    with_target_version({ primary: 12 }) do
       assert_unsafe AddColumnDefault
     end
   end
 
   def test_target_version_multiple_dbs_unconfigured
     assert_raises_with_message(StandardError, /OnlineMigrations.config.target_version is not configured for :primary/i) do
-      with_target_version({ animals: 10 }) do
+      with_target_version({ animals: 12 }) do
         assert_safe AddColumnDefault
       end
     end

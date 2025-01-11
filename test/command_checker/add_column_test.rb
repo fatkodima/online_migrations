@@ -22,32 +22,7 @@ module CommandChecker
     end
 
     def test_add_column_default
-      with_target_version(11) do
-        assert_safe AddColumnDefault
-      end
-    end
-
-    def test_add_column_default_before_11
-      with_target_version(10) do
-        assert_unsafe AddColumnDefault, <<~MSG
-          Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
-
-          A safer approach is to:
-          1. add the column without a default value
-          2. change the column default
-          3. backfill existing rows with the new value
-
-          add_column_with_default takes care of all this steps:
-
-          class CommandChecker::AddColumnTest::AddColumnDefault < #{migration_parent}
-            disable_ddl_transaction!
-
-            def change
-              add_column_with_default :users, :admin, :boolean, default: false
-            end
-          end
-        MSG
-      end
+      assert_safe AddColumnDefault
     end
 
     class AddColumnDefaultNull < TestMigration
@@ -56,25 +31,8 @@ module CommandChecker
       end
     end
 
-    def test_add_column_default_null_before_11
-      with_target_version(10) do
-        assert_unsafe AddColumnDefaultNull, <<~MSG
-          Adding a column with a null default blocks reads and writes while the entire table is rewritten.
-          Instead, add the column without a default value.
-
-          class CommandChecker::AddColumnTest::AddColumnDefaultNull < #{migration_parent}
-            def change
-              add_column :users, :admin, :boolean
-            end
-          end
-        MSG
-      end
-    end
-
     def test_add_column_default_null
-      with_target_version(11) do
-        assert_safe AddColumnDefaultNull
-      end
+      assert_safe AddColumnDefaultNull
     end
 
     class AddColumnVolatileUuidDefault < TestMigration
@@ -85,9 +43,7 @@ module CommandChecker
     end
 
     def test_add_column_volatile_uuid_default
-      with_target_version(11) do
-        assert_unsafe AddColumnVolatileUuidDefault
-      end
+      assert_unsafe AddColumnVolatileUuidDefault
     end
 
     class AddColumnNonVolatileUuidDefault < TestMigration
@@ -97,9 +53,7 @@ module CommandChecker
     end
 
     def test_add_column_non_volatile_uuid_default
-      with_target_version(11) do
-        assert_safe AddColumnNonVolatileUuidDefault
-      end
+      assert_safe AddColumnNonVolatileUuidDefault
     end
 
     class AddColumnVolatileDefault < TestMigration
@@ -109,9 +63,14 @@ module CommandChecker
     end
 
     def test_add_column_volatile_default
-      with_target_version(11) do
-        assert_unsafe AddColumnVolatileDefault
-      end
+      assert_unsafe AddColumnVolatileDefault, <<~MSG
+        Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
+
+        A safer approach is to:
+        1. add the column without a default value
+        2. change the column default
+        3. backfill existing rows with the new value
+      MSG
     end
 
     class AddColumnNonVolatileDefault < TestMigration
@@ -122,9 +81,7 @@ module CommandChecker
     end
 
     def test_add_column_non_volatile_default
-      with_target_version(11) do
-        assert_safe AddColumnNonVolatileDefault
-      end
+      assert_safe AddColumnNonVolatileDefault
     end
 
     class AddColumnDefaultNotNull < TestMigration
@@ -133,16 +90,8 @@ module CommandChecker
       end
     end
 
-    def test_add_column_default_not_null_older_version
-      with_target_version(10) do
-        assert_unsafe AddColumnDefaultNotNull, "add the NOT NULL constraint"
-      end
-    end
-
-    def test_add_column_default_not_null_newer_version
-      with_target_version(11) do
-        assert_safe AddColumnDefaultNotNull
-      end
+    def test_add_column_default_not_null
+      assert_safe AddColumnDefaultNotNull
     end
 
     class AddColumnNoDefault < TestMigration

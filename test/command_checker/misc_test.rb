@@ -37,8 +37,8 @@ module CommandChecker
     end
 
     def test_unsupported_version
-      with_target_version(9.5) do
-        assert_raises_with_message(StandardError, /PostgreSQL < 9.6 is not supported/i) do
+      with_target_version(11) do
+        assert_raises_with_message(StandardError, /PostgreSQL < 12 is not supported/i) do
           migrate ForceCreateTable
         end
       end

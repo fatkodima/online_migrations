@@ -317,7 +317,7 @@ A safer approach is to:
 <% end %>",
 
       add_timestamps_with_default:
-"Adding timestamps columns with non-null defaults blocks reads and writes while the entire table is rewritten.
+"Adding timestamp columns with volatile defaults blocks reads and writes while the entire table is rewritten.
 
 A safer approach is to, for both timestamps columns:
 1. add the column without a default value
@@ -327,7 +327,6 @@ A safer approach is to, for both timestamps columns:
 4. add the NOT NULL constraint
 <% end %>
 
-<% unless volatile_default %>
 add_column_with_default takes care of all this steps:
 
 class <%= migration_name %> < <%= migration_parent %>
@@ -336,8 +335,7 @@ class <%= migration_name %> < <%= migration_parent %>
   def change
     <%= code %>
   end
-end
-<% end %>",
+end",
 
       add_reference:
 "<% if bad_foreign_key %>
@@ -355,13 +353,6 @@ class <%= migration_name %> < <%= migration_parent %>
     <%= code %>
   end
 end",
-
-      add_hash_index:
-"Hash index operations are not WAL-logged, so hash indexes might need to be rebuilt with REINDEX
-after a database crash if there were unwritten changes. Also, changes to hash indexes are not replicated
-over streaming or file-based replication after the initial base backup, so they give wrong answers
-to queries that subsequently use them. For these reasons, hash index use is discouraged.
-Use B-tree indexes instead.",
 
       add_index:
 "Adding an index non-concurrently blocks writes. Instead, use:

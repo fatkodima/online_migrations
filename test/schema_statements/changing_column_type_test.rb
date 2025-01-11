@@ -52,30 +52,15 @@ module SchemaStatements
       @connection.drop_table(:users, if_exists: true)
     end
 
-    def test_initialize_column_type_change_creates_new_column_before_11
-      with_postgres(10) do
-        @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
+    def test_initialize_column_type_change_creates_new_column
+      @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
 
-        column = column_for(:projects, :name_for_type_change)
-        assert_equal :string, column.type
-        assert_equal 100, column.limit
-        assert column.null
-        assert_equal "My project", column.default
-        assert_equal "Project's name", column.comment
-      end
-    end
-
-    def test_initialize_column_type_change_creates_new_column_after_11
-      with_postgres(11) do
-        @connection.initialize_column_type_change(:projects, :name, :string, limit: 100)
-
-        column = column_for(:projects, :name_for_type_change)
-        assert_equal :string, column.type
-        assert_equal 100, column.limit
-        assert_not column.null
-        assert_equal "My project", column.default
-        assert_equal "Project's name", column.comment
-      end
+      column = column_for(:projects, :name_for_type_change)
+      assert_equal :string, column.type
+      assert_equal 100, column.limit
+      assert_not column.null
+      assert_equal "My project", column.default
+      assert_equal "Project's name", column.comment
     end
 
     def test_initialize_column_type_change_type_cast_function_as_literal
@@ -90,22 +75,6 @@ module SchemaStatements
       clear_caches
       p = Project.create!(description: "Required description", score: "123.4")
       assert_equal 123, @connection.select_value("SELECT score_for_type_change FROM projects WHERE id = #{p.id}")
-    end
-
-    def test_initialize_columns_type_change_creates_new_columns_before_11
-      with_postgres(10) do
-        @connection.initialize_columns_type_change(:projects, [[:name, :string], [:user_id, :bigint]], name: { limit: 100 })
-
-        name_column = column_for(:projects, :name_for_type_change)
-        assert_equal :string, name_column.type
-        assert_equal 100, name_column.limit
-        assert name_column.null
-        assert_equal "My project", name_column.default
-
-        user_id_column = column_for(:projects, :user_id_for_type_change)
-        assert user_id_column.null
-        assert_equal "bigint", user_id_column.sql_type
-      end
     end
 
     def test_initialize_columns_type_change_raises_for_incorrect_column_and_type_format
@@ -128,26 +97,13 @@ module SchemaStatements
       assert(schema_cache.columns(:projects).none? { |column| column.name == "name_for_type_change" })
     end
 
-    def test_initialize_column_type_change_for_primary_key_before_11
-      with_postgres(10) do
-        @connection.initialize_column_type_change(:projects, :id, :bigint)
+    def test_initialize_column_type_change_for_primary_key
+      @connection.initialize_column_type_change(:projects, :id, :bigint)
 
-        column = column_for(:projects, :id_for_type_change)
-        assert_equal "bigint", column.sql_type
-        assert_nil column.default
-        assert column.null
-      end
-    end
-
-    def test_initialize_column_type_change_for_primary_key_after_11
-      with_postgres(11) do
-        @connection.initialize_column_type_change(:projects, :id, :bigint)
-
-        column = column_for(:projects, :id_for_type_change)
-        assert_equal "bigint", column.sql_type
-        assert_equal "0", column.default
-        assert_not column.null
-      end
+      column = column_for(:projects, :id_for_type_change)
+      assert_equal "bigint", column.sql_type
+      assert_equal "0", column.default
+      assert_not column.null
     end
 
     def test_initialize_column_type_change_copies_not_null_constraint
@@ -317,28 +273,14 @@ module SchemaStatements
       assert_includes constraint.expression, "start_at"
     end
 
-    def test_finalize_column_type_change_preserves_not_null_without_default_before_12
-      with_postgres(11) do
-        @connection.initialize_column_type_change(:projects, :description, :text)
+    def test_finalize_column_type_change_preserves_not_null_without_default
+      @connection.initialize_column_type_change(:projects, :description, :text)
 
-        assert_sql("UPDATE pg_catalog.pg_attribute") do
-          @connection.finalize_column_type_change(:projects, :description)
-        end
-
-        assert_equal false, column_for(:projects, :description).null
+      refute_sql("UPDATE pg_catalog.pg_attribute") do
+        @connection.finalize_column_type_change(:projects, :description)
       end
-    end
 
-    def test_finalize_column_type_change_preserves_not_null_without_default_after_12
-      with_postgres(12) do
-        @connection.initialize_column_type_change(:projects, :description, :text)
-
-        refute_sql("UPDATE pg_catalog.pg_attribute") do
-          @connection.finalize_column_type_change(:projects, :description)
-        end
-
-        assert_equal false, column_for(:projects, :description).null
-      end
+      assert_equal false, column_for(:projects, :description).null
     end
 
     def test_finalize_column_type_change_keeps_columns_in_sync
@@ -380,34 +322,19 @@ module SchemaStatements
     def test_finalize_column_type_change_for_primary_key
       user1 = User.create!
 
-      with_postgres(11) do
-        @connection.initialize_column_type_change(:users, :id, :bigint)
-        @connection.finalize_column_type_change(:users, :id)
+      @connection.initialize_column_type_change(:users, :id, :bigint)
+      @connection.finalize_column_type_change(:users, :id)
 
-        assert_equal "id", @connection.primary_key(:users)
-        id_column = column_for(:users, :id)
-        assert_equal "bigint", id_column.sql_type
+      assert_equal "id", @connection.primary_key(:users)
+      id_column = column_for(:users, :id)
+      assert_equal "bigint", id_column.sql_type
 
-        old_id_column = column_for(:users, :id_for_type_change)
-        assert_equal :integer, old_id_column.type
+      old_id_column = column_for(:users, :id_for_type_change)
+      assert_equal :integer, old_id_column.type
 
-        # sequence is assigned to the new column
-        user2 = User.create!
-        assert_equal user1.id + 1, user2.id
-      end
-    end
-
-    def test_finalize_column_type_change_for_primary_key_before_11
-      # For PG >= 11 we set NOT NULL from the beginning.
-      # This tests if manual setting as NOT NULL is working as expected.
-      with_postgres(10) do
-        @connection.initialize_column_type_change(:users, :id, :bigint)
-        @connection.finalize_column_type_change(:users, :id)
-
-        assert_equal "id", @connection.primary_key(:users)
-        id_column = column_for(:users, :id)
-        assert_equal "bigint", id_column.sql_type
-      end
+      # sequence is assigned to the new column
+      user2 = User.create!
+      assert_equal user1.id + 1, user2.id
     end
 
     def test_finalize_column_type_change_for_primary_key_changes_referencing_foreign_keys

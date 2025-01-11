@@ -31,34 +31,26 @@ module CommandChecker
       end
     end
 
-    def test_change_column_null_to_disallow_before_12
-      with_target_version(11) do
-        assert_unsafe ChangeColumnNullToFalse, <<~MSG
-          Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
-          A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
-          add_not_null_constraint and validate_not_null_constraint take care of that.
-
-          class CommandChecker::ChangeColumnNullTest::ChangeColumnNullToFalse < #{migration_parent}
-            disable_ddl_transaction!
-
-            def change
-              add_not_null_constraint :users, :name, name: "users_name_null", validate: false
-              # You can use `validate_constraint_in_background` if you have a very large table
-              # and want to validate the constraint using background schema migrations.
-              validate_not_null_constraint :users, :name, name: "users_name_null"
-            end
-          end
-        MSG
-      end
-    end
-
     def test_change_column_null_to_disallow
-      with_target_version(12) do
-        assert_unsafe ChangeColumnNullToFalse, <<-MSG
-    change_column_null :users, :name, false
-    remove_check_constraint :users, name: "users_name_null"
-        MSG
-      end
+      assert_unsafe ChangeColumnNullToFalse, <<~MSG
+        Setting NOT NULL on an existing column blocks reads and writes while every row is checked.
+        A safer approach is to add a NOT NULL check constraint and validate it in a separate transaction.
+        add_not_null_constraint and validate_not_null_constraint take care of that.
+
+        class CommandChecker::ChangeColumnNullTest::ChangeColumnNullToFalse < #{migration_parent}
+          disable_ddl_transaction!
+
+          def change
+            add_not_null_constraint :users, :name, name: "users_name_null", validate: false
+            # You can use `validate_constraint_in_background` if you have a very large table
+            # and want to validate the constraint using background schema migrations.
+            validate_not_null_constraint :users, :name, name: "users_name_null"
+
+            change_column_null :users, :name, false
+            remove_check_constraint :users, name: "users_name_null"
+          end
+        end
+      MSG
     end
 
     class ChangeColumnNullToFalseDefault < TestMigration
@@ -101,15 +93,7 @@ module CommandChecker
     end
 
     def test_change_column_null_constraint
-      with_target_version(12) do
-        assert_safe ChangeColumnNullConstraint
-      end
-    end
-
-    def test_change_column_null_constraint_before_12
-      with_target_version(11) do
-        assert_unsafe ChangeColumnNullConstraint
-      end
+      assert_safe ChangeColumnNullConstraint
     end
 
     class ChangeColumnNullConstraintUnvalidated < TestMigration
@@ -120,9 +104,7 @@ module CommandChecker
     end
 
     def test_change_column_null_constraint_unvalidated
-      with_target_version(12) do
-        assert_unsafe ChangeColumnNullConstraintUnvalidated
-      end
+      assert_unsafe ChangeColumnNullConstraintUnvalidated
     end
 
     class ChangeColumnNullConstraintQuoted < TestMigration
@@ -140,9 +122,7 @@ module CommandChecker
     end
 
     def test_change_column_null_constraint_quoted
-      with_target_version(12) do
-        assert_safe ChangeColumnNullConstraintQuoted
-      end
+      assert_safe ChangeColumnNullConstraintQuoted
     end
   end
 end

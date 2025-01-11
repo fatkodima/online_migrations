@@ -59,7 +59,6 @@ module OnlineMigrations
         short_primary_key_type: "using-primary-key-with-short-integer-type",
         drop_table_multiple_foreign_keys: "removing-a-table-with-multiple-foreign-keys",
         rename_table: "renaming-a-table",
-        add_column_with_default_null: "adding-a-column-with-a-default-value",
         add_column_with_default: "adding-a-column-with-a-default-value",
         add_column_generated_stored: "adding-a-stored-generated-column",
         add_column_json: "adding-a-json-column",
@@ -69,7 +68,6 @@ module OnlineMigrations
         change_column_null: "setting-not-null-on-an-existing-column",
         remove_column: "removing-a-column",
         add_timestamps_with_default: "adding-a-column-with-a-default-value",
-        add_hash_index: "hash-indexes",
         add_reference: "adding-a-reference",
         add_index: "adding-an-index-non-concurrently",
         replace_index: "replacing-an-index",
@@ -89,8 +87,8 @@ module OnlineMigrations
         adapter = connection.adapter_name
         case adapter
         when /postg/i
-          if postgresql_version < Gem::Version.new("9.6")
-            raise "#{adapter} < 9.6 is not supported"
+          if postgresql_version < Gem::Version.new("12")
+            raise "#{adapter} < 12 is not supported"
           end
         else
           raise "#{adapter} is not supported"
@@ -181,11 +179,7 @@ module OnlineMigrations
         # But I think this check is enough for now.
         raise_error :short_primary_key_type if short_primary_key_type?(options)
 
-        if block
-          collect_foreign_keys(&block)
-          check_for_hash_indexes(&block) if postgresql_version < Gem::Version.new("10")
-        end
-
+        collect_foreign_keys(&block) if block
         @new_tables << table_name.to_s
       end
 
@@ -230,18 +224,11 @@ module OnlineMigrations
         @new_columns << [table_name.to_s, column_name.to_s]
 
         if !new_or_small_table?(table_name)
-          if options.key?(:default) &&
-             (postgresql_version < Gem::Version.new("11") || (!default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))))
-
-            if default.nil?
-              raise_error :add_column_with_default_null,
-                code: command_str(:add_column, table_name, column_name, type, options.except(:default))
-            else
-              raise_error :add_column_with_default,
-                code: command_str(:add_column_with_default, table_name, column_name, type, options),
-                not_null: options[:null] == false,
-                volatile_default: volatile_default
-            end
+          if options.key?(:default) && !default.nil? && (volatile_default = Utils.volatile_default?(connection, type, default))
+            raise_error :add_column_with_default,
+              code: command_str(:add_column_with_default, table_name, column_name, type, options),
+              not_null: options[:null] == false,
+              volatile_default: volatile_default
           end
 
           if type == :virtual && options[:stored]
@@ -357,9 +344,7 @@ module OnlineMigrations
 
               [:datetime, :timestamp, :timestamptz].include?(existing_type) &&
               precision >= existing_precision &&
-              (type == existing_type ||
-                (postgresql_version >= Gem::Version.new("12") &&
-                connection.select_value("SHOW timezone") == "UTC"))
+              (type == existing_type || connection.select_value("SHOW timezone") == "UTC")
             when :interval
               precision = options[:precision] || options[:limit] || 6
               existing_precision = existing_column.precision || existing_column.limit || 6
@@ -398,14 +383,11 @@ module OnlineMigrations
 
       def change_column_null(table_name, column_name, allow_null, default = nil, **)
         if !allow_null && !new_or_small_table?(table_name)
-          safe = false
           # In PostgreSQL 12+ you can add a check constraint to the table
           # and then "promote" it to NOT NULL for the column.
-          if postgresql_version >= Gem::Version.new("12")
-            safe = check_constraints(table_name).any? do |c|
-              c["def"] == "CHECK ((#{column_name} IS NOT NULL))" ||
-                c["def"] == "CHECK ((#{connection.quote_column_name(column_name)} IS NOT NULL))"
-            end
+          safe = check_constraints(table_name).any? do |c|
+            c["def"] == "CHECK ((#{column_name} IS NOT NULL))" ||
+              c["def"] == "CHECK ((#{connection.quote_column_name(column_name)} IS NOT NULL))"
           end
 
           if !safe
@@ -413,16 +395,12 @@ module OnlineMigrations
             vars = {
               add_constraint_code: command_str(:add_not_null_constraint, table_name, column_name, name: constraint_name, validate: false),
               validate_constraint_code: command_str(:validate_not_null_constraint, table_name, column_name, name: constraint_name),
-              remove_constraint_code: nil,
               table_name: table_name,
               column_name: column_name,
               default: default,
+              remove_constraint_code: command_str(:remove_check_constraint, table_name, name: constraint_name),
+              change_column_null_code: command_str(:change_column_null, table_name, column_name, false),
             }
-
-            if postgresql_version >= Gem::Version.new("12")
-              vars[:remove_constraint_code] = command_str(:remove_check_constraint, table_name, name: constraint_name)
-              vars[:change_column_null_code] = command_str(:change_column_null, table_name, column_name, false)
-            end
 
             raise_error :change_column_null, **vars
           end
@@ -466,25 +444,19 @@ module OnlineMigrations
         @new_columns << [table_name.to_s, "created_at"]
         @new_columns << [table_name.to_s, "updated_at"]
 
-        volatile_default = false
         if !new_or_small_table?(table_name) && !options[:default].nil? &&
-           (postgresql_version < Gem::Version.new("11") || (volatile_default = Utils.volatile_default?(connection, :datetime, options[:default])))
+           Utils.volatile_default?(connection, :datetime, options[:default])
 
           raise_error :add_timestamps_with_default,
             code: [command_str(:add_column_with_default, table_name, :created_at, :datetime, options),
                    command_str(:add_column_with_default, table_name, :updated_at, :datetime, options)].join("\n    "),
-            not_null: options[:null] == false,
-            volatile_default: volatile_default
+            not_null: options[:null] == false
         end
       end
 
       def add_reference(table_name, ref_name, **options)
         # Always added by default in 5.0+
         index = options.fetch(:index, true)
-
-        if index.is_a?(Hash) && index[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
-          raise_error :add_hash_index
-        end
 
         concurrently_set = index.is_a?(Hash) && index[:algorithm] == :concurrently
         bad_index = index && !concurrently_set
@@ -518,13 +490,6 @@ module OnlineMigrations
       alias add_belongs_to add_reference
 
       def add_reference_concurrently(table_name, ref_name, **options)
-        # Always added by default in 5.0+
-        index = options.fetch(:index, true)
-
-        if index.is_a?(Hash) && index[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
-          raise_error :add_hash_index
-        end
-
         foreign_key = options.fetch(:foreign_key, false)
 
         if foreign_key
@@ -542,10 +507,6 @@ module OnlineMigrations
       end
 
       def add_index(table_name, column_name, **options)
-        if options[:using].to_s == "hash" && postgresql_version < Gem::Version.new("10")
-          raise_error :add_hash_index
-        end
-
         if !new_or_small_table?(table_name)
           if options[:algorithm] != :concurrently
             raise_error :add_index,
@@ -696,19 +657,6 @@ module OnlineMigrations
         collector = ForeignKeysCollector.new
         collector.collect(&block)
         @foreign_key_tables |= collector.referenced_tables
-      end
-
-      def check_for_hash_indexes(&block)
-        indexes = collect_indexes(&block)
-        if indexes.any? { |index| index.using == "hash" }
-          raise_error :add_hash_index
-        end
-      end
-
-      def collect_indexes(&block)
-        collector = IndexesCollector.new
-        collector.collect(&block)
-        collector.indexes
       end
 
       def new_or_small_table?(table_name)

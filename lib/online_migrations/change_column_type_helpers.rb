@@ -118,24 +118,19 @@ module OnlineMigrations
           type_cast_functions[column_name] = type_cast_function if type_cast_function
           tmp_column_name = conversions[column_name]
 
-          if database_version >= 11_00_00
-            if primary_key(table_name) == column_name.to_s && old_col.type == :integer
-              # For PG < 11 and Primary Key conversions, setting a column as the PK
-              # converts even check constraints to NOT NULL column constraints
-              # and forces an inline re-verification of the whole table.
-              # To avoid this, we instead set it to `NOT NULL DEFAULT 0` and we'll
-              # copy the correct values when backfilling.
-              add_column(table_name, tmp_column_name, new_type,
-                **old_col_options, **column_options, default: old_col.default || 0, null: false)
-            else
-              if !old_col.default.nil?
-                old_col_options = old_col_options.merge(default: old_col.default, null: old_col.null)
-              end
-              add_column(table_name, tmp_column_name, new_type, **old_col_options, **column_options)
-            end
+          if primary_key(table_name) == column_name.to_s && old_col.type == :integer
+            # For PG < 11 and Primary Key conversions, setting a column as the PK
+            # converts even check constraints to NOT NULL column constraints
+            # and forces an inline re-verification of the whole table.
+            # To avoid this, we instead set it to `NOT NULL DEFAULT 0` and we'll
+            # copy the correct values when backfilling.
+            add_column(table_name, tmp_column_name, new_type,
+              **old_col_options, **column_options, default: old_col.default || 0, null: false)
           else
+            if !old_col.default.nil?
+              old_col_options = old_col_options.merge(default: old_col.default, null: old_col.null)
+            end
             add_column(table_name, tmp_column_name, new_type, **old_col_options, **column_options)
-            change_column_default(table_name, tmp_column_name, old_col.default) if !old_col.default.nil?
           end
         end
 
@@ -264,7 +259,7 @@ module OnlineMigrations
 
           # At this point we are sure there are no NULLs in this column
           transaction do
-            __set_not_null(table_name, tmp_column_name)
+            change_column_null(table_name, tmp_column_name, false)
             remove_not_null_constraint(table_name, tmp_column_name)
           end
         end
@@ -491,29 +486,6 @@ module OnlineMigrations
             where: constraint.where,
             deferrable: constraint.deferrable
           )
-        end
-      end
-
-      def __set_not_null(table_name, column_name)
-        # For PG >= 12 we can "promote" CHECK constraint to NOT NULL constraint:
-        # https://github.com/postgres/postgres/commit/bbb96c3704c041d139181c6601e5bc770e045d26
-        if database_version >= 12_00_00
-          execute(<<~SQL)
-            ALTER TABLE #{quote_table_name(table_name)}
-            ALTER #{quote_column_name(column_name)}
-            SET NOT NULL
-          SQL
-        else
-          # For older versions we can set attribute as NOT NULL directly
-          # through PG internal tables.
-          # In-depth analysis of implications of this was made, so this approach
-          # is considered safe - https://habr.com/ru/company/haulmont/blog/493954/  (in russian).
-          execute(<<~SQL)
-            UPDATE pg_catalog.pg_attribute
-            SET attnotnull = true
-            WHERE attrelid = #{quote(table_name)}::regclass
-              AND attname = #{quote(column_name)}
-          SQL
         end
       end
 

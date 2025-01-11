@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Drop support for PostgreSQL < 12
 - Drop support for Ruby < 3.0 and Rails < 7.0
 
 ## 0.22.0 (2025-01-03)
