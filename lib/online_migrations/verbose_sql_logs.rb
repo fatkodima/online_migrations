@@ -6,7 +6,7 @@ module OnlineMigrations
     class << self
       def enable
         @activerecord_logger_was = ActiveRecord::Base.logger
-        @verbose_query_logs_was = verbose_query_logs
+        @verbose_query_logs_was = ActiveRecord.verbose_query_logs
         return if @activerecord_logger_was.nil?
 
         stdout_logger = ActiveSupport::Logger.new($stdout)
@@ -23,30 +23,13 @@ module OnlineMigrations
           end
 
         ActiveRecord::Base.logger = combined_logger
-        set_verbose_query_logs(false)
+        ActiveRecord.verbose_query_logs = false
       end
 
       def disable
         ActiveRecord::Base.logger = @activerecord_logger_was
-        set_verbose_query_logs(@verbose_query_logs_was)
+        ActiveRecord.verbose_query_logs = @verbose_query_logs_was
       end
-
-      private
-        def verbose_query_logs
-          if Utils.ar_version >= 7.0
-            ActiveRecord.verbose_query_logs
-          else
-            ActiveRecord::Base.verbose_query_logs
-          end
-        end
-
-        def set_verbose_query_logs(value) # rubocop:disable Naming/AccessorMethodName
-          if Utils.ar_version >= 7.0
-            ActiveRecord.verbose_query_logs = value
-          else
-            ActiveRecord::Base.verbose_query_logs = value
-          end
-        end
     end
   end
 end

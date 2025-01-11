@@ -128,12 +128,12 @@ migration_helpers provides a safer approach to do this:
       <%= column_name.to_s.inspect %> => <%= new_column.to_s.inspect %>
     }
   }
-<% unless partial_writes %>
+<% unless ActiveRecord::Base.partial_inserts %>
 
   NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
   until the process of column rename is fully done.
   # config/application.rb
-  config.active_record.<%= partial_writes_setting %> = true
+  config.active_record.partial_inserts = true
 <% end %>
 
 2. Deploy
@@ -148,7 +148,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
   end
 
 4. Replace usages of the old column with a new column in the codebase
-<% if enumerate_columns_in_select_statements %>
+<% if ActiveRecord::Base.enumerate_columns_in_select_statements %>
 5. Ignore old column
 
   self.ignored_columns += [:<%= column_name %>]
@@ -247,7 +247,7 @@ during writes works automatically). For most column type changes, this does not 
 to be inserted when changing the default value of a column.
 Disable partial writes in config/application.rb:
 
-config.active_record.<%= config %> = false",
+config.active_record.partial_inserts = false",
 
       change_column_null:
 "Setting NOT NULL on an existing column blocks reads and writes while every row is checked.

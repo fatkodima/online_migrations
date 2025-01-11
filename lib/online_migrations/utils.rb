@@ -86,26 +86,6 @@ module OnlineMigrations
         "#{short_name}#{hashed_identifier}"
       end
 
-      def ar_partial_writes?
-        ActiveRecord::Base.public_send(ar_partial_writes_setting)
-      end
-
-      def ar_partial_writes_setting
-        if Utils.ar_version >= 7.0
-          "partial_inserts"
-        else
-          "partial_writes"
-        end
-      end
-
-      def ar_enumerate_columns_in_select_statements
-        if ar_version >= 7
-          ActiveRecord::Base.enumerate_columns_in_select_statements
-        else
-          false
-        end
-      end
-
       # Returns estimated rows count for a table.
       # https://www.citusdata.com/blog/2016/10/12/count-performance/
       def estimated_count(connection, table_name)

@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.4
+          ruby-version: "3.4"
           bundler-cache: true
       - run: bundle exec rubocop
 
@@ -33,18 +33,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - ruby-version: 2.7
-            gemfile: activerecord_61.gemfile
-          - ruby-version: 2.7
+          - ruby-version: "3.0"
             gemfile: activerecord_70.gemfile
-          - ruby-version: 2.7
+          - ruby-version: "3.0"
             gemfile: activerecord_71.gemfile
-
-          - ruby-version: 3.4
+          - ruby-version: "3.1"
+            gemfile: activerecord_72.gemfile
+          - ruby-version: "3.4"
             gemfile: activerecord_80.gemfile
 
           # Test against latest versions just in case.
-          - ruby-version: 3.4
+          - ruby-version: "3.4"
             gemfile: activerecord_head.gemfile
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.gemfile }}

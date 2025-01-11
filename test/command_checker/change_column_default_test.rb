@@ -23,19 +23,13 @@ module CommandChecker
 
     def test_with_partial_writes
       with_partial_writes(true) do
-        if ar_version >= 7
-          assert_unsafe ChangeColumnDefault, <<~MSG
-            Partial writes are enabled, which can cause incorrect values
-            to be inserted when changing the default value of a column.
-            Disable partial writes in config/application.rb:
+        assert_unsafe ChangeColumnDefault, <<~MSG
+          Partial writes are enabled, which can cause incorrect values
+          to be inserted when changing the default value of a column.
+          Disable partial writes in config/application.rb:
 
-            config.active_record.partial_inserts = false
-          MSG
-        else
-          assert_unsafe ChangeColumnDefault, <<~MSG
-            config.active_record.partial_writes = false
-          MSG
-        end
+          config.active_record.partial_inserts = false
+        MSG
       end
     end
 

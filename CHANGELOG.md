@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Drop support for Ruby < 3.0 and Rails < 7.0
+
 ## 0.22.0 (2025-01-03)
 
 - Make background data migrations scheduler run a single migration at a time

@@ -3,7 +3,7 @@ require:
   - rubocop-disable_syntax
 
 AllCops:
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.0
   NewCops: enable
   SuggestExtensions: false
 
@@ -86,6 +86,9 @@ Style/RescueStandardError:
 
 Style/MultipleComparison:
   ComparisonsThreshold: 3 # default is 2
+
+Style/ArgumentsForwarding:
+  Enabled: false
 
 Style/DisableSyntax:
   DisableSyntax:

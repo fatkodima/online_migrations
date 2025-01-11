@@ -116,8 +116,7 @@ module MinitestHelpers
   end
 
   def with_partial_writes(value, &block)
-    setting = OnlineMigrations::Utils.ar_partial_writes_setting
-    ActiveRecord::Base.stub(setting, value, &block)
+    ActiveRecord::Base.stub(:partial_inserts, value, &block)
   end
 
   def with_postgres(major_version, &block)

@@ -42,12 +42,8 @@ module SchemaStatements
     end
 
     def test_schema
-      if ActiveRecord.version >= Gem::Version.new("7.0.2")
+      assert_nothing_raised do
         ActiveRecord::Schema[ar_version].define do
-          add_index :users, :name
-        end
-      else
-        ActiveRecord::Schema.define do
           add_index :users, :name
         end
       end

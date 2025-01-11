@@ -210,39 +210,35 @@ module CommandChecker
             NOTE: You also need to temporarily enable partial writes (is disabled by default in Active Record >= 7)
             until the process of column rename is fully done.
             # config/application.rb
-            config.active_record.#{OnlineMigrations::Utils.ar_partial_writes_setting} = true
+            config.active_record.partial_inserts = true
         MSG
       end
     end
 
     def test_rename_column_with_enumerate_columns_in_select_statements
-      skip if ar_version < 7
+      previous = ActiveRecord::Base.enumerate_columns_in_select_statements
+      ActiveRecord::Base.enumerate_columns_in_select_statements = true
 
-      begin
-        previous = ActiveRecord::Base.enumerate_columns_in_select_statements
-        ActiveRecord::Base.enumerate_columns_in_select_statements = true
+      assert_unsafe RenameColumn, <<~MSG
+        5. Ignore old column
 
-        assert_unsafe RenameColumn, <<~MSG
-          5. Ignore old column
+          self.ignored_columns += [:name]
 
-            self.ignored_columns += [:name]
+        6. Deploy
+        7. Remove the column rename config from step 1
+        8. Remove the column ignore from step 5
+        9. Remove the VIEW created in step 3 and finally rename the column:
 
-          6. Deploy
-          7. Remove the column rename config from step 1
-          8. Remove the column ignore from step 5
-          9. Remove the VIEW created in step 3 and finally rename the column:
-
-            class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent}
-              def change
-                finalize_column_rename :users, :name, :first_name
-              end
+          class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent}
+            def change
+              finalize_column_rename :users, :name, :first_name
             end
+          end
 
-          10. Deploy
-        MSG
-      ensure
-        ActiveRecord::Base.enumerate_columns_in_select_statements = previous
-      end
+        10. Deploy
+      MSG
+    ensure
+      ActiveRecord::Base.enumerate_columns_in_select_statements = previous
     end
 
     class RenameColumnNewTable < TestMigration

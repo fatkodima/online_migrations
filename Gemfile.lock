@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     online_migrations (0.22.0)
-      activerecord (>= 6.1)
+      activerecord (>= 7.0)
 
 GEM
   remote: https://rubygems.org/

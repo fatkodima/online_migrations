@@ -280,10 +280,7 @@ module OnlineMigrations
             table_name: table_name,
             column_name: column_name,
             new_column: new_column,
-            model: table_name.to_s.classify,
-            partial_writes: Utils.ar_partial_writes?,
-            partial_writes_setting: Utils.ar_partial_writes_setting,
-            enumerate_columns_in_select_statements: Utils.ar_enumerate_columns_in_select_statements
+            model: table_name.to_s.classify
         end
       end
 
@@ -394,9 +391,8 @@ module OnlineMigrations
       end
 
       def change_column_default(table_name, column_name, _default_or_changes)
-        if Utils.ar_partial_writes? && !new_column?(table_name, column_name)
-          raise_error :change_column_default,
-            config: Utils.ar_partial_writes_setting
+        if ActiveRecord::Base.partial_inserts && !new_column?(table_name, column_name)
+          raise_error :change_column_default
         end
       end
 

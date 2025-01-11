@@ -32,12 +32,7 @@ module OnlineMigrations
 
       alias_attribute :name, :migration_name
 
-      # Avoid deprecation warnings.
-      if Utils.ar_version >= 7
-        enum :status, STATUSES.index_with(&:to_s)
-      else
-        enum status: STATUSES.index_with(&:to_s)
-      end
+      enum :status, STATUSES.index_with(&:to_s)
 
       belongs_to :parent, class_name: name, optional: true, inverse_of: :children
       has_many :children, class_name: name, foreign_key: :parent_id, dependent: :delete_all, inverse_of: :parent
