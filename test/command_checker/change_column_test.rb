@@ -223,7 +223,7 @@ module CommandChecker
 
     def test_timestamp_to_timestamptz_no_utc
       with_postgres(12) do
-        with_time_zone("Europe/Kiev") do
+        with_time_zone("Europe/Kyiv") do
           assert_unsafe TimestampToTimestamptz
         end
       end
@@ -738,6 +738,7 @@ module CommandChecker
       def with_time_zone(name)
         previous = connection.select_value("SHOW TIME ZONE")
         connection.select_value("SET TIME ZONE '#{name}'")
+        yield
       ensure
         connection.select_value("SET TIME ZONE #{connection.quote(previous)}")
       end

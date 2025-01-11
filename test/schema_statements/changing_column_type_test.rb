@@ -414,9 +414,11 @@ module SchemaStatements
       @connection.initialize_column_type_change(:users, :id, :bigint)
       @connection.finalize_column_type_change(:users, :id)
 
-      assert @connection.foreign_keys(:projects).any? do |fk|
+      foreign_key = @connection.foreign_keys(:projects).find do |fk|
         fk.to_table == "users" && fk.primary_key == "id"
       end
+
+      assert foreign_key
     end
 
     def test_revert_finalize_column_type_change_raises_in_transaction

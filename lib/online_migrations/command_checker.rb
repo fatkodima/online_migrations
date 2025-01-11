@@ -736,7 +736,7 @@ module OnlineMigrations
           if Utils.developer_env? && (target_version = OnlineMigrations.config.target_version)
             target_version.to_s
           else
-            database_version = connection.select_value("SHOW server_version_num").to_i
+            database_version = connection.database_version
             major = database_version / 10000
             if database_version >= 100000
               minor = database_version % 10000
