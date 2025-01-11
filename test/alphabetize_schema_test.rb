@@ -17,6 +17,9 @@ class AlphabetizeSchemaTest < Minitest::Test
   end
 
   def test_default
+    # Columns are sorted in rails 8.1 (https://github.com/rails/rails/pull/53281).
+    skip if ar_version >= 8.1
+
     schema = dump_schema
 
     expected_columns = <<-RUBY
