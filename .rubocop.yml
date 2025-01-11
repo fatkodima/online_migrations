@@ -84,6 +84,9 @@ Style/FetchEnvVar:
 Style/RescueStandardError:
   Enabled: false
 
+Style/MultipleComparison:
+  ComparisonsThreshold: 3 # default is 2
+
 Style/DisableSyntax:
   DisableSyntax:
     - unless
