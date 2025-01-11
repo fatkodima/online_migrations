@@ -99,9 +99,12 @@ module OnlineMigrations
 
       def set_statement_timeout
         if !defined?(@statement_timeout_set)
-          if (statement_timeout = OnlineMigrations.config.statement_timeout)
-            # TODO: inline this method call after deprecated `disable_statement_timeout` method removal.
-            connection.__set_statement_timeout(statement_timeout)
+          if (timeout = OnlineMigrations.config.statement_timeout)
+            # use ceil to prevent no timeout for values under 1 ms
+            timeout = (timeout * 1000).ceil if !timeout.is_a?(String)
+
+            # Can't use `execute`, because command checker marks it as a dangerous operation.
+            connection.select_value("SET statement_timeout TO #{connection.quote(timeout)}")
           end
           @statement_timeout_set = true
         end

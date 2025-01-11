@@ -296,41 +296,6 @@ module SchemaStatements
       assert_equal 'ALTER TABLE "invoices" VALIDATE CONSTRAINT "fk_invoices_user_id"', m.definition
     end
 
-    def test_disable_statement_timeout
-      prev_value = get_statement_timeout
-      set_statement_timeout(10)
-
-      OnlineMigrations.deprecator.silence do
-        @connection.disable_statement_timeout do
-          assert_equal "0", get_statement_timeout
-        end
-      end
-      assert_equal "10ms", get_statement_timeout
-    ensure
-      set_statement_timeout(prev_value)
-    end
-
-    def test_nested_disable_statement_timeouts
-      prev_value = get_statement_timeout
-      set_statement_timeout(10)
-
-      OnlineMigrations.deprecator.silence do
-        @connection.disable_statement_timeout do
-          set_statement_timeout(20)
-
-          @connection.disable_statement_timeout do
-            assert_equal "0", get_statement_timeout
-          end
-
-          assert_equal "20ms", get_statement_timeout
-        end
-      end
-
-      assert_equal "10ms", get_statement_timeout
-    ensure
-      set_statement_timeout(prev_value)
-    end
-
     private
       def column_for(table_name, column_name)
         @connection.columns(table_name).find { |c| c.name == column_name.to_s }

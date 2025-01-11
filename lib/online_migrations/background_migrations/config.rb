@@ -39,35 +39,11 @@ module OnlineMigrations
       #
       attr_accessor :batch_max_attempts
 
-      def throttler
-        OnlineMigrations.deprecator.warn(<<~MSG)
-          `config.background_migrations.throttler` is deprecated and will be removed.
-          Use `config.throttler` instead.
-        MSG
-        OnlineMigrations.config.throttler
-      end
-
       # The number of seconds that must pass before the running job is considered stuck
       #
       # @return [Integer] defaults to 1 hour
       #
       attr_accessor :stuck_jobs_timeout
-
-      def backtrace_cleaner
-        OnlineMigrations.deprecator.warn(<<~MSG)
-          `config.background_migrations.backtrace_cleaner` is deprecated and will be removed.
-          Use `config.backtrace_cleaner` instead.
-        MSG
-        OnlineMigrations.config.backtrace_cleaner
-      end
-
-      def backtrace_cleaner=(value)
-        OnlineMigrations.deprecator.warn(<<~MSG)
-          `config.background_migrations.backtrace_cleaner=` is deprecated and will be removed.
-          Use `config.backtrace_cleaner=` instead.
-        MSG
-        OnlineMigrations.config.backtrace_cleaner = value
-      end
 
       # The callback to perform when an error occurs in the migration job.
       #
@@ -92,14 +68,6 @@ module OnlineMigrations
         @batch_max_attempts = 5
         @stuck_jobs_timeout = 1.hour
         @error_handler = ->(error, errored_job) {}
-      end
-
-      def throttler=(value)
-        OnlineMigrations.deprecator.warn(<<~MSG)
-          `config.background_migrations.throttler=` is deprecated and will be removed.
-          Use `config.throttler=` instead.
-        MSG
-        OnlineMigrations.config.throttler = value
       end
     end
   end

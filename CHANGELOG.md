@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Remove deprecated code
 - Drop support for PostgreSQL < 12
 - Drop support for Ruby < 3.0 and Rails < 7.0
 

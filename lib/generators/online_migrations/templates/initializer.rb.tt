@@ -4,7 +4,9 @@ OnlineMigrations.configure do |config|
   # Configure the migration version starting after which checks are performed.
   # config.start_after = <%= start_after %>
 
-  # Configure statement timeout used for migrations.
+  # Configure statement timeout for migrations (in seconds).
+  # Note: Background data migrations use application specific timeouts and
+  # background schema migrations use their custom timeouts.
   config.statement_timeout = 1.hour
 
   # Set the version of the production database so the right checks are run in development.

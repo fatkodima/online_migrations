@@ -79,10 +79,6 @@ TestMigration = ActiveRecord::Migration::Current
 TestMigration.version = 20200101000001
 
 OnlineMigrations.configure do |config|
-  # TODO: Remove this after deprecated `disable_statement_timeout` methods is removed.
-  # To remove our own deprecation warning.
-  config.statement_timeout = 1.hour
-
   config.background_migrations.migrations_module = "BackgroundMigrations"
 
   # Do not waste time sleeping in tests
