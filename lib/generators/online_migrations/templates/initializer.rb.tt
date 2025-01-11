@@ -10,7 +10,7 @@ OnlineMigrations.configure do |config|
   config.statement_timeout = 1.hour
 
   # Set the version of the production database so the right checks are run in development.
-  # config.target_version = 10
+  # config.target_version = 17
 
   # Configure whether to perform checks when migrating down.
   config.check_down = false
@@ -21,7 +21,7 @@ OnlineMigrations.configure do |config|
 
   # Maximum allowed lock timeout value (in seconds).
   # If set lock timeout is greater than this value, the migration will fail.
-  # config.lock_timeout_limit = 10.seconds
+  config.lock_timeout_limit = 10.seconds
 
   # Configure list of tables with permanently small number of records.
   # This tables are usually tables like "settings", "prices", "plans" etc.
@@ -30,10 +30,10 @@ OnlineMigrations.configure do |config|
 
   # Analyze tables after indexes are added.
   # Outdated statistics can sometimes hurt performance.
-  # config.auto_analyze = true
+  config.auto_analyze = false
 
   # Alphabetize table columns when dumping the schema.
-  # config.alphabetize_schema = true
+  config.alphabetize_schema = false
 
   # Disable specific checks.
   # For the list of available checks look at the `error_messages.rb` file inside
@@ -94,29 +94,29 @@ OnlineMigrations.configure do |config|
 
   # ==> Background data migrations configuration
   # The path where generated background migrations will be placed.
-  # config.background_migrations.migrations_path = "lib"
+  config.background_migrations.migrations_path = "lib"
 
   # The module in which background migrations will be placed.
-  # config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
+  config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
 
   # The number of rows to process in a single background migration run.
-  # config.background_migrations.batch_size = 20_000
+  config.background_migrations.batch_size = 20_000
 
   # The smaller batches size that the batches will be divided into.
-  # config.background_migrations.sub_batch_size = 1000
+  config.background_migrations.sub_batch_size = 1000
 
   # The pause interval between each background migration job's execution (in seconds).
-  # config.background_migrations.batch_pause = 0.seconds
+  config.background_migrations.batch_pause = 0.seconds
 
   # The number of milliseconds to sleep between each sub_batch execution.
-  # config.background_migrations.sub_batch_pause_ms = 100
+  config.background_migrations.sub_batch_pause_ms = 100
 
   # Maximum number of batch run attempts.
   # When attempts are exhausted, the individual batch is marked as failed.
-  # config.background_migrations.batch_max_attempts = 5
+  config.background_migrations.batch_max_attempts = 5
 
   # The number of seconds that must pass before the running job is considered stuck.
-  # config.background_migrations.stuck_jobs_timeout = 1.hour
+  config.background_migrations.stuck_jobs_timeout = 1.hour
 
   # The callback to perform when an error occurs in the migration job.
   # config.background_migrations.error_handler = ->(error, errored_job) do
@@ -127,10 +127,10 @@ OnlineMigrations.configure do |config|
 
   # ==> Background schema migrations configuration
   # When attempts are exhausted, the failing migration stops to be retried.
-  # config.background_schema_migrations.max_attempts = 5
+  config.background_schema_migrations.max_attempts = 5
 
   # Statement timeout value used when running background schema migration.
-  # config.background_schema_migrations.statement_timeout = 1.hour
+  config.background_schema_migrations.statement_timeout = 1.hour
 
   # The callback to perform when an error occurs during the background schema migration.
   # config.background_schema_migrations.error_handler = ->(error, errored_migration) do
