@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Reduce default batch sizes for background data migrations
+
+    `batch_size` was 20_000, now 1_000; `sub_batch_size` was 1_000, now 100
+
 - Remove deprecated code
 - Drop support for PostgreSQL < 12
 - Drop support for Ruby < 3.0 and Rails < 7.0

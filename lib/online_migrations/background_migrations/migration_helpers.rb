@@ -335,8 +335,8 @@ module OnlineMigrations
       #     defaults to `SELECT MIN(batch_column_name)`
       # @option options [Integer] :max_value Value in the column the batching will end at,
       #     defaults to `SELECT MAX(batch_column_name)`
-      # @option options [Integer] :batch_size (20_000) Number of rows to process in a single background migration run
-      # @option options [Integer] :sub_batch_size (1000) Smaller batches size that the batches will be divided into
+      # @option options [Integer] :batch_size (1_000) Number of rows to process in a single background migration run
+      # @option options [Integer] :sub_batch_size (100) Smaller batches size that the batches will be divided into
       # @option options [Integer] :batch_pause (0) Pause interval between each background migration job's execution (in seconds)
       # @option options [Integer] :sub_batch_pause_ms (100) Number of milliseconds to sleep between each sub_batch execution
       # @option options [Integer] :batch_max_attempts (5) Maximum number of batch run attempts

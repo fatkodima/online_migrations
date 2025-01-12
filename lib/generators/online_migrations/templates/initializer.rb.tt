@@ -100,10 +100,10 @@ OnlineMigrations.configure do |config|
   config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
 
   # The number of rows to process in a single background migration run.
-  config.background_migrations.batch_size = 20_000
+  config.background_migrations.batch_size = 1_000
 
   # The smaller batches size that the batches will be divided into.
-  config.background_migrations.sub_batch_size = 1000
+  config.background_migrations.sub_batch_size = 100
 
   # The pause interval between each background migration job's execution (in seconds).
   config.background_migrations.batch_pause = 0.seconds

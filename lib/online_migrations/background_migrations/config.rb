@@ -13,12 +13,12 @@ module OnlineMigrations
       attr_accessor :migrations_module
 
       # The number of rows to process in a single background migration run
-      # @return [Integer] defaults to 20_000
+      # @return [Integer] defaults to 1_000
       #
       attr_accessor :batch_size
 
       # The smaller batches size that the batches will be divided into
-      # @return [Integer] defaults to 1000
+      # @return [Integer] defaults to 100
       #
       attr_accessor :sub_batch_size
 
@@ -61,8 +61,8 @@ module OnlineMigrations
       def initialize
         @migrations_path = "lib"
         @migrations_module = "OnlineMigrations::BackgroundMigrations"
-        @batch_size = 20_000
-        @sub_batch_size = 1000
+        @batch_size = 1_000
+        @sub_batch_size = 100
         @batch_pause = 0.seconds
         @sub_batch_pause_ms = 100
         @batch_max_attempts = 5

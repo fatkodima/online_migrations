@@ -12,7 +12,7 @@ module OnlineMigrations
     # @param column_name [String, Symbol]
     # @param value value for the column. It is typically a literal. To perform a computed
     #     update, an Arel literal can be used instead
-    # @option options [Integer] :batch_size (1000) size of the batch
+    # @option options [Integer] :batch_size (1_000) size of the batch
     # @option options [String, Symbol] :batch_column_name (primary key) option is for tables without primary key, in this
     #     case another unique integer column can be used. Example: `:user_id`
     # @option options [Proc, Boolean] :progress (false) whether to show progress while running.
