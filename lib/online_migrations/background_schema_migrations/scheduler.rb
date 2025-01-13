@@ -23,7 +23,10 @@ module OnlineMigrations
         migration = find_migration
         if migration
           runner = MigrationRunner.new(migration)
-          runner.run
+
+          try_with_lock do
+            runner.run
+          end
         end
       end
 
@@ -39,6 +42,11 @@ module OnlineMigrations
                 active_migration.table_name == runnable_migration.table_name
             end
           end
+        end
+
+        def try_with_lock(&block)
+          lock = AdvisoryLock.new(name: "online_migrations_schema_scheduler")
+          lock.try_with_lock(&block)
         end
     end
   end

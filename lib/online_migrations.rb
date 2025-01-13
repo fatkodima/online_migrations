@@ -23,6 +23,7 @@ module OnlineMigrations
 
   extend ActiveSupport::Autoload
 
+  autoload :AdvisoryLock
   autoload :ApplicationRecord
   autoload :BatchIterator
   autoload :VerboseSqlLogs

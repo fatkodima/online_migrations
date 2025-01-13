@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Prevent multiple instances of schedulers from being running simultaneously
+
 - Reduce default batch sizes for background data migrations
 
     `batch_size` was 20_000, now 1_000; `sub_batch_size` was 1_000, now 100
