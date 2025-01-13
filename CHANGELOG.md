@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.23.0 (2025-01-13)
+
 - Prevent multiple instances of schedulers from being running simultaneously
 
 - Reduce default batch sizes for background data migrations
