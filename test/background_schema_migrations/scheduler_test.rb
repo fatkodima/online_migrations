@@ -32,6 +32,26 @@ module BackgroundSchemaMigrations
       assert m.reload.succeeded?
     end
 
+    def test_run_specific_shard
+      m = create_migration(
+        name: "index_dogs_on_name",
+        table_name: "dogs",
+        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
+        connection_class_name: "ShardRecord"
+      )
+
+      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
+      scheduler.run(shard: :shard_two)
+
+      assert m.reload.running?
+
+      shard_one_migration = m.children.find_by(shard: :shard_one)
+      assert shard_one_migration.enqueued?
+
+      shard_two_migration = m.children.find_by(shard: :shard_two)
+      assert shard_two_migration.succeeded?
+    end
+
     def test_run_retries_failed_migrations
       m = create_migration(
         name: "index_dogs_on_name",

@@ -208,6 +208,12 @@ module OnlineMigrations
         end
       end
 
+      # @private
+      def on_shard(&block)
+        shard = (self.shard || connection_class.default_shard).to_sym
+        connection_class.connected_to(shard: shard, role: :writing, &block)
+      end
+
       private
         def validate_children_statuses
           if composite?
@@ -241,11 +247,6 @@ module OnlineMigrations
           config = ::OnlineMigrations.config.background_schema_migrations
           self.max_attempts ||= config.max_attempts
           self.statement_timeout ||= config.statement_timeout
-        end
-
-        def on_shard(&block)
-          shard = (self.shard || connection_class.default_shard).to_sym
-          connection_class.connected_to(shard: shard, role: :writing, &block)
         end
 
         def with_statement_timeout(connection, timeout)

@@ -84,14 +84,22 @@ module OnlineMigrations
     end
 
     # Run background data migrations
-    def run_background_migrations
-      BackgroundMigrations::Scheduler.run
+    #
+    # @param shard [String, Symbol, nil] the name of the shard to run
+    #   background data migrations on. By default runs on all shards.
+    #
+    def run_background_migrations(shard: nil)
+      BackgroundMigrations::Scheduler.run(shard: shard)
     end
     alias run_background_data_migrations run_background_migrations
 
     # Run background schema migrations
-    def run_background_schema_migrations
-      BackgroundSchemaMigrations::Scheduler.run
+    #
+    # @param shard [String, Symbol, nil] the name of the shard to run
+    #   background schema migrations on. By default runs on all shards.
+    #
+    def run_background_schema_migrations(shard: nil)
+      BackgroundSchemaMigrations::Scheduler.run(shard: shard)
     end
 
     def deprecator

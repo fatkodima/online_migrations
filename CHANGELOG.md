@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add ability to run background migrations in parallel
+
 ## 0.23.0 (2025-01-13)
 
 - Prevent multiple instances of schedulers from being running simultaneously

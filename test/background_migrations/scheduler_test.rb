@@ -16,6 +16,7 @@ module BackgroundMigrations
     def teardown
       @connection.drop_table(:users, if_exists: true)
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      on_each_shard { Dog.delete_all }
     end
 
     def test_run
@@ -23,7 +24,7 @@ module BackgroundMigrations
       user2 = User.create!
       user3 = User.create!
 
-      m = OnlineMigrations::BackgroundMigrations::Migration.create!(
+      m = create_migration(
         migration_name: "MakeAllNonAdmins",
         batch_size: 2,
         sub_batch_size: 1,
@@ -49,11 +50,27 @@ module BackgroundMigrations
       end
     end
 
+    def test_run_specific_shard
+      on_each_shard { Dog.create! }
+
+      m = create_migration(migration_name: "MakeAllDogsNice")
+
+      scheduler = OnlineMigrations::BackgroundMigrations::Scheduler.new
+      scheduler.run(shard: :shard_two)
+      scheduler.run(shard: :shard_two) # finish
+
+      assert m.reload.running?
+
+      _child1, child2, child3 = m.children.to_a
+      assert child2.enqueued?
+      assert child3.succeeded?
+    end
+
     def test_run_migration_has_stuck_job
       user1 = User.create!
       user2 = User.create!
 
-      m = OnlineMigrations::BackgroundMigrations::Migration.create!(
+      m = create_migration(
         migration_name: "MakeAllNonAdmins",
         batch_size: 1,
         sub_batch_size: 1
@@ -81,5 +98,10 @@ module BackgroundMigrations
       scheduler.run # last run to ensure there are no more work
       assert m.reload.completed?
     end
+
+    private
+      def create_migration(migration_name:, **attributes)
+        @connection.create_background_data_migration(migration_name, **attributes)
+      end
   end
 end
