@@ -23,13 +23,10 @@ module OnlineMigrations
 
     # Runs the given block if an advisory lock is able to be acquired.
     def try_with_lock
-      if try_lock
-        begin
-          yield
-        ensure
-          unlock
-        end
-      end
+      locked = try_lock
+      yield if locked
+    ensure
+      unlock if locked
     end
 
     def active?

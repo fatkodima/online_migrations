@@ -27,9 +27,12 @@ class AdvisoryLockTest < Minitest::Test
   def test_try_with_lock
     assert_not @lock.active?
 
+    called = false
     @lock.try_with_lock do
+      called = true
       assert @lock.active?
     end
+    assert called
 
     assert_not @lock.active?
   end
