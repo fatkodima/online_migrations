@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "logger"
 require "online_migrations"
 
 require "minitest/autorun"

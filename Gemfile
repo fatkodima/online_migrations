@@ -13,6 +13,7 @@ gem "rubocop-disable_syntax"
 
 gem "yard"
 gem "pg"
+gem "logger" # remove when dropping activerecord < 8 support
 
 if defined?(@ar_gem_requirement)
   gem "activerecord", @ar_gem_requirement

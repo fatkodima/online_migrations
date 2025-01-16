@@ -146,6 +146,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord
+  logger
   minitest (~> 5.0)
   online_migrations!
   pg
