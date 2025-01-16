@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add ability to run a separate background migrations scheduler per shard
+
 - Revert "Prevent multiple instances of schedulers from being running simultaneously"
 
     The feature was implemented using advisory locks, but they do not always play nicely with the

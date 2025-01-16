@@ -7,20 +7,26 @@ module OnlineMigrations
     # running migration on the same table.
     #
     # Scheduler should be configured to run periodically, for example, via cron.
+    #
     # @example Run via whenever
     #   # add this to schedule.rb
     #   every 1.minute do
     #     runner "OnlineMigrations.run_background_schema_migrations"
     #   end
     #
+    # @example Run via whenever (specific shard)
+    #   every 1.minute do
+    #     runner "OnlineMigrations.run_background_schema_migrations(shard: :shard_two)"
+    #   end
+    #
     class Scheduler
-      def self.run
-        new.run
+      def self.run(**options)
+        new.run(**options)
       end
 
       # Runs Scheduler
-      def run
-        migration = find_migration
+      def run(**options)
+        migration = find_migration(**options)
         if migration
           runner = MigrationRunner.new(migration)
           runner.run
@@ -28,9 +34,13 @@ module OnlineMigrations
       end
 
       private
-        def find_migration
+        def find_migration(**options)
           active_migrations = Migration.running.reject(&:stuck?)
           runnable_migrations = Migration.runnable.enqueued.queue_order.to_a + Migration.retriable.queue_order.to_a
+
+          if options.key?(:shard)
+            runnable_migrations = runnable_migrations.select { |migration| migration.shard.to_s == options[:shard].to_s }
+          end
 
           runnable_migrations.find do |runnable_migration|
             active_migrations.none? do |active_migration|

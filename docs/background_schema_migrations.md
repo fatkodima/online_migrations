@@ -192,3 +192,13 @@ OnlineMigrations::ApplicationRecord.connects_to database: { writing: :shard_one 
 
 By default, ActiveRecord uses the database config named `:primary` (if exists) under the environment section from the `database.yml`.
 Otherwise, the first config under the environment section is used.
+
+By default, the scheduler works on a single shard on each run. To run a separate scheduler per shard:
+
+```ruby
+[:shard_one, :shard_two, :shard_three].each do |shard|
+  every 1.minute do
+    runner "OnlineMigrations.run_background_schema_migrations(shard: :#{shard})"
+  end
+end
+```
