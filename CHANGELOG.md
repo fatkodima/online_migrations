@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.24.0 (2025-01-20)
+
 - Add ability to run a separate background migrations scheduler per shard
 
 - Revert "Prevent multiple instances of schedulers from being running simultaneously"
