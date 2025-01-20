@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Revert "Prevent multiple instances of schedulers from being running simultaneously"
+
+    The feature was implemented using advisory locks, but they do not always play nicely with the
+    database poolers, so the feature was reverted. It is expected now for user's code to prevent
+    multiple instances of the schedulers from being run (by wrapping it into Redis lock etc).
+
 ## 0.23.0 (2025-01-13)
 
 - Prevent multiple instances of schedulers from being running simultaneously

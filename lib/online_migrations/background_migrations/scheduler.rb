@@ -27,18 +27,9 @@ module OnlineMigrations
 
         if runnable_migration
           runner = MigrationRunner.new(runnable_migration)
-
-          try_with_lock do
-            runner.run_migration_job
-          end
+          runner.run_migration_job
         end
       end
-
-      private
-        def try_with_lock(&block)
-          lock = AdvisoryLock.new(name: "online_migrations_data_scheduler")
-          lock.try_with_lock(&block)
-        end
     end
   end
 end
