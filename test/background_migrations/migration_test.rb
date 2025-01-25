@@ -301,6 +301,14 @@ module BackgroundMigrations
       assert child1.enqueued?
       assert child3.succeeded?
       assert child1.migration_jobs.all?(&:enqueued?)
+
+      # Retrying a child should retry a parent.
+      m.update_column(:status, "failed")
+      child1.update_column(:status, "failed")
+
+      assert child1.retry
+      assert child1.reload.enqueued?
+      assert m.reload.enqueued?
     end
 
     def test_started_at

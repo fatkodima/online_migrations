@@ -189,15 +189,23 @@ module OnlineMigrations
       #
       def retry
         if composite? && failed?
-          children.failed.each(&:retry)
-          enqueued!
+          transaction do
+            enqueued!
+            children.failed.each(&:retry)
+          end
+
           true
         elsif failed?
-          iterator = BatchIterator.new(migration_jobs.failed)
-          iterator.each_batch(of: 100) do |batch|
-            batch.each(&:retry)
+          transaction do
+            parent.enqueued! if parent
+            enqueued!
+
+            iterator = BatchIterator.new(migration_jobs.failed)
+            iterator.each_batch(of: 100) do |batch|
+              batch.each(&:retry)
+            end
           end
-          enqueued!
+
           true
         else
           false

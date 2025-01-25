@@ -139,22 +139,27 @@ module OnlineMigrations
       #
       def retry
         if composite? && failed?
-          children.failed.each(&:retry)
-          update!(
-            status: self.class.statuses[:enqueued],
-            finished_at: nil
-          )
+          transaction do
+            update!(status: :enqueued, finished_at: nil)
+            children.failed.each(&:retry)
+          end
+
           true
         elsif failed?
-          update!(
-            status: self.class.statuses[:enqueued],
-            attempts: 0,
-            started_at: nil,
-            finished_at: nil,
-            error_class: nil,
-            error_message: nil,
-            backtrace: nil
-          )
+          transaction do
+            parent.update!(status: :enqueued, finished_at: nil) if parent
+
+            update!(
+              status: :enqueued,
+              attempts: 0,
+              started_at: nil,
+              finished_at: nil,
+              error_class: nil,
+              error_message: nil,
+              backtrace: nil
+            )
+          end
+
           true
         else
           false
