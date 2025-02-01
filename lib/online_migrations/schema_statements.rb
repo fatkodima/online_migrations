@@ -892,14 +892,10 @@ module OnlineMigrations
       views = self.views
 
       table_renames = OnlineMigrations.config.table_renames
-      renamed_tables = table_renames.select do |old_name, _|
-        views.include?(old_name)
-      end
+      renamed_tables = table_renames.slice(*views)
 
       column_renames = OnlineMigrations.config.column_renames
-      renamed_columns = column_renames.select do |table_name, _|
-        views.include?(table_name)
-      end
+      renamed_columns = column_renames.slice(*views)
 
       if renamed_tables.key?(table)
         super(renamed_tables[table])
