@@ -46,10 +46,6 @@ module OnlineMigrations
   #     end
   #
   class LockRetrier
-    # Database connection on which retries are run
-    #
-    attr_accessor :connection
-
     # Returns the number of retrying attempts
     #
     def attempts
@@ -73,14 +69,15 @@ module OnlineMigrations
     # Executes the block with a retry mechanism that alters the `lock_timeout`
     # and sleep time between attempts.
     #
+    # @param connection The connection on which to retry lock timeouts
     # @return [void]
     #
     # @example
-    #   retrier.with_lock_retries do
+    #   retrier.with_lock_retries(connection) do
     #     add_column(:users, :name, :string)
     #   end
     #
-    def with_lock_retries(&block)
+    def with_lock_retries(connection, &block)
       return yield if lock_retries_disabled?
 
       current_attempt = 0
@@ -90,7 +87,7 @@ module OnlineMigrations
 
         current_lock_timeout = lock_timeout(current_attempt)
         if current_lock_timeout
-          with_lock_timeout(current_lock_timeout.in_milliseconds, &block)
+          with_lock_timeout(connection, current_lock_timeout.in_milliseconds, &block)
         else
           yield
         end
@@ -110,7 +107,7 @@ module OnlineMigrations
         Utils.to_bool(ENV["DISABLE_LOCK_RETRIES"])
       end
 
-      def with_lock_timeout(value)
+      def with_lock_timeout(connection, value)
         value = value.ceil.to_i
         prev_value = connection.select_value("SHOW lock_timeout")
         connection.execute("SET lock_timeout TO #{connection.quote("#{value}ms")}")
@@ -234,7 +231,7 @@ module OnlineMigrations
     def delay(*)
     end
 
-    def with_lock_retries
+    def with_lock_retries(_connection)
       yield
     end
   end

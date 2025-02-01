@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Fix thread safety issue for lock retrier
+
+    Note: Lock retrier changed its API (`LockRetrier#connection` accessor was removed and
+    `LockRetrier#with_lock_retries` now accepts a connection argument). This change might be of interest
+    if you implemented a custom lock retrier class.
+
 ## 0.24.0 (2025-01-20)
 
 - Add ability to run a separate background migrations scheduler per shard

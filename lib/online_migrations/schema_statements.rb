@@ -915,8 +915,7 @@ module OnlineMigrations
       __ensure_not_in_transaction!
 
       retrier = OnlineMigrations.config.lock_retrier
-      retrier.connection = self
-      retrier.with_lock_retries(&block)
+      retrier.with_lock_retries(self, &block)
     end
 
     private
