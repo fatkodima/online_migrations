@@ -277,6 +277,10 @@ module BackgroundMigrations
       m.migration_jobs.update_all(status: "failed")
 
       assert m.retry
+
+      m.reload
+      assert_nil m.started_at
+      assert_nil m.finished_at
       assert m.migration_jobs.all?(&:enqueued?)
       assert m.enqueued?
     end
@@ -288,6 +292,8 @@ module BackgroundMigrations
 
       migrations = [m, child1, child2, child3]
       assert migrations.all?(&:succeeded?)
+      assert m.started_at
+      assert m.finished_at
       assert_equal false, m.retry
 
       m.update_column(:status, "failed")
@@ -295,6 +301,8 @@ module BackgroundMigrations
       child1.migration_jobs.update_all(status: "failed")
 
       assert m.retry
+      assert m.started_at
+      assert_nil m.finished_at
 
       migrations.each(&:reload)
       assert m.enqueued?
@@ -309,19 +317,6 @@ module BackgroundMigrations
       assert child1.retry
       assert child1.reload.enqueued?
       assert m.reload.enqueued?
-    end
-
-    def test_started_at
-      m = create_migration
-      assert_equal m.created_at, m.started_at
-    end
-
-    def test_finished_at
-      m = create_migration
-      assert_nil m.finished_at
-      2.times { run_migration_job(m) }
-      assert m.succeeded?
-      assert_equal m.updated_at, m.finished_at
     end
 
     def test_next_batch_range

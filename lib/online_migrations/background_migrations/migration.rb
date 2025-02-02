@@ -190,15 +190,15 @@ module OnlineMigrations
       def retry
         if composite? && failed?
           transaction do
-            enqueued!
+            update!(status: :enqueued, finished_at: nil)
             children.failed.each(&:retry)
           end
 
           true
         elsif failed?
           transaction do
-            parent.enqueued! if parent
-            enqueued!
+            parent.update!(status: :enqueued, finished_at: nil) if parent
+            update!(status: :enqueued, started_at: nil, finished_at: nil)
 
             iterator = BatchIterator.new(migration_jobs.failed)
             iterator.each_batch(of: 100) do |batch|
@@ -212,20 +212,6 @@ module OnlineMigrations
         end
       end
       alias retry_failed_jobs retry
-
-      # Returns the time this migration started running.
-      def started_at
-        # To be precise, we should get the minimum of `started_at` amongst the children jobs
-        # (for simple migrations) and amongst the children migrations (for composite migrations).
-        # But we do not have an appropriate index on the jobs table and using this will lead to
-        # N+1 queries if used inside some dashboard, for example.
-        created_at
-      end
-
-      # Returns the time this migration finished running.
-      def finished_at
-        updated_at if completed?
-      end
 
       # @private
       def on_shard(&block)

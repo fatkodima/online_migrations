@@ -34,6 +34,10 @@ module OnlineMigrations
           migrations << "background_schema_migrations_change_unique_index"
         end
 
+        if !connection.column_exists?(BackgroundMigrations::Migration.table_name, :started_at)
+          migrations << "add_timestamps_to_background_migrations"
+        end
+
         migrations
       end
 

@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Track start/finish time of background data migrations
+
+    Note: Make sure to run `bin/rails generate online_migrations:upgrade` if using background migrations.
+
 - Add new state for errored background migrations
 
     * **errored** - migration raised an error during last run

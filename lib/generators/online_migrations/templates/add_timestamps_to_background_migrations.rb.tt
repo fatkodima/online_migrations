@@ -1,0 +1,31 @@
+class AddTimestampsToBackgroundMigrations < <%= migration_parent %>
+  def change
+    safety_assured do
+      add_column :background_migrations, :started_at, :datetime
+      add_column :background_migrations, :finished_at, :datetime
+
+      up_only do
+        # Set started_at.
+        execute(<<~SQL)
+          UPDATE background_migrations
+          SET started_at = (
+            SELECT min(started_at)
+            FROM background_migration_jobs
+            WHERE background_migration_jobs.migration_id = background_migrations.id
+          )
+        SQL
+
+        # Set finished_at.
+        execute(<<~SQL)
+          UPDATE background_migrations
+          SET finished_at = (
+            SELECT max(finished_at)
+            FROM background_migration_jobs
+            WHERE background_migration_jobs.migration_id = background_migrations.id
+          )
+          WHERE status IN ('failed', 'succeeded')
+        SQL
+      end
+    end
+  end
+end

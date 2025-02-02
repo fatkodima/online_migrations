@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 ActiveRecord::Schema.define do
-  enable_extension "pgcrypto" # for gen_random_uuid
-  enable_extension "citext"
-  enable_extension "btree_gist"
-
   create_table :background_migrations, force: :cascade do |t|
     t.bigint :parent_id
     t.string :migration_name, null: false
@@ -21,8 +17,6 @@ ActiveRecord::Schema.define do
     t.string :status, default: "enqueued", null: false
     t.string :shard
     t.boolean :composite, default: false, null: false
-    t.datetime :started_at
-    t.datetime :finished_at
     t.timestamps
 
     t.foreign_key :background_migrations, column: :parent_id, on_delete: :cascade
@@ -76,6 +70,7 @@ ActiveRecord::Schema.define do
 
     t.foreign_key :background_schema_migrations, column: :parent_id, on_delete: :cascade
 
-    t.index [:migration_name, :shard], unique: true, name: :index_background_schema_migrations_on_unique_configuration
+    t.index [:migration_name, :shard, :connection_class_name], unique: true,
+      name: :index_background_schema_migrations_on_unique_configuration
   end
 end

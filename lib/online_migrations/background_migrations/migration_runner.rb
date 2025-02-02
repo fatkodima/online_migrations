@@ -34,9 +34,9 @@ module OnlineMigrations
           job_runner.run
         elsif !migration.migration_jobs.active.exists?
           if migration.migration_jobs.failed.exists?
-            migration.failed!
+            migration.update!(status: :failed, finished_at: Time.current)
           else
-            migration.succeeded!
+            migration.update!(status: :succeeded, finished_at: Time.current)
           end
 
           ActiveSupport::Notifications.instrument("completed.background_migrations", migration_payload)
@@ -100,8 +100,15 @@ module OnlineMigrations
       private
         def mark_as_running
           Migration.transaction do
-            migration.running!
-            migration.parent.running! if migration.parent && migration.parent.enqueued?
+            migration.update!(status: :running, started_at: Time.current, finished_at: nil)
+
+            if (parent = migration.parent)
+              if parent.started_at
+                parent.update!(status: :running, finished_at: nil)
+              else
+                parent.update!(status: :running, started_at: Time.current, finished_at: nil)
+              end
+            end
           end
         end
 
@@ -133,10 +140,10 @@ module OnlineMigrations
           parent.with_lock do
             children = parent.children.select(:status)
             if children.all?(&:succeeded?)
-              parent.succeeded!
+              parent.update!(status: :succeeded, finished_at: Time.current)
               completed = true
             elsif children.any?(&:failed?)
-              parent.failed!
+              parent.update!(status: :failed, finished_at: Time.current)
               completed = true
             end
           end

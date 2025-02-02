@@ -43,6 +43,18 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_adds_timestamps_to_background_migrations
+    simulate_transactional_test do
+      load_schema(3)
+      run_generator
+
+      assert_migration("db/migrate/add_timestamps_to_background_migrations.rb") do |content|
+        assert_includes content, "add_column :background_migrations, :started_at, :datetime"
+        assert_includes content, "add_column :background_migrations, :finished_at, :datetime"
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do
