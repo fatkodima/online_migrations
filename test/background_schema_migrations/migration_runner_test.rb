@@ -21,7 +21,12 @@ module BackgroundSchemaMigrations
     def teardown
       @connection.drop_table(:projects, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
-      on_each_shard { Dog.connection.remove_index(:dogs, :name) }
+
+      on_each_shard do
+        Dog.connection.remove_index(:dogs, :name)
+        Dog.delete_all
+      end
+
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
     end
 
@@ -75,6 +80,24 @@ module BackgroundSchemaMigrations
       run_migration(child3)
       assert child3.succeeded?
       assert m.reload.succeeded?
+    end
+
+    def test_run_failed_child_migration_completes_parent
+      m = create_sharded_migration(max_attempts: 2)
+      on_shard(:shard_one) do
+        Dog.create!(name: "Beethoven")
+        Dog.create!(name: "Beethoven")
+      end
+
+      child = m.children.find_by(shard: "shard_one")
+
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        run_migration(child) # "errored" status
+        run_migration(child) # "failed" status
+      end
+
+      assert child.failed?
+      assert m.reload.failed?
     end
 
     def test_recreates_invalid_indexes
@@ -257,12 +280,13 @@ module BackgroundSchemaMigrations
         @connection.create_background_schema_migration(name, table_name, definition: definition, **attributes)
       end
 
-      def create_sharded_migration
+      def create_sharded_migration(**attributes)
         create_migration(
           name: "index_dogs_on_name",
           table_name: "dogs",
-          definition: 'CREATE INDEX CONCURRENTLY "index_dogs_on_name" ON "dogs" ("name")',
-          connection_class_name: "ShardRecord"
+          definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_dogs_on_name" ON "dogs" ("name")',
+          connection_class_name: "ShardRecord",
+          **attributes
         )
       end
 

@@ -93,6 +93,8 @@ module OnlineMigrations
             backtrace: backtrace_cleaner ? backtrace_cleaner.clean(e.backtrace) : e.backtrace
           )
 
+          complete_parent_if_needed(migration) if migration.parent.present?
+
           ::OnlineMigrations.config.background_schema_migrations.error_handler.call(e, migration)
           raise if Utils.run_background_migrations_inline?
         end
