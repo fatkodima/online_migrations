@@ -11,7 +11,8 @@ module OnlineMigrations
       STATUSES = [
         :enqueued,    # The migration has been enqueued by the user.
         :running,     # The migration is being performed by a migration executor.
-        :failed,      # The migration raises an exception when running.
+        :errored,     # The migration raised an error during last run.
+        :failed,      # The migration raises an error when running and retry attempts exceeded.
         :succeeded,   # The migration finished without error.
         :cancelled,   # The migration was cancelled by the user.
       ]
@@ -23,7 +24,7 @@ module OnlineMigrations
       scope :queue_order, -> { order(created_at: :asc) }
       scope :parents, -> { where(parent_id: nil) }
       scope :runnable, -> { where(composite: false) }
-      scope :active, -> { where(status: [statuses[:enqueued], statuses[:running]]) }
+      scope :active, -> { where(status: [:enqueued, :running, :errored]) }
       scope :except_succeeded, -> { where.not(status: :succeeded) }
 
       scope :stuck, -> do
@@ -33,14 +34,11 @@ module OnlineMigrations
       end
 
       scope :retriable, -> do
-        failed_retriable = runnable.failed.where("attempts < max_attempts")
-
-        stuck_sql             = connection.unprepared_statement { stuck.to_sql }
-        failed_retriable_sql  = connection.unprepared_statement { failed_retriable.to_sql }
+        stuck_sql = connection.unprepared_statement { stuck.to_sql }
 
         from(Arel.sql(<<~SQL))
           (
-            (#{failed_retriable_sql})
+            (SELECT * FROM background_schema_migrations WHERE NOT composite AND status = 'errored')
             UNION
             (#{stuck_sql})
           ) AS #{table_name}

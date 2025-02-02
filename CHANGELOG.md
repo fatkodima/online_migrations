@@ -1,5 +1,10 @@
 ## master (unreleased)
 
+- Add new state for errored background migrations
+
+    * **errored** - migration raised an error during last run
+    * **failed** - migration raises an error when running and retry attempts exceeded
+
 - Fix thread safety issue for lock retrier
 
     Note: Lock retrier changed its API (`LockRetrier#connection` accessor was removed and

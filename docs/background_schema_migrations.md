@@ -134,7 +134,8 @@ Background Schema Migrations can be in various states during its execution:
 
 * **enqueued**: A migration has been enqueued by the user.
 * **running**: A migration is being performed by a migration executor.
-* **failed**: A migration raises an exception when running.
+* **errored**: A migration raised an error during last run.
+* **failed**: A migration raises an error when running and retry attempts exceeded.
 * **succeeded**: A migration finished without error.
 * **cancelled**: A migration was cancelled by the user.
 

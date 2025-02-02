@@ -237,9 +237,9 @@ module OnlineMigrations
 
       # @private
       def reset_failed_jobs_attempts
-        iterator = BatchIterator.new(migration_jobs.failed.attempts_exceeded)
+        iterator = BatchIterator.new(migration_jobs.failed)
         iterator.each_batch(of: 100) do |relation|
-          relation.update_all(attempts: 0)
+          relation.update_all(status: :enqueued, attempts: 0)
         end
       end
 

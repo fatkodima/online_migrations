@@ -66,7 +66,7 @@ module BackgroundMigrations
       user1 = User.create!
       _user2 = User.create!
       m = create_migration(batch_size: 1, sub_batch_size: 1)
-      failed_job = m.migration_jobs.create!(status: :failed, min_value: user1.id, max_value: user1.id)
+      failed_job = m.migration_jobs.create!(status: :errored, min_value: user1.id, max_value: user1.id)
 
       # creates new (and last) job
       run_migration_job(m)
@@ -272,11 +272,11 @@ module BackgroundMigrations
 
     def test_finish
       4.times { User.create! }
-      m = create_migration(batch_size: 2, sub_batch_size: 2, batch_max_attempts: 2)
+      m = create_migration(batch_size: 2, sub_batch_size: 2)
 
       # This failed job with attempts exceeded should rerun.
       user1 = User.first
-      _failed_job = m.migration_jobs.create!(status: :failed, min_value: user1.id, max_value: user1.id, attempts: 2)
+      _failed_job = m.migration_jobs.create!(status: :failed, min_value: user1.id, max_value: user1.id)
 
       # this does some part of the work
       run_migration_job(m)

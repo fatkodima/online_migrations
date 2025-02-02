@@ -6,6 +6,7 @@ module OnlineMigrations
       STATUSES = [
         :enqueued,
         :running,
+        :errored,
         :failed,
         :succeeded,
         :cancelled,
@@ -13,7 +14,7 @@ module OnlineMigrations
 
       self.table_name = :background_migration_jobs
 
-      scope :active, -> { where(status: [:enqueued, :running]) }
+      scope :active, -> { where(status: [:enqueued, :running, :errored]) }
       scope :completed, -> { where(status: [:failed, :succeeded]) }
       scope :stuck, -> do
         timeout = OnlineMigrations.config.background_migrations.stuck_jobs_timeout
@@ -21,14 +22,11 @@ module OnlineMigrations
       end
 
       scope :retriable, -> do
-        failed_retriable = failed.where("attempts < max_attempts")
-
-        stuck_sql             = connection.unprepared_statement { stuck.to_sql }
-        failed_retriable_sql  = connection.unprepared_statement { failed_retriable.to_sql }
+        stuck_sql = connection.unprepared_statement { stuck.to_sql }
 
         from(Arel.sql(<<~SQL))
           (
-            (#{failed_retriable_sql})
+            (SELECT * FROM background_migration_jobs WHERE status = 'errored')
             UNION
             (#{stuck_sql})
           ) AS #{table_name}
@@ -36,7 +34,6 @@ module OnlineMigrations
       end
 
       scope :except_succeeded, -> { where.not(status: :succeeded) }
-      scope :attempts_exceeded, -> { where("attempts >= max_attempts") }
 
       enum :status, STATUSES.index_with(&:to_s)
 
@@ -58,6 +55,10 @@ module OnlineMigrations
       def stuck?
         timeout = OnlineMigrations.config.background_migrations.stuck_jobs_timeout
         running? && updated_at <= timeout.seconds.ago
+      end
+
+      def attempts_exceeded?
+        attempts >= max_attempts
       end
 
       # Mark this job as ready to be processed again.

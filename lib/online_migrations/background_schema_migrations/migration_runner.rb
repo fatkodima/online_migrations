@@ -13,7 +13,7 @@ module OnlineMigrations
       def run
         return if migration.cancelled? || migration.succeeded?
 
-        mark_as_running if migration.enqueued? || migration.failed?
+        mark_as_running if migration.enqueued? || migration.errored?
 
         if migration.composite?
           migration.children.each do |child_migration|
@@ -83,8 +83,10 @@ module OnlineMigrations
         rescue Exception => e # rubocop:disable Lint/RescueException
           backtrace_cleaner = ::OnlineMigrations.config.backtrace_cleaner
 
+          status = migration.attempts_exceeded? ? :failed : :errored
+
           migration.update!(
-            status: :failed,
+            status: status,
             finished_at: Time.current,
             error_class: e.class.name,
             error_message: e.message,

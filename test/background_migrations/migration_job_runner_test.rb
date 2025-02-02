@@ -36,7 +36,7 @@ module BackgroundMigrations
       assert_equal User.count, User.where(admin: false).count
     end
 
-    def test_run_saves_error_when_failed
+    def test_run_saves_error_when_errored
       _user = User.create!
 
       job = create_migration_job(migration_name: "EachBatchFails")
@@ -46,14 +46,14 @@ module BackgroundMigrations
       end
       assert_equal "Boom!", error.message
 
-      assert job.failed?
+      assert job.errored?
       assert job.finished_at.present?
       assert_equal "RuntimeError", job.error_class
       assert_equal "Boom!", job.error_message
       assert_not job.backtrace.empty?
     end
 
-    def test_run_calls_error_handler_when_failed
+    def test_run_calls_error_handler_when_errored
       _user = User.create!
       job = create_migration_job(migration_name: "EachBatchFails")
 

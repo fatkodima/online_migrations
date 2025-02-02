@@ -6,7 +6,8 @@ module OnlineMigrations
     class MigrationJobStatusValidator < ActiveModel::Validator
       VALID_STATUS_TRANSITIONS = {
         "enqueued" => ["running", "cancelled"],
-        "running" => ["succeeded", "failed", "cancelled"],
+        "running" => ["succeeded", "errored", "failed", "cancelled"],
+        "errored" => ["running", "failed", "cancelled"],
         "failed" => ["enqueued", "running", "cancelled"],
       }
 

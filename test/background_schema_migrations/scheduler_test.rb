@@ -65,10 +65,10 @@ module BackgroundSchemaMigrations
       scheduler.run
 
       # Emulate failed migration.
-      child.update_columns(status: :failed, attempts: child.max_attempts - 1)
+      child.update_columns(status: :errored, attempts: child.max_attempts - 1)
 
       assert m.reload.running?
-      assert child.reload.failed?
+      assert child.reload.errored?
 
       3.times { scheduler.run } # 2 children + 1 retry
 

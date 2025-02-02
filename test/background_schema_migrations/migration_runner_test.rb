@@ -125,20 +125,20 @@ module BackgroundSchemaMigrations
       assert foreign_key.validated?
     end
 
-    def test_run_saves_error_when_failed
+    def test_run_saves_error_when_errored
       m = create_migration(definition: "SOME INVALID SQL")
       assert_raises(ActiveRecord::StatementInvalid) do
         run_migration(m)
       end
 
-      assert m.failed?
+      assert m.errored?
       assert m.finished_at
       assert_equal "ActiveRecord::StatementInvalid", m.error_class
       assert_match(/PG::SyntaxError/, m.error_message)
       assert_not m.backtrace.empty?
     end
 
-    def test_run_calls_error_handler_when_failed
+    def test_run_calls_error_handler_when_errored
       previous = OnlineMigrations.config.background_schema_migrations.error_handler
       m = create_migration(definition: "SOME INVALID SQL")
 
