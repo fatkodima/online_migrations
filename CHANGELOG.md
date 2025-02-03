@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.25.0 (2025-02-03)
+
 - Track start/finish time of background data migrations
 
     Note: Make sure to run `bin/rails generate online_migrations:upgrade` if using background migrations.
