@@ -59,13 +59,11 @@ class LockRetrierTest < Minitest::Test
       lock_timeout: 0.001
     )
 
-    # Verify the method accepts both attempt and command parameters
     assert_nothing_raised do
-      retrier.lock_timeout(1, command: "ALTER TABLE", arguments: ["users"])
+      retrier.lock_timeout(1, :add_column, [:users, :name, :string])
     end
 
-    # Verify it returns the expected lock_timeout value
-    assert_in_delta(0.001, retrier.lock_timeout(1, command: "ALTER TABLE", arguments: ["users"]))
+    assert_in_delta(0.001, retrier.lock_timeout(1, :add_column, [:users, :name, :string]))
   end
 
   private
