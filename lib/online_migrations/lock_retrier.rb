@@ -77,7 +77,7 @@ module OnlineMigrations
     #     add_column(:users, :name, :string)
     #   end
     #
-    def with_lock_retries(connection, &block)
+    def with_lock_retries(connection, command = nil, *args, &block)
       return yield if lock_retries_disabled?
 
       current_attempt = 0
@@ -85,7 +85,7 @@ module OnlineMigrations
       begin
         current_attempt += 1
 
-        current_lock_timeout = lock_timeout(current_attempt)
+        current_lock_timeout = lock_timeout(current_attempt, command: command, arguments: args)
         if current_lock_timeout
           with_lock_timeout(connection, current_lock_timeout.in_milliseconds, &block)
         else
@@ -152,7 +152,8 @@ module OnlineMigrations
     # @return [Numeric] Database lock timeout value (in seconds)
     # @see LockRetrier#lock_timeout
     #
-    def lock_timeout(_attempt)
+    # def lock_timeout(_attempt)
+    def lock_timeout(_attempt, command: nil, arguments: nil)
       @lock_timeout
     end
 
@@ -204,7 +205,8 @@ module OnlineMigrations
     # @return [Numeric] Database lock timeout value (in seconds)
     # @see LockRetrier#lock_timeout
     #
-    def lock_timeout(_attempt)
+    def lock_timeout(_attempt, command: nil, arguments: nil)
+      # binding.irb
       @lock_timeout
     end
 
