@@ -12,6 +12,11 @@ module OnlineMigrations
         end
 
       if use_transaction?(migration)
+        # Wrap the entire transaction with lock retries so that if the transaction
+        # fails to acquire any locks, the whole migration is retried.
+        # Note: at this point we don't have visibility into individual DDL commands,
+        # so command and arguments will be nil when lock_timeout is called.
+        # For command-specific retry behavior, migrations must use `disable_ddl_transaction!`
         migration.connection.with_lock_retries do
           super
         end

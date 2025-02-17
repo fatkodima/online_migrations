@@ -36,7 +36,7 @@ module OnlineMigrations
   #         TIMINGS.size
   #       end
   #
-  #       def lock_timeout(attempt)
+  #       def lock_timeout(attempt, command = nil, arguments = [])
   #         TIMINGS[attempt - 1][0]
   #       end
   #
@@ -48,21 +48,34 @@ module OnlineMigrations
   class LockRetrier
     # Returns the number of retrying attempts
     #
-    def attempts
+    # @param _command [Symbol, nil] the migration method being executed (e.g., :add_index, :add_column).
+    #   Will be nil when called from a transaction-wrapped migration (the default).
+    #   Only populated for migrations using `disable_ddl_transaction!`.
+    # @param _arguments [Array] the arguments passed to the migration method
+    #
+    def attempts(_command = nil, _arguments = [])
       raise NotImplementedError
     end
 
     # Returns database lock timeout value (in seconds) for specified attempt number
     #
     # @param _attempt [Integer] attempt number
+    # @param _command [Symbol, nil] the migration method being executed (e.g., :add_index, :add_column).
+    #   Will be nil when called from a transaction-wrapped migration (the default).
+    #   Only populated for migrations using `disable_ddl_transaction!`.
+    # @param _arguments [Array] the arguments passed to the migration method
     #
-    def lock_timeout(_attempt); end
+    def lock_timeout(_attempt, _command = nil, _arguments = []); end
 
     # Returns sleep time after unsuccessful lock attempt (in seconds)
     #
     # @param _attempt [Integer] attempt number
+    # @param _command [Symbol, nil] the migration method being executed (e.g., :add_index, :add_column).
+    #   Will be nil when called from a transaction-wrapped migration (the default).
+    #   Only populated for migrations using `disable_ddl_transaction!`.
+    # @param _arguments [Array] the arguments passed to the migration method
     #
-    def delay(_attempt)
+    def delay(_attempt, _command = nil, _arguments = [])
       raise NotImplementedError
     end
 
@@ -77,7 +90,7 @@ module OnlineMigrations
     #     add_column(:users, :name, :string)
     #   end
     #
-    def with_lock_retries(connection, &block)
+    def with_lock_retries(connection, command = nil, *arguments, &block)
       return yield if lock_retries_disabled?
 
       current_attempt = 0
@@ -85,15 +98,15 @@ module OnlineMigrations
       begin
         current_attempt += 1
 
-        current_lock_timeout = lock_timeout(current_attempt)
+        current_lock_timeout = lock_timeout(current_attempt, command, arguments)
         if current_lock_timeout
           with_lock_timeout(connection, current_lock_timeout.in_milliseconds, &block)
         else
           yield
         end
       rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked => e
-        if current_attempt <= attempts
-          current_delay = delay(current_attempt)
+        if current_attempt <= attempts(command, arguments)
+          current_delay = delay(current_attempt, command, arguments)
 
           problem = e.is_a?(ActiveRecord::Deadlocked) ? "Deadlock detected." : "Lock timeout."
           Utils.say("#{problem} Retrying in #{current_delay} seconds...")
@@ -130,13 +143,6 @@ module OnlineMigrations
   #   config.retrier = OnlineMigrations::ConstantLockRetrier.new(attempts: 5, delay: 2.seconds, lock_timeout: 0.05.seconds)
   #
   class ConstantLockRetrier < LockRetrier
-    # LockRetrier API implementation
-    #
-    # @return [Integer] Number of retrying attempts
-    # @see LockRetrier#attempts
-    #
-    attr_reader :attempts
-
     # Create a new ConstantLockRetrier instance
     #
     # @param attempts [Integer] Maximum number of attempts
@@ -152,10 +158,19 @@ module OnlineMigrations
 
     # LockRetrier API implementation
     #
+    # @return [Integer] Number of retrying attempts
+    # @see LockRetrier#attempts
+    #
+    def attempts(_command = nil, _arguments = [])
+      @attempts
+    end
+
+    # LockRetrier API implementation
+    #
     # @return [Numeric] Database lock timeout value (in seconds)
     # @see LockRetrier#lock_timeout
     #
-    def lock_timeout(_attempt)
+    def lock_timeout(_attempt, _command = nil, _arguments = [])
       @lock_timeout
     end
 
@@ -164,7 +179,7 @@ module OnlineMigrations
     # @return [Numeric] Sleep time after unsuccessful lock attempt (in seconds)
     # @see LockRetrier#delay
     #
-    def delay(_attempt)
+    def delay(_attempt, _command = nil, _arguments = [])
       @delay
     end
   end
@@ -180,13 +195,6 @@ module OnlineMigrations
   #       base_delay: 0.01.seconds, max_delay: 1.minute, lock_timeout: 0.2.seconds)
   #
   class ExponentialLockRetrier < LockRetrier
-    # LockRetrier API implementation
-    #
-    # @return [Integer] Number of retrying attempts
-    # @see LockRetrier#attempts
-    #
-    attr_reader :attempts
-
     # Create a new ExponentialLockRetrier instance
     #
     # @param attempts [Integer] Maximum number of attempts
@@ -204,10 +212,19 @@ module OnlineMigrations
 
     # LockRetrier API implementation
     #
+    # @return [Integer] Number of retrying attempts
+    # @see LockRetrier#attempts
+    #
+    def attempts(_command = nil, _arguments = [])
+      @attempts
+    end
+
+    # LockRetrier API implementation
+    #
     # @return [Numeric] Database lock timeout value (in seconds)
     # @see LockRetrier#lock_timeout
     #
-    def lock_timeout(_attempt)
+    def lock_timeout(_attempt, _command = nil, _arguments = [])
       @lock_timeout
     end
 
@@ -217,21 +234,21 @@ module OnlineMigrations
     # @see LockRetrier#delay
     # @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
     #
-    def delay(attempt)
+    def delay(attempt, _command = nil, _arguments = [])
       (rand * [@max_delay, @base_delay * (2**(attempt - 1))].min).ceil
     end
   end
 
   # @private
   class NullLockRetrier < LockRetrier
-    def attempts(*)
+    def attempts(_command = nil, _arguments = [])
       0
     end
 
     def lock_timeout(*)
     end
 
-    def delay(*)
+    def delay(_attempt, _command = nil, _arguments = [])
     end
 
     def with_lock_retries(_connection)

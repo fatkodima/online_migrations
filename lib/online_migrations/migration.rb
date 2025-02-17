@@ -23,9 +23,9 @@ module OnlineMigrations
         if in_transaction?
           super
         elsif method == :with_lock_retries
-          connection.with_lock_retries(*args, &block)
+          connection.with_lock_retries(method, *args, &block)
         else
-          connection.with_lock_retries { super }
+          connection.with_lock_retries(method, *args) { super }
         end
       end
     end

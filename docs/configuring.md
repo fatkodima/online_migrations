@@ -113,6 +113,129 @@ When a statement within transaction fails - the whole transaction is retried. If
 
 **Note**: Statements are retried by default, unless lock retries are disabled. It is possible to implement more sophisticated lock retriers. See [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/lock_retrier.rb) for the examples.
 
+### Command-specific lock retry configuration
+
+For migrations using `disable_ddl_transaction!`, you can implement command-specific lock retry behavior. This is useful when different DDL operations have different locking characteristics:
+
+- `add_index` with `algorithm: :concurrently` uses `ShareUpdateExclusiveLock` (less restrictive), so can use longer timeouts
+- `add_foreign_key` uses `AccessExclusiveLock` (blocks all access), so should use shorter timeouts to fail fast
+
+**Note**: Command-specific configuration only works for migrations with `disable_ddl_transaction!`. For migrations running within transactions (the default), the lock retrier wraps the entire transaction and doesn't have visibility into individual DDL commands.
+
+```ruby
+module OnlineMigrations
+  class CommandAwareLockRetrier < LockRetrier
+    # You can vary the number of attempts based on the command
+    def attempts(command = nil, arguments = [])
+      case command
+      when :add_index
+        # Concurrent index creation uses longer individual timeouts,
+        # so fewer attempts are needed to reach the same overall window
+        10
+      when :add_foreign_key
+        # Foreign keys use shorter timeouts to fail fast,
+        # so more attempts are needed to reach the same overall window
+        60
+      else
+        # Default attempts for other operations
+        30
+      end
+    end
+
+    def lock_timeout(attempt, command = nil, arguments = [])
+      case command
+      when :add_index
+        # Concurrent index creation is less restrictive, use longer timeout
+        30.seconds
+      when :add_foreign_key
+        # Foreign keys block all access, use shorter timeout to fail fast
+        5.seconds
+      else
+        # Default timeout for other operations
+        10.seconds
+      end
+    end
+
+    def delay(attempt, command = nil, arguments = [])
+      case command
+      when :add_index
+        # Longer delay for index operations since they take time anyway
+        3.seconds
+      when :add_foreign_key
+        # Shorter delay to retry faster for quick FK operations
+        1.second
+      else
+        # Default delay for other operations
+        2.seconds
+      end
+    end
+  end
+end
+
+config.lock_retrier = OnlineMigrations::CommandAwareLockRetrier.new
+```
+
+All three methods (`attempts`, `lock_timeout`, and `delay`) can receive command-specific parameters:
+- `command` - the migration method being called (e.g., `:add_index`, `:add_column`, `:add_foreign_key`), or `nil` for transaction-wrapped migrations
+- `arguments` - an array of arguments passed to the migration method
+
+Additionally, `lock_timeout` and `delay` receive:
+- `attempt` - the current retry attempt number (1-indexed)
+
+This allows you to fine-tune the retry strategy for different commands. For example, to maintain roughly the same total timeout window:
+- `add_index`: 10 attempts × (30s lock + 3s delay) = ~5.5 minute window
+- `add_foreign_key`: 60 attempts × (5s lock + 1s delay) = ~6 minute window
+
+#### Alternative: Configuration Hash Approach
+
+For simpler use cases, you can use a configuration hash instead of case statements:
+
+```ruby
+module OnlineMigrations
+  class ConfigurableLockRetrier < LockRetrier
+    COMMAND_CONFIGS = {
+      add_index: {
+        attempts: 10,
+        lock_timeout: 30.seconds,
+        delay: 3.seconds
+      },
+      add_foreign_key: {
+        attempts: 60,
+        lock_timeout: 5.seconds,
+        delay: 1.second
+      },
+      default: {
+        attempts: 30,
+        lock_timeout: 10.seconds,
+        delay: 2.seconds
+      }
+    }
+
+    def attempts(command = nil, arguments = [])
+      config_for(command)[:attempts]
+    end
+
+    def lock_timeout(attempt, command = nil, arguments = [])
+      config_for(command)[:lock_timeout]
+    end
+
+    def delay(attempt, command = nil, arguments = [])
+      config_for(command)[:delay]
+    end
+
+    private
+
+    def config_for(command)
+      COMMAND_CONFIGS[command] || COMMAND_CONFIGS[:default]
+    end
+  end
+end
+
+config.lock_retrier = OnlineMigrations::ConfigurableLockRetrier.new
+```
+
+This approach is more concise and easier to maintain when you have simple static configurations per command. The case statement approach (shown above) is better when you need conditional logic or want to use the `attempt` parameter dynamically.
+
 To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable. This is useful when you are deploying a hotfix and do not want to wait too long while the lock retrier safely tries to acquire the lock, but try to acquire the lock immediately with the default configured lock timeout value.
 
 To permanently disable lock retries, you can set `lock_retrier` to `nil`.
