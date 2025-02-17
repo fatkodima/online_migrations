@@ -56,7 +56,7 @@ module OnlineMigrations
     #
     # @param _attempt [Integer] attempt number
     #
-    def lock_timeout(_attempt); end
+    def lock_timeout(_attempt, command: nil, arguments: nil); end
 
     # Returns sleep time after unsuccessful lock attempt (in seconds)
     #
@@ -206,7 +206,6 @@ module OnlineMigrations
     # @see LockRetrier#lock_timeout
     #
     def lock_timeout(_attempt, command: nil, arguments: nil)
-      # binding.irb
       @lock_timeout
     end
 
