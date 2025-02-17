@@ -80,9 +80,9 @@ class LockRetrierTest < Minitest::Test
       ActiveRecord::Base.connection_pool.checkin(connection) if connection
     end
 
-    def with_lock_retries(lock_retrier = OnlineMigrations::ConstantLockRetrier.new(attempts: 2, delay: 0, lock_timeout: 0.001))
+    def with_lock_retries
       previous = OnlineMigrations.config.lock_retrier
-      OnlineMigrations.config.lock_retrier = lock_retrier
+      OnlineMigrations.config.lock_retrier = OnlineMigrations::ConstantLockRetrier.new(attempts: 2, delay: 0, lock_timeout: 0.001)
 
       yield
     ensure
