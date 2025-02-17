@@ -56,7 +56,7 @@ module OnlineMigrations
     #
     # @param _attempt [Integer] attempt number
     #
-    def lock_timeout(_attempt, command: nil, arguments: nil); end
+    def lock_timeout(_attempt, _command = nil, _arguments = []); end
 
     # Returns sleep time after unsuccessful lock attempt (in seconds)
     #
@@ -85,7 +85,7 @@ module OnlineMigrations
       begin
         current_attempt += 1
 
-        current_lock_timeout = lock_timeout(current_attempt, command: command, arguments: args)
+        current_lock_timeout = lock_timeout(current_attempt, command, args)
         if current_lock_timeout
           with_lock_timeout(connection, current_lock_timeout.in_milliseconds, &block)
         else
@@ -153,7 +153,7 @@ module OnlineMigrations
     # @see LockRetrier#lock_timeout
     #
     # def lock_timeout(_attempt)
-    def lock_timeout(_attempt, command: nil, arguments: nil)
+    def lock_timeout(_attempt, _command = nil, _arguments = [])
       @lock_timeout
     end
 
@@ -205,7 +205,7 @@ module OnlineMigrations
     # @return [Numeric] Database lock timeout value (in seconds)
     # @see LockRetrier#lock_timeout
     #
-    def lock_timeout(_attempt, command: nil, arguments: nil)
+    def lock_timeout(_attempt, _command = nil, _arguments = [])
       @lock_timeout
     end
 
