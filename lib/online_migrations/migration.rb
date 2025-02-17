@@ -21,6 +21,7 @@ module OnlineMigrations
         super
       elsif command_checker.check(method, *args, &block)
         if in_transaction?
+          # why doesn't this use the lock_retries block?
           super(method, *args)
         elsif method == :with_lock_retries
           connection.with_lock_retries(method, *args, &block)
