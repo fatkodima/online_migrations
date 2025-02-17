@@ -915,8 +915,6 @@ module OnlineMigrations
       __ensure_not_in_transaction!
 
       retrier = OnlineMigrations.config.lock_retrier
-
-      # how do we know the method at the call site? via the connection class we prepend this to?
       retrier.with_lock_retries(self, command, *args, &block)
     end
 
