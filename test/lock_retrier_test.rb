@@ -89,15 +89,6 @@ class LockRetrierTest < Minitest::Test
       OnlineMigrations.config.lock_retrier = previous
     end
 
-    # def with_dynamic_lock_retries
-    #   previous = OnlineMigrations.config.lock_retrier
-    #   OnlineMigrations.config.lock_retrier = OnlineMigrations::ConstantLockRetrier.new(attempts: 2, delay: 0, lock_timeout: 0.001)
-
-    #   yield
-    # ensure
-    #   OnlineMigrations.config.lock_retrier = previous
-    # end
-
     def assert_lock_timeout(&block)
       error = assert_raises(&block)
       assert_match(/canceling statement due to lock timeout/, error.message)
