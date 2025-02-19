@@ -97,6 +97,16 @@ module MinitestHelpers
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 
+  def stub_const(mod, constant, new_value)
+    old_value = mod.const_get(constant, false)
+    mod.send(:remove_const, constant)
+    mod.const_set(constant, new_value)
+    yield
+  ensure
+    mod.send(:remove_const, constant)
+    mod.const_set(constant, old_value)
+  end
+
   def with_target_version(version)
     prev = OnlineMigrations.config.target_version
     OnlineMigrations.config.target_version = version
