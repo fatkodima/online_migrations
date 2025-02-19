@@ -1,0 +1,16 @@
+class ChangeBackgroundDataMigrations < <%= migration_parent %>
+  def change
+    safety_assured do
+      rename_table :background_migrations, :background_data_migrations
+
+      change_table :background_data_migrations do |t|
+        t.string :cursor
+        t.string :jid
+        t.bigint :tick_total
+        t.bigint :tick_count, default: 0, null: false
+        t.float :time_running, default: 0.0, null: false
+        t.string :connection_class_name
+      end
+    end
+  end
+end

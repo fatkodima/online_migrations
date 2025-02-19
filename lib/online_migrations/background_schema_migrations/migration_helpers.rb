@@ -78,67 +78,46 @@ module OnlineMigrations
       #   ensure_background_schema_migration_succeeded("index_users_on_email")
       #
       def ensure_background_schema_migration_succeeded(migration_name)
-        migration = Migration.parents.find_by(migration_name: migration_name)
+        migrations = Migration.where(migration_name: migration_name).to_a
 
-        if migration.nil?
-          Utils.raise_in_prod_or_say_in_dev("Could not find background schema migration: '#{migration_name}'")
-        elsif !migration.succeeded?
-          raise "Expected background schema migration '#{migration_name}' to be marked as 'succeeded', " \
-                "but it is '#{migration.status}'."
+        if migrations.empty?
+          Utils.raise_in_prod_or_say_in_dev("Could not find background schema migration(s): '#{migration_name}'.")
+        elsif !migrations.all?(&:succeeded?)
+          raise "Expected background schema migration(s) '#{migration_name}' to be marked as 'succeeded'."
         end
       end
 
-      def enqueue_background_schema_migration(name, table_name, **options)
-        if options[:connection_class_name].nil? && Utils.multiple_databases?
+      def enqueue_background_schema_migration(migration_name, table_name, connection_class_name: nil, **options)
+        options.assert_valid_keys(:definition, :max_attempts, :statement_timeout)
+
+        if Utils.multiple_databases? && !connection_class_name
           raise ArgumentError, "You must pass a :connection_class_name when using multiple databases."
         end
 
-        migration = create_background_schema_migration(name, table_name, **options)
-
-        run_inline = OnlineMigrations.config.run_background_migrations_inline
-        if run_inline && run_inline.call
-          runner = MigrationRunner.new(migration)
-          runner.run
-        end
-
-        migration
-      end
-
-      # @private
-      def create_background_schema_migration(migration_name, table_name, connection_class_name: nil, **options)
-        options.assert_valid_keys(:definition, :max_attempts, :statement_timeout)
-
         if connection_class_name
-          connection_class_name = __normalize_connection_class_name(connection_class_name)
+          klass = connection_class_name.constantize
+          connection_class = Utils.find_connection_class(klass)
+          # Normalize to the real connection class name.
+          connection_class_name = connection_class.name
+        else
+          connection_class = ActiveRecord::Base
         end
 
-        Migration.find_or_create_by!(migration_name: migration_name, shard: nil,
-                                     connection_class_name: connection_class_name) do |migration|
-          migration.assign_attributes(**options, table_name: table_name)
+        shards = Utils.shard_names(connection_class)
+        shards = [nil] if shards.size == 1
 
-          shards = Utils.shard_names(migration.connection_class)
-          if shards.size > 1
-            migration.children = shards.map do |shard|
-              child = migration.dup
-              child.shard = shard
-              child
-            end
+        shards.each do |shard|
+          migration = Migration.create_with(**options, table_name: table_name)
+                               .find_or_create_by!(migration_name: migration_name, shard: shard, connection_class_name: connection_class_name)
 
-            migration.composite = true
+          if Utils.run_background_migrations_inline?
+            runner = MigrationRunner.new(migration)
+            runner.run
           end
         end
+
+        true
       end
-
-      private
-        def __normalize_connection_class_name(connection_class_name)
-          if connection_class_name
-            klass = connection_class_name.safe_constantize
-            if klass
-              connection_class = Utils.find_connection_class(klass)
-              connection_class.name if connection_class
-            end
-          end
-        end
     end
   end
 end
