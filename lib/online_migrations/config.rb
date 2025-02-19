@@ -210,10 +210,10 @@ module OnlineMigrations
 
     # Configuration object to configure background migrations
     #
-    # @return [BackgroundMigrationsConfig]
-    # @see BackgroundMigrationsConfig
+    # @return [BackgroundDataMigrations::Config]
+    # @see BackgroundDataMigrations::Config
     #
-    attr_reader :background_migrations
+    attr_reader :background_data_migrations
 
     attr_reader :background_schema_migrations
 
@@ -230,7 +230,7 @@ module OnlineMigrations
         lock_timeout: 0.2.seconds
       )
 
-      @background_migrations = BackgroundMigrations::Config.new
+      @background_data_migrations = BackgroundDataMigrations::Config.new
       @background_schema_migrations = BackgroundSchemaMigrations::Config.new
 
       @checks = []

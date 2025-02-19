@@ -6,7 +6,8 @@ require "online_migrations/version"
 require "online_migrations/utils"
 require "online_migrations/background_schema_migrations/migration_helpers"
 require "online_migrations/change_column_type_helpers"
-require "online_migrations/background_migrations/migration_helpers"
+require "online_migrations/background_data_migrations/migration_helpers"
+require "online_migrations/active_record_batch_enumerator"
 require "online_migrations/schema_statements"
 require "online_migrations/schema_cache"
 require "online_migrations/migration"
@@ -29,7 +30,8 @@ module OnlineMigrations
   autoload :ForeignKeysCollector
   autoload :IndexDefinition
   autoload :CommandChecker
-  autoload :BackgroundMigration
+  autoload :DataMigration
+  autoload :ShardAware
 
   autoload_at "online_migrations/lock_retrier" do
     autoload :LockRetrier
@@ -40,24 +42,21 @@ module OnlineMigrations
 
   autoload :CopyTrigger
 
-  module BackgroundMigrations
+  module BackgroundDataMigrations
     extend ActiveSupport::Autoload
 
     autoload :Config
     autoload :MigrationStatusValidator
-    autoload :MigrationJobStatusValidator
-    autoload :BackgroundMigrationClassValidator
     autoload :BackfillColumn
     autoload :CopyColumn
     autoload :DeleteAssociatedRecords
     autoload :DeleteOrphanedRecords
     autoload :PerformActionOnRelation
     autoload :ResetCounters
-    autoload :MigrationJob
     autoload :Migration
-    autoload :MigrationJobRunner
-    autoload :MigrationRunner
+    autoload :MigrationJob
     autoload :Scheduler
+    autoload :Ticker
   end
 
   module BackgroundSchemaMigrations
@@ -69,6 +68,10 @@ module OnlineMigrations
     autoload :MigrationRunner
     autoload :Scheduler
   end
+
+  # Make aliases for less typing.
+  DataMigrations = BackgroundDataMigrations
+  SchemaMigrations = BackgroundSchemaMigrations
 
   class << self
     # @private
@@ -87,10 +90,10 @@ module OnlineMigrations
     # @option options [String, Symbol, nil] :shard The name of the shard to run
     #   background data migrations on. By default runs on all shards.
     #
-    def run_background_migrations(**options)
-      BackgroundMigrations::Scheduler.run(**options)
+    def run_background_data_migrations(**options)
+      BackgroundDataMigrations::Scheduler.run(**options)
     end
-    alias run_background_data_migrations run_background_migrations
+    alias run_background_migrations run_background_data_migrations
 
     # Run background schema migrations
     #
@@ -121,6 +124,10 @@ module OnlineMigrations
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache72)
       else
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
+      end
+
+      if !ActiveRecord::Batches::BatchEnumerator.method_defined?(:use_ranges)
+        ActiveRecord::Batches::BatchEnumerator.include(OnlineMigrations::ActiveRecordBatchEnumerator)
       end
     end
   end

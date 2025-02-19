@@ -96,40 +96,37 @@ OnlineMigrations.configure do |config|
   config.backtrace_cleaner = Rails.backtrace_cleaner
 
   # ==> Background data migrations configuration
-  # The path where generated background migrations will be placed.
-  config.background_migrations.migrations_path = "lib"
+  #
+  # The path where generated data migrations will be placed.
+  config.background_data_migrations.migrations_path = "lib"
 
-  # The module in which background migrations will be placed.
-  config.background_migrations.migrations_module = "OnlineMigrations::BackgroundMigrations"
+  # The module in which data migrations will be placed.
+  config.background_data_migrations.migrations_module = "OnlineMigrations::DataMigrations"
 
-  # The number of rows to process in a single background migration run.
-  config.background_migrations.batch_size = 1_000
+  # Maximum number of run attempts.
+  # When attempts are exhausted, the data migration is marked as failed.
+  config.background_data_migrations.max_attempts = 5
 
-  # The smaller batches size that the batches will be divided into.
-  config.background_migrations.sub_batch_size = 100
+  # The number of seconds that must pass before the cancelling or pausing data migration is considered stuck.
+  config.background_data_migrations.stuck_timeout = 5.minutes
 
-  # The pause interval between each background migration job's execution (in seconds).
-  config.background_migrations.batch_pause = 0.seconds
+  # The pause interval between each data migration's `process` method execution (in seconds).
+  config.background_data_migrations.iteration_pause = 0.seconds
 
-  # The number of milliseconds to sleep between each sub_batch execution.
-  config.background_migrations.sub_batch_pause_ms = 100
-
-  # Maximum number of batch run attempts.
-  # When attempts are exhausted, the individual batch is marked as failed.
-  config.background_migrations.batch_max_attempts = 5
-
-  # The number of seconds that must pass before the running job is considered stuck.
-  config.background_migrations.stuck_jobs_timeout = 1.hour
-
-  # The callback to perform when an error occurs in the migration job.
-  # config.background_migrations.error_handler = ->(error, errored_job) do
+  # The callback to perform when an error occurs during the data migration.
+  # config.background_data_migrations.error_handler = ->(error, errored_migration) do
   #   Bugsnag.notify(error) do |notification|
-  #     notification.add_metadata(:background_migration, { name: errored_job.migration_name })
+  #     notification.add_metadata(:background_migration, { name: errored_migration.migration_name })
   #   end
   # end
 
+  # The name of the sidekiq job to be used to perform data migrations.
+  config.background_data_migrations.job = "OnlineMigrations::BackgroundDataMigrations::MigrationJob"
+
   # ==> Background schema migrations configuration
-  # When attempts are exhausted, the failing migration stops to be retried.
+  #
+  # Maximum number of run attempts.
+  # When attempts are exhausted, the background schema migration is marked as failed.
   config.background_schema_migrations.max_attempts = 5
 
   # Statement timeout value used when running background schema migration.

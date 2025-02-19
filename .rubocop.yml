@@ -129,6 +129,7 @@ Naming/FileName:
   CheckDefinitionPathHierarchy: false
   Exclude:
     - lib/online_migrations/version.rb
+    - test/background_data_migrations/data_migrations.rb
     - test/support/schema.rb
     - test/support/models.rb
     - test/support/db/**

@@ -8,13 +8,15 @@ module OnlineMigrations
     #   `enqueue_background_schema_migration` helper inside migrations.
     #
     class Migration < ApplicationRecord
+      include ShardAware
+
       STATUSES = [
-        :enqueued,    # The migration has been enqueued by the user.
-        :running,     # The migration is being performed by a migration executor.
-        :errored,     # The migration raised an error during last run.
-        :failed,      # The migration raises an error when running and retry attempts exceeded.
-        :succeeded,   # The migration finished without error.
-        :cancelled,   # The migration was cancelled by the user.
+        "enqueued",    # The migration has been enqueued by the user.
+        "running",     # The migration is being performed by a migration executor.
+        "errored",     # The migration raised an error during last run.
+        "failed",      # The migration raises an error when running and retry attempts exceeded.
+        "succeeded",   # The migration finished without error.
+        "cancelled",   # The migration was cancelled by the user.
       ]
 
       MAX_IDENTIFIER_LENGTH = 63
@@ -22,13 +24,10 @@ module OnlineMigrations
       self.table_name = :background_schema_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
-      scope :parents, -> { where(parent_id: nil) }
-      scope :runnable, -> { where(composite: false) }
       scope :active, -> { where(status: [:enqueued, :running, :errored]) }
-      scope :except_succeeded, -> { where.not(status: :succeeded) }
 
       scope :stuck, -> do
-        runnable.active.where(<<~SQL)
+        active.where(<<~SQL)
           updated_at <= NOW() - interval '1 second' * (COALESCE(statement_timeout, 60*60*24) + 60*10)
         SQL
       end
@@ -38,7 +37,7 @@ module OnlineMigrations
 
         from(Arel.sql(<<~SQL))
           (
-            (SELECT * FROM background_schema_migrations WHERE NOT composite AND status = 'errored')
+            (SELECT * FROM background_schema_migrations WHERE status = 'errored')
             UNION
             (#{stuck_sql})
           ) AS #{table_name}
@@ -48,9 +47,6 @@ module OnlineMigrations
       alias_attribute :name, :migration_name
 
       enum :status, STATUSES.index_with(&:to_s)
-
-      belongs_to :parent, class_name: name, optional: true, inverse_of: :children
-      has_many :children, class_name: name, foreign_key: :parent_id, inverse_of: :parent
 
       validates :table_name, presence: true, length: { maximum: MAX_IDENTIFIER_LENGTH }
       validates :definition, presence: true
@@ -65,68 +61,47 @@ module OnlineMigrations
         end,
       }
 
-      validate :validate_children_statuses, if: -> { composite? && status_changed? }
-      validate :validate_connection_class, if: :connection_class_name?
       validate :validate_table_exists
       validates_with MigrationStatusValidator, on: :update
 
       before_validation :set_defaults
 
+      # Returns whether the migration is completed, which is defined as
+      # having a status of succeeded, failed, or cancelled.
+      #
+      # @return [Boolean] whether the migration is completed.
+      #
       def completed?
-        succeeded? || failed?
+        succeeded? || failed? || cancelled?
       end
 
-      # Overwrite enum's generated method to correctly work for composite migrations.
-      def cancelled!
-        return super if !composite?
-
-        transaction do
-          super
-          children.each { |child| child.cancelled! if !child.succeeded? }
-        end
+      # Returns whether the migration is active, which is defined as
+      # having a status of enqueued, or running.
+      #
+      # @return [Boolean] whether the migration is active.
+      #
+      def active?
+        enqueued? || running?
       end
+
       alias cancel cancelled!
 
+      # Returns whether this migration is pausable.
+      #
       def pausable?
         false
       end
 
-      def can_be_paused?
-        false
-      end
-
-      def can_be_cancelled?
-        !succeeded? && !cancelled?
-      end
-
-      # Returns the progress of the background schema migration.
+      # Dummy method to support the same interface as background data migrations.
       #
-      # @return [Float] value in range from 0.0 to 100.0
+      # @return [nil]
       #
       def progress
-        if succeeded?
-          100.0
-        elsif composite?
-          progresses = children.map(&:progress)
-          # There should not be composite migrations without children,
-          # but children may be deleted for some reason, so we need to
-          # make a check to avoid 0 division error.
-          if progresses.any?
-            (progresses.sum.to_f / progresses.size).round(2)
-          else
-            0.0
-          end
-        else
-          0.0
-        end
       end
 
       # Whether the migration is considered stuck (is running for some configured time).
       #
       def stuck?
-        # Composite migrations are not considered stuck.
-        return false if composite?
-
         stuck_timeout = (statement_timeout || 1.day) + 10.minutes
         running? && updated_at <= stuck_timeout.seconds.ago
       end
@@ -136,27 +111,16 @@ module OnlineMigrations
       # This is used to manually retrying failed migrations.
       #
       def retry
-        if composite? && failed?
-          transaction do
-            update!(status: :enqueued, finished_at: nil)
-            children.failed.each(&:retry)
-          end
-
-          true
-        elsif failed?
-          transaction do
-            parent.update!(status: :enqueued, finished_at: nil) if parent
-
-            update!(
-              status: :enqueued,
-              attempts: 0,
-              started_at: nil,
-              finished_at: nil,
-              error_class: nil,
-              error_message: nil,
-              backtrace: nil
-            )
-          end
+        if failed?
+          update!(
+            status: :enqueued,
+            attempts: 0,
+            started_at: nil,
+            finished_at: nil,
+            error_class: nil,
+            error_message: nil,
+            backtrace: nil
+          )
 
           true
         else
@@ -169,22 +133,13 @@ module OnlineMigrations
       end
 
       # @private
-      def connection_class
-        if connection_class_name && (klass = connection_class_name.safe_constantize)
-          Utils.find_connection_class(klass)
-        else
-          ActiveRecord::Base
-        end
-      end
-
-      # @private
       def attempts_exceeded?
         attempts >= max_attempts
       end
 
       # @private
       def run
-        on_shard do
+        on_shard_if_present do
           connection = connection_class.connection
 
           connection.with_lock_retries do
@@ -214,28 +169,11 @@ module OnlineMigrations
       end
 
       private
-        def validate_children_statuses
-          if composite?
-            if succeeded? && children.except_succeeded.exists?
-              errors.add(:base, "all child migrations must be succeeded")
-            elsif failed? && !children.failed.exists?
-              errors.add(:base, "at least one child migration must be failed")
-            end
-          end
-        end
-
-        def validate_connection_class
-          klass = connection_class_name.safe_constantize
-          if !(klass <= ActiveRecord::Base)
-            errors.add(:connection_class_name, "is not an ActiveRecord::Base child class")
-          end
-        end
-
         def validate_table_exists
           # Skip this validation if we have invalid connection class name.
           return if errors.include?(:connection_class_name)
 
-          on_shard do
+          on_shard_if_present do
             if !connection_class.connection.table_exists?(table_name)
               errors.add(:table_name, "'#{table_name}' does not exist")
             end
@@ -246,11 +184,6 @@ module OnlineMigrations
           config = ::OnlineMigrations.config.background_schema_migrations
           self.max_attempts ||= config.max_attempts
           self.statement_timeout ||= config.statement_timeout
-        end
-
-        def on_shard(&block)
-          shard = (self.shard || connection_class.default_shard).to_sym
-          connection_class.connected_to(shard: shard, role: :writing, &block)
         end
 
         def with_statement_timeout(connection, timeout)

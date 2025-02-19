@@ -1,5 +1,14 @@
 ## master (unreleased)
 
+- **WARNING**: This release has breaking changes! See `docs/0.27-upgrade.md` for release notes
+
+- Add ability to run background data migrations in parallel
+
+    ```ruby
+    # Run 2 data migrations in parallel.
+    OnlineMigrations.run_background_data_migrations(concurrency: 2)
+    ```
+
 - Retry deadlocks by lock retrier
 - Fix copying check constraints on columns with similar names when changing column type
 
