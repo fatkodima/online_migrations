@@ -1,0 +1,28 @@
+# frozen_string_literal: true
+
+module <%= migrations_module %>
+<% module_namespacing do -%>
+  class <%= class_name %> < OnlineMigrations::DataMigration
+    def collection
+      # Collection to iterate over.
+      # Must be ActiveRecord::Relation, ActiveRecord::Batches::BatchEnumerator, or Array.
+    end
+
+    def process(element)
+      # The work to be done in a single iteration of the migration.
+      # This should be idempotent, as the same element may be processed more
+      # than once if the migration is interrupted and resumed.
+    end
+
+    # Optional.
+    def count
+      # Define the number of rows that will be iterated over.
+      # This is used to track the background migration's progress.
+      # Usually this is configured to be 'relation.count'.
+      #
+      # If the query to calculate the count is heavy, it is recommended to use
+      # some approximate hardcode number or skip defining this method entirely.
+    end
+  end
+<% end -%>
+end

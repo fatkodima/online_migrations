@@ -1,0 +1,34 @@
+class ChangeBackgroundDataMigrations < <%= migration_parent %>
+  def change
+    safety_assured do
+      change_table :background_migrations do |t|
+        t.string :cursor
+        t.string :jid
+        t.bigint :tick_total
+        t.bigint :tick_count, default: 0, null: false
+        t.float :time_running, default: 0.0, null: false
+        t.string :error_class
+        t.string :error_message
+        t.string :backtrace, array: true
+        t.string :connection_class_name
+      end
+
+      rename_column :background_migrations, :batch_max_attempts, :max_attempts
+
+      [
+        "batch_column_name",
+        "min_value",
+        "max_value",
+        "batch_size",
+        "sub_batch_size",
+        "batch_pause",
+        "sub_batch_pause_ms",
+        "composite",
+      ].each do |column|
+        change_column_null :background_migrations, column, true
+      end
+
+      rename_table :background_migrations, :background_data_migrations
+    end
+  end
+end

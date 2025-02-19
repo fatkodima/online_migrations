@@ -7,6 +7,7 @@ gemspec
 
 gem "minitest", "~> 5.0"
 gem "rake", "~> 12.0"
+gem "sidekiq", "7.3.3"
 gem "rubocop", "< 2"
 gem "rubocop-minitest"
 gem "rubocop-disable_syntax"

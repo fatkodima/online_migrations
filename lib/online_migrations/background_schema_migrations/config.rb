@@ -4,9 +4,9 @@ module OnlineMigrations
   module BackgroundSchemaMigrations
     # Class representing configuration options for background schema migrations.
     class Config
-      # Maximum number of run attempts
+      # Maximum number of run attempts.
       #
-      # When attempts are exhausted, the migration is marked as failed.
+      # When attempts are exhausted, the schema migration is marked as failed.
       # @return [Integer] defaults to 5
       #
       attr_accessor :max_attempts
