@@ -1278,17 +1278,6 @@ Interesting reads:
 - [Stop worrying about PostgreSQL locks in your Rails migrations](https://medium.com/doctolib/stop-worrying-about-postgresql-locks-in-your-rails-migrations-3426027e9cc9)
 - [Avoiding integer overflows with zero downtime](https://buildkite.com/blog/avoiding-integer-overflows-with-zero-downtime)
 
-## Maybe TODO
-
-- support MySQL
-- support other ORMs
-
-Background migrations:
-
-- extract as a separate gem
-- add UI
-- support batching over non-integer and multiple columns
-
 ## Comparison to `strong_migrations`
 
 This gem was heavily inspired by the `strong_migrations` and GitLab's approaches to database migrations. This gem is a superset of `strong_migrations`, feature-wise, and has the same APIs.
