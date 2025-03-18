@@ -24,7 +24,7 @@ module SchemaStatements
 
       Milestone.reset_column_information
       column = Milestone.columns_hash["status"]
-      assert_equal "0", column.default
+      assert_equal 0, Integer(column.default)
       assert column.null
     end
 

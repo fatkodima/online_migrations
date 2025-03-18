@@ -102,7 +102,7 @@ module SchemaStatements
 
       column = column_for(:projects, :id_for_type_change)
       assert_equal "bigint", column.sql_type
-      assert_equal "0", column.default
+      assert_equal 0, Integer(column.default)
       assert_not column.null
     end
 
