@@ -73,6 +73,13 @@ module OnlineMigrations
       end
     end
 
+    # Whether to require safety reason explanation when calling #safery_assured
+    #
+    # Disabled by default
+    # @return [Boolean]
+    #
+    attr_accessor :require_safety_assured_reason
+
     # Whether to perform checks when migrating down
     #
     # Disabled by default
@@ -230,6 +237,7 @@ module OnlineMigrations
       @start_after = 0
       @target_version = nil
       @small_tables = []
+      @require_safety_assured_reason = false
       @check_down = false
       @auto_analyze = false
       @alphabetize_schema = false

@@ -1,6 +1,6 @@
 class AddShardingToOnlineMigrations < <%= migration_parent %>
   def change
-    safety_assured do
+    safety_assured("Table is small") do
       remove_index :background_migrations, [:migration_name, :arguments], unique: true
 
       change_table :background_migrations do |t|

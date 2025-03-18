@@ -1,6 +1,6 @@
 class AddTimestampsToBackgroundMigrations < <%= migration_parent %>
   def change
-    safety_assured do
+    safety_assured("Table is small") do
       add_column :background_migrations, :started_at, :datetime
       add_column :background_migrations, :finished_at, :datetime
 

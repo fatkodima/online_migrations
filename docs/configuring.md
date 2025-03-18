@@ -38,6 +38,14 @@ config.disable_check(:remove_index)
 
 Check the [source code](https://github.com/fatkodima/online_migrations/blob/master/lib/online_migrations/error_messages.rb) for the list of keys.
 
+## Requiring safety_assured reason
+
+To require safety reason explanation when calling `safery_assured` (disabled by default):
+
+```ruby
+config.require_safety_assured_reason = true
+```
+
 ## Down Migrations / Rollbacks
 
 By default, checks are disabled when migrating down. Enable them with:

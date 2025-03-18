@@ -1,5 +1,17 @@
 ## master (unreleased)
 
+- Allow to require safety reason explanation when calling `safery_assured`
+
+  ```ruby
+  # config/initializers/online_migrations.rb
+  config.require_safety_assured_reason = true
+
+  # in migration
+  safety_assured("Table is small") do
+    add_index :users, :email, unique: true
+  end
+  ```
+
 ## 0.25.0 (2025-02-03)
 
 - Track start/finish time of background data migrations

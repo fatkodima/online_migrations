@@ -173,6 +173,42 @@ class ConfigTest < Minitest::Test
     config.enable_check(:remove_column)
   end
 
+  class RequireSafetyAssuredReasonMigration < TestMigration
+    def change
+      safety_assured { add_index :users, :name }
+    end
+
+    def version
+      10
+    end
+  end
+
+  def test_require_safety_assured_reason_disabled_by_default
+    assert_safe RequireSafetyAssuredReasonMigration
+  end
+
+  def test_require_safety_assured_reason
+    previous = OnlineMigrations.config.require_safety_assured_reason
+    OnlineMigrations.config.require_safety_assured_reason = true
+
+    assert_raises_with_message(StandardError, /Specify a safety reason/) do
+      migrate RequireSafetyAssuredReasonMigration
+    end
+  ensure
+    OnlineMigrations.config.require_safety_assured_reason = previous
+  end
+
+  def test_require_safety_assured_reason_when_safe_version
+    previous = OnlineMigrations.config.require_safety_assured_reason
+    OnlineMigrations.config.require_safety_assured_reason = true
+
+    with_start_after(20) do
+      assert_safe RequireSafetyAssuredReasonMigration
+    end
+  ensure
+    OnlineMigrations.config.require_safety_assured_reason = previous
+  end
+
   class AddIndexToUsers < TestMigration
     def change
       add_index :users, :name

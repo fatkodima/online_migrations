@@ -45,7 +45,14 @@ module OnlineMigrations
     # @example
     #   safety_assured { remove_column(:users, :some_column) }
     #
-    def safety_assured(&block)
+    def safety_assured(reason = nil, &block)
+      config = OnlineMigrations.config
+      safe_version = version && version <= config.start_after
+
+      if config.require_safety_assured_reason && reason.blank? && !safe_version
+        raise OnlineMigrations::Error, "Specify a safety reason explanation when calling #safety_assured."
+      end
+
       command_checker.class.safety_assured(&block)
     end
 
