@@ -103,6 +103,16 @@ module MinitestHelpers
       "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} found.#{queries.empty? ? '' : "\nQueries:\n#{queries.join("\n")}"}"
   end
 
+  def stub_const(mod, constant, new_value)
+    old_value = mod.const_get(constant, false)
+    mod.send(:remove_const, constant)
+    mod.const_set(constant, new_value)
+    yield
+  ensure
+    mod.send(:remove_const, constant)
+    mod.const_set(constant, old_value)
+  end
+
   def with_target_version(version)
     prev = OnlineMigrations.config.target_version
     OnlineMigrations.config.target_version = version
@@ -139,6 +149,10 @@ module MinitestHelpers
   def on_shard(shard, &block)
     ShardRecord.connected_to(shard: shard, role: :writing, &block)
   end
+
+  def last_schema_migration
+    OnlineMigrations::BackgroundSchemaMigrations::Migration.last
+  end
 end
 
 Minitest::Test.class_eval do
@@ -149,4 +163,9 @@ Minitest::Test.class_eval do
   alias_method :assert_no_match, :refute_match
   alias_method :assert_not_nil, :refute_nil
   alias_method :assert_not_empty, :refute_empty
+
+  def after_teardown
+    Sidekiq::Worker.clear_all
+    super
+  end
 end

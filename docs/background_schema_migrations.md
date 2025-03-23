@@ -103,7 +103,7 @@ To get notified about specific type of events, subscribe to the event name follo
 ```ruby
 # config/initializers/online_migrations.rb
 ActiveSupport::Notifications.subscribe("retried.background_schema_migrations") do |name, start, finish, id, payload|
-  # background schema migration object is available in payload[:background_schema_migration]
+  # background schema migration object is available in payload[:migration]
 
   # Your code here
 end
@@ -114,7 +114,7 @@ If you want to subscribe to every `background_schema_migrations` event, use:
 ```ruby
 # config/initializers/online_migrations.rb
 ActiveSupport::Notifications.subscribe(/background_schema_migrations/) do |name, start, finish, id, payload|
-  # background schema migration object is available in payload[:background_schema_migration]
+  # background schema migration object is available in payload[:migration]
 
   # Your code here
 end
