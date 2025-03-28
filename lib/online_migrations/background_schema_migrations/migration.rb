@@ -206,6 +206,11 @@ module OnlineMigrations
               end
 
               connection.execute(definition)
+
+              # Outdated statistics + a new index can hurt performance of existing queries.
+              if OnlineMigrations.config.auto_analyze
+                connection.execute("ANALYZE #{table_name}")
+              end
             end
           end
         end
