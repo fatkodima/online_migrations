@@ -231,8 +231,8 @@ module SchemaStatements
     end
 
     def test_add_text_limit_constraint_to_not_text_column_raises
-      assert_raises_with_message(RuntimeError, /add_text_limit_constraint must be used only with :text columns/) do
-        connection.add_text_limit_constraint :milestones, :name, 100
+      assert_raises_with_message(RuntimeError, /add_text_limit_constraint must be used only with :text or :string columns/) do
+        connection.add_text_limit_constraint :milestones, :points, 100
       end
     end
 

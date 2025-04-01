@@ -568,8 +568,8 @@ module OnlineMigrations
     #
     def add_text_limit_constraint(table_name, column_name, limit, name: nil, validate: true)
       column = column_for(table_name, column_name)
-      if column.type != :text
-        raise "add_text_limit_constraint must be used only with :text columns"
+      if column.type != :text && column.type != :string
+        raise "add_text_limit_constraint must be used only with :text or :string columns"
       end
 
       name ||= __text_limit_constraint_name(table_name, column_name)
