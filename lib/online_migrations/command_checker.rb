@@ -375,6 +375,31 @@ module OnlineMigrations
               cleanup_code: command_str(:cleanup_column_type_change, table_name, column_name),
               cleanup_down_code: command_str(:initialize_column_type_change, table_name, column_name, existing_type)
           end
+
+          # Constraints must be rechecked.
+          # PostgreSQL recommends dropping constraints before and adding them back.
+          # https://www.postgresql.org/docs/current/ddl-alter.html#DDL-ALTER-COLUMN-TYPE
+          constraints = connection.check_constraints(table_name).select do |c|
+            c.validated? && c.expression.match?(/\b#{column_name}\b/)
+          end
+
+          if constraints.any?
+            change_commands = constraints.map do |c|
+              command_str(:remove_check_constraint, table_name, c.expression, { name: c.name })
+            end
+            change_commands << command_str(:change_column, table_name, column_name, type, **options)
+            constraints.each do |c|
+              change_commands << command_str(:add_check_constraint, table_name, c.expression, { name: c.name, validate: false })
+            end
+
+            validate_commands = constraints.map do |c|
+              command_str(:validate_check_constraint, table_name, { name: c.name })
+            end
+
+            raise_error :change_column_constraint,
+              change_column_code: change_commands.join("\n    "),
+              validate_constraint_code: validate_commands.join("\n    ")
+          end
         end
       end
 
@@ -388,9 +413,9 @@ module OnlineMigrations
         if !allow_null && !new_or_small_table?(table_name)
           # In PostgreSQL 12+ you can add a check constraint to the table
           # and then "promote" it to NOT NULL for the column.
-          safe = check_constraints(table_name).any? do |c|
-            c["def"] == "CHECK ((#{column_name} IS NOT NULL))" ||
-              c["def"] == "CHECK ((#{connection.quote_column_name(column_name)} IS NOT NULL))"
+          safe = connection.check_constraints(table_name).select(&:validated?).any? do |c|
+            c.expression == "#{column_name} IS NOT NULL" ||
+              c.expression == "#{connection.quote_column_name(column_name)} IS NOT NULL"
           end
 
           if !safe
@@ -763,18 +788,6 @@ module OnlineMigrations
         hashed_identifier = OpenSSL::Digest::SHA256.hexdigest(identifier).first(10)
 
         "chk_rails_#{hashed_identifier}"
-      end
-
-      def check_constraints(table_name)
-        constraints_query = <<~SQL
-          SELECT pg_get_constraintdef(oid) AS def
-          FROM pg_constraint
-          WHERE contype = 'c'
-            AND convalidated
-            AND conrelid = #{connection.quote(table_name)}::regclass
-        SQL
-
-        connection.select_all(constraints_query).to_a
       end
 
       def check_inheritance_column(table_name, column_name, default)

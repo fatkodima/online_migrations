@@ -242,6 +242,22 @@ during writes works automatically). For most column type changes, this does not 
 8. Remove changes from step 3, if any
 9. Deploy",
 
+      change_column_constraint: "Changing the type of a column that has check constraints blocks reads and writes
+while every row is checked. Drop the check constraints on the column before
+changing the type and add them back afterwards.
+
+class <%= migration_name %> < <%= migration_parent %>
+  def change
+    <%= change_column_code %>
+  end
+end
+
+class Validate<%= migration_name %> < <%= migration_parent %>
+  def change
+    <%= validate_constraint_code %>
+  end
+end",
+
       change_column_default:
 "Partial writes are enabled, which can cause incorrect values
 to be inserted when changing the default value of a column.

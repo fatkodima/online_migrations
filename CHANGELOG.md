@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add check for `change_column` for columns with check constraints
+
 - Allow to require safety reason explanation when calling `safery_assured`
 
   ```ruby

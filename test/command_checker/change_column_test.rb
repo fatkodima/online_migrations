@@ -704,6 +704,39 @@ module CommandChecker
       MSG
     end
 
+    class ChangeColumnConstraint < TestMigration
+      def change
+        safety_assured do
+          add_check_constraint :files, "name IS NOT NULL"
+        end
+        change_column :files, :name, :text
+      end
+    end
+
+    def test_constraint
+      assert_unsafe ChangeColumnConstraint, <<~MSG
+        Changing the type of a column that has check constraints blocks reads and writes
+      MSG
+    end
+
+    class ChangeColumnOtherConstraints < TestMigration
+      def change
+        add_column :files, :new_name, :string
+        safety_assured do
+          add_check_constraint :files, "new_name IS NOT NULL"
+          add_check_constraint :files, "size > 0"
+        end
+        reversible do |dir|
+          dir.up { change_column :files, :name, :text }
+          dir.down { change_column :files, :name, :string }
+        end
+      end
+    end
+
+    def test_other_constraints
+      assert_safe ChangeColumnOtherConstraints
+    end
+
     class ChangeColumnNewTable < TestMigration
       def up
         create_table :files_new do |t|
