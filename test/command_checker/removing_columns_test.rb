@@ -146,8 +146,6 @@ module CommandChecker
     end
 
     def test_remove_column_with_include_index
-      skip if ar_version < 7.1
-
       assert_unsafe RemoveColumnWithIncludeIndex,
         "remove_index :users, name: :index_users_on_email, algorithm: :concurrently"
     end

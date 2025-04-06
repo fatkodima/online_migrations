@@ -50,8 +50,6 @@ module SchemaStatements
     end
 
     def test_add_exclusion_constraint
-      skip if ar_version < 7.1
-
       user = User.create!
       start_date = 3.days.ago
       end_date = 1.day.ago
@@ -67,8 +65,6 @@ module SchemaStatements
     end
 
     def test_add_exclusion_constraint_is_idempotent
-      skip if ar_version < 7.1
-
       assert_nothing_raised do
         2.times do
           @connection.add_exclusion_constraint(:invoices, "daterange(start_date, end_date) WITH &&", using: :gist)

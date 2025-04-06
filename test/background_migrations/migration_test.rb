@@ -207,14 +207,12 @@ module BackgroundMigrations
       on_each_shard { Dog.create! }
 
       m = create_migration(migration_name: "MakeAllDogsNice")
-      # child1 is for `:default` and same as child2.
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       run_all_migration_jobs(child1)
-      assert_in_delta 100.0 / 3, m.progress, 1
+      assert_in_delta 50.0, m.progress
 
       run_all_migration_jobs(child2)
-      run_all_migration_jobs(child3)
       assert_in_delta 100.0, m.progress
     end
 
@@ -222,11 +220,10 @@ module BackgroundMigrations
       on_each_shard { Dog.create! }
 
       m = create_migration(migration_name: "MakeAllDogsNice")
-      # child1 is for `:default` and same as child2.
-      child1, _child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       run_all_migration_jobs(child1)
-      child3.update_column(:rows_count, nil) # make migration's progress untrackable
+      child2.update_column(:rows_count, nil) # make migration's progress untrackable
 
       assert_nil m.progress
     end
@@ -287,10 +284,10 @@ module BackgroundMigrations
 
     def test_retry_composite
       m = create_migration(migration_name: "MakeAllDogsNice")
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
       run_all_migration_jobs(m)
 
-      migrations = [m, child1, child2, child3]
+      migrations = [m, child1, child2]
       assert migrations.all?(&:succeeded?)
       assert m.started_at
       assert m.finished_at
@@ -307,7 +304,7 @@ module BackgroundMigrations
       migrations.each(&:reload)
       assert m.enqueued?
       assert child1.enqueued?
-      assert child3.succeeded?
+      assert child2.succeeded?
       assert child1.migration_jobs.all?(&:enqueued?)
 
       # Retrying a child should retry a parent.
@@ -353,10 +350,10 @@ module BackgroundMigrations
       on_shard(:shard_two) { Dog.create!(id: 1000) }
 
       m = create_migration(migration_name: "MakeAllDogsNice")
-      child1, _child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       assert_equal [1, 100], child1.next_batch_range
-      assert_equal [1, 1000], child3.next_batch_range
+      assert_equal [1, 1000], child2.next_batch_range
     end
 
     def test_mark_as_succeeded_when_not_all_jobs_succeeded
@@ -423,20 +420,17 @@ module BackgroundMigrations
       children = m.children.order(:shard).to_a
       assert children.none?(&:composite?)
 
-      child1, child2, child3 = children
+      child1, child2 = children
 
-      assert_equal "default", child1.shard
+      assert_equal "shard_one", child1.shard
       assert_equal 1, child1.min_value
       assert_equal 100, child1.max_value
       assert_equal 2, child1.rows_count
 
-      # Everything else is same as for "default".
-      assert_equal "shard_one", child2.shard
-
-      assert_equal "shard_two", child3.shard
-      assert_equal 1, child3.min_value
-      assert_equal 300, child3.max_value
-      assert_equal 3, child3.rows_count
+      assert_equal "shard_two", child2.shard
+      assert_equal 1, child2.min_value
+      assert_equal 300, child2.max_value
+      assert_equal 3, child2.rows_count
     end
 
     def test_copies_attribute_changes_to_child_migrations
@@ -461,7 +455,7 @@ module BackgroundMigrations
     def test_delete_all_deletes_children
       m = create_migration(migration_name: "MakeAllDogsNice")
       assert m.composite?
-      assert_equal 3, m.children.count
+      assert_equal 2, m.children.count
       m.children.delete_all
       assert_equal 1, OnlineMigrations::BackgroundMigrations::Migration.count
     end

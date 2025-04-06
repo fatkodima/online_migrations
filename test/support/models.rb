@@ -18,9 +18,6 @@ class ShardRecord < ActiveRecord::Base
   self.abstract_class = true
 
   connects_to shards: {
-    # Can be removed for Active Record 7.1+.
-    # See https://github.com/rails/rails/pull/48353.
-    default: { writing: :shard_one, reading: :shard_one },
     shard_one: { writing: :shard_one, reading: :shard_one },
     shard_two: { writing: :shard_two, reading: :shard_two },
   }

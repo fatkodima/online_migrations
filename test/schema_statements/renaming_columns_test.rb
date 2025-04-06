@@ -205,7 +205,7 @@ module SchemaStatements
     end
 
     def test_rename_column_in_table_with_long_name
-      # For ActiveRecord 7.1 use @connection.max_identifier_length, because older versions
+      # For ActiveRecord 7.2 use @connection.max_identifier_length, because older versions
       # does not correctly generate pkey names when renaming, so need to use a shorter identifier.
       table_name = "a" * 55
       @connection.create_table(table_name, force: true) do |t|

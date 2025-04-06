@@ -37,9 +37,7 @@ module SchemaStatements
         t.foreign_key :users
         t.check_constraint "star_count >= 0"
 
-        if ar_version >= 7.1
-          t.exclusion_constraint "tsrange(start_at, end_at) WITH &&", name: "original_e_constraint", using: :gist, deferrable: :deferred
-        end
+        t.exclusion_constraint "tsrange(start_at, end_at) WITH &&", name: "original_e_constraint", using: :gist, deferrable: :deferred
       end
 
       User.reset_column_information
@@ -259,8 +257,6 @@ module SchemaStatements
     end
 
     def test_finalize_column_type_change_copies_exclusion_constraints
-      skip if ar_version < 7.1
-
       @connection.initialize_column_type_change(:projects, :start_at, :timestamp, limit: 4)
       @connection.finalize_column_type_change(:projects, :start_at)
 
