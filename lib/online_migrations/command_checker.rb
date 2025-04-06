@@ -80,6 +80,7 @@ module OnlineMigrations
         add_inheritance_column: "adding-a-single-table-inheritance-column",
         mismatched_foreign_key_type: "mismatched-reference-column-types",
       }
+      private_constant :ERROR_MESSAGE_TO_LINK
 
       def check_database_version
         return if defined?(@database_version_checked)
