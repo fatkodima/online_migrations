@@ -14,13 +14,7 @@ module OnlineMigrations
         stdout_logger.level = @activerecord_logger_was.level
         stdout_logger = ActiveSupport::TaggedLogging.new(stdout_logger)
 
-        combined_logger =
-          # Broadcasting logs API was changed in https://github.com/rails/rails/pull/48615.
-          if Utils.ar_version >= 7.1
-            ActiveSupport::BroadcastLogger.new(stdout_logger, @activerecord_logger_was)
-          else
-            stdout_logger.extend(ActiveSupport::Logger.broadcast(@activerecord_logger_was))
-          end
+        combined_logger = ActiveSupport::BroadcastLogger.new(stdout_logger, @activerecord_logger_was)
 
         ActiveRecord::Base.logger = combined_logger
         ActiveRecord.verbose_query_logs = false

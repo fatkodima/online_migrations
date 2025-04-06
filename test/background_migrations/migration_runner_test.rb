@@ -118,22 +118,20 @@ module BackgroundMigrations
       on_each_shard { Dog.create! }
 
       m = create_migration(migration_name: "MakeAllDogsNice")
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       run_all_migration_jobs(child1)
-      run_all_migration_jobs(child2)
-      run_migration_job(child3)
+      run_migration_job(child2)
 
       assert child1.succeeded?
-      assert child2.succeeded?
-      assert child3.running?
+      assert child2.running?
       assert m.reload.running?
 
       # nothing to run, just updates the status
-      run_migration_job(child3)
+      run_migration_job(child2)
 
       assert m.reload.succeeded?
-      assert child3.succeeded?
+      assert child2.succeeded?
     end
 
     def test_run_migration_job_finishes_parent_with_failed_child_migrations
@@ -292,10 +290,9 @@ module BackgroundMigrations
       on_each_shard { 2.times { Dog.create! } }
 
       m = create_migration(migration_name: "MakeAllDogsNice")
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
       run_migration_job(child1)
       run_migration_job(child2)
-      run_migration_job(child3)
 
       runner = migration_runner(m)
       runner.finish

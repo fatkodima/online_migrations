@@ -16,7 +16,7 @@ module BackgroundSchemaMigrations
         definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
         connection_class_name: "ShardRecord"
       )
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
       scheduler.run
@@ -26,9 +26,6 @@ module BackgroundSchemaMigrations
 
       scheduler.run
       assert child2.reload.succeeded?
-
-      scheduler.run
-      assert child3.reload.succeeded?
       assert m.reload.succeeded?
     end
 

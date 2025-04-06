@@ -627,7 +627,7 @@ module OnlineMigrations
       def add_unique_constraint(table_name, column_name = nil, **options)
         return if new_or_small_table?(table_name) || options[:using_index] || !column_name
 
-        index_name = Utils.index_name(table_name, column_name)
+        index_name = connection.index_name(table_name, column_name)
 
         raise_error :add_unique_constraint,
           add_index_code: command_str(:add_index, table_name, column_name, unique: true, name: index_name, algorithm: :concurrently),
@@ -848,10 +848,8 @@ module OnlineMigrations
       end
 
       def index_include_column?(index, column)
-        # Expression index
-        (index.columns.is_a?(String) && index.columns.include?(column)) ||
-          index.columns.include?(column) ||
-          (Utils.ar_version >= 7.1 && index.include && index.include.include?(column)) ||
+        index.columns.include?(column) ||
+          (index.include && index.include.include?(column)) ||
           (index.where && index.where.include?(column))
       end
 

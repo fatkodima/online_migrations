@@ -69,23 +69,6 @@ module OnlineMigrations
         end
       end
 
-      # Implementation is from ActiveRecord.
-      # This is not needed for ActiveRecord >= 7.1 (https://github.com/rails/rails/pull/47753).
-      def index_name(table_name, column_name)
-        max_index_name_size = 62
-        name = "index_#{table_name}_on_#{Array(column_name) * '_and_'}"
-        return name if name.bytesize <= max_index_name_size
-
-        # Fallback to short version, add hash to ensure uniqueness
-        hashed_identifier = "_#{OpenSSL::Digest::SHA256.hexdigest(name).first(10)}"
-        name = "idx_on_#{Array(column_name) * '_'}"
-
-        short_limit = max_index_name_size - hashed_identifier.bytesize
-        short_name = name[0, short_limit]
-
-        "#{short_name}#{hashed_identifier}"
-      end
-
       # Returns estimated rows count for a table.
       # https://www.citusdata.com/blog/2016/10/12/count-performance/
       def estimated_count(connection, table_name)
@@ -144,9 +127,7 @@ module OnlineMigrations
           # This is the way that currently is used in ActiveRecord tests themselves.
           pool_manager = ActiveRecord::Base.connection_handler.send(:get_pool_manager, ancestor.name)
 
-          # .uniq call is not needed for Active Record 7.1+
-          # See https://github.com/rails/rails/pull/49284.
-          return pool_manager.shard_names.uniq if pool_manager
+          return pool_manager.shard_names if pool_manager
         end
       end
 

@@ -20,7 +20,7 @@ module OnlineMigrations
       # For ActiveRecord::ConnectionAdapters::IndexDefinition is for expression indexes,
       # `columns` is a string
       table == other.table &&
-        (columns & Array(other.columns)).any?
+        columns.intersect?(Array(other.columns))
     end
 
     # @param other [OnlineMigrations::IndexDefinition, ActiveRecord::ConnectionAdapters::IndexDefinition]

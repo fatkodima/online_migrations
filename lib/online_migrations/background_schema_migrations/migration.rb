@@ -194,10 +194,7 @@ module OnlineMigrations
               if index_addition?
                 index = connection.indexes(table_name).find { |i| i.name == name }
                 if index
-                  # Use index validity from https://github.com/rails/rails/pull/45160
-                  # when switching to ActiveRecord >= 7.1.
-                  schema = connection.send(:__schema_for_table, table_name)
-                  if connection.send(:__index_valid?, name, schema: schema)
+                  if index.valid?
                     return
                   else
                     connection.remove_index(table_name, name: name, algorithm: :concurrently)

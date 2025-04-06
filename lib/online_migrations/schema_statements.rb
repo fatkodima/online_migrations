@@ -710,15 +710,11 @@ module OnlineMigrations
           index_name = (options[:name] || index_name(table_name, column_name)).to_s
           indexes(table_name).find { |i| i.name == index_name }
         else
-          # Rewrite this with `IndexDefinition#defined_for?` when Active Record >= 7.1 is supported.
-          # See https://github.com/rails/rails/pull/45160.
-          indexes(table_name).find { |i| __index_defined_for?(i, column_name, **options) }
+          indexes(table_name).find { |i| i.defined_for?(column_name, **options) }
         end
 
       if index
-        schema = __schema_for_table(table_name)
-
-        if __index_valid?(index.name, schema: schema)
+        if index.valid?
           Utils.say("Index was not created because it already exists.")
           return
         else
@@ -761,22 +757,6 @@ module OnlineMigrations
         super
       else
         Utils.say("Index was not removed because it does not exist.")
-      end
-    end
-
-    # @private
-    # From ActiveRecord. Will not be needed for ActiveRecord >= 7.1.
-    def index_name(table_name, options)
-      if options.is_a?(Hash)
-        if options[:column]
-          Utils.index_name(table_name, options[:column])
-        elsif options[:name]
-          options[:name]
-        else
-          raise ArgumentError, "You must specify the index name"
-        end
-      else
-        index_name(table_name, column: options)
       end
     end
 
@@ -833,7 +813,7 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
     #
     def add_check_constraint(table_name, expression, **options)
-      if __check_constraint_exists?(table_name, expression: expression, **options)
+      if check_constraint_exists?(table_name, expression: expression, **options)
         Utils.say(<<~MSG.squish)
           Check constraint was not created because it already exists (this may be due to an aborted migration or similar).
           table_name: #{table_name}, expression: #{expression}
@@ -864,7 +844,7 @@ module OnlineMigrations
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
     #
     def remove_check_constraint(table_name, expression = nil, **options)
-      if __check_constraint_exists?(table_name, expression: expression, **options)
+      if check_constraint_exists?(table_name, expression: expression, **options)
         super
       else
         Utils.say(<<~MSG.squish)
@@ -874,16 +854,14 @@ module OnlineMigrations
       end
     end
 
-    if Utils.ar_version >= 7.1
-      def add_exclusion_constraint(table_name, expression, **options)
-        if __exclusion_constraint_exists?(table_name, expression: expression, **options)
-          Utils.say(<<~MSG.squish)
-            Exclusion constraint was not created because it already exists (this may be due to an aborted migration or similar).
-            table_name: #{table_name}, expression: #{expression}
-          MSG
-        else
-          super
-        end
+    def add_exclusion_constraint(table_name, expression, **options)
+      if __exclusion_constraint_exists?(table_name, expression: expression, **options)
+        Utils.say(<<~MSG.squish)
+          Exclusion constraint was not created because it already exists (this may be due to an aborted migration or similar).
+          table_name: #{table_name}, expression: #{expression}
+        MSG
+      else
+        super
       end
     end
 
@@ -932,20 +910,9 @@ module OnlineMigrations
         end
       end
 
-      # Will not be needed for Active Record >= 7.1
-      def __index_defined_for?(index, columns = nil, name: nil, unique: nil, valid: nil, include: nil, nulls_not_distinct: nil, **options)
-        columns = options[:column] if columns.blank?
-        (columns.nil? || Array(index.columns) == Array(columns).map(&:to_s)) &&
-          (name.nil? || index.name == name.to_s) &&
-          (unique.nil? || index.unique == unique) &&
-          (valid.nil? || index.valid == valid) &&
-          (include.nil? || Array(index.include) == Array(include).map(&:to_s)) &&
-          (nulls_not_distinct.nil? || index.nulls_not_distinct == nulls_not_distinct)
-      end
-
       def __not_null_constraint_exists?(table_name, column_name, name: nil)
         name ||= __not_null_constraint_name(table_name, column_name)
-        __check_constraint_exists?(table_name, name: name)
+        check_constraint_exists?(table_name, name: name)
       end
 
       def __not_null_constraint_name(table_name, column_name)
@@ -958,21 +925,7 @@ module OnlineMigrations
 
       def __text_limit_constraint_exists?(table_name, column_name, name: nil)
         name ||= __text_limit_constraint_name(table_name, column_name)
-        __check_constraint_exists?(table_name, name: name)
-      end
-
-      # Can use index validity attribute for Active Record >= 7.1.
-      def __index_valid?(index_name, schema:)
-        select_value(<<~SQL)
-          SELECT indisvalid
-          FROM pg_index i
-          JOIN pg_class c
-            ON i.indexrelid = c.oid
-          JOIN pg_namespace n
-            ON c.relnamespace = n.oid
-          WHERE n.nspname = #{schema}
-            AND c.relname = #{quote(index_name)}
-        SQL
+        check_constraint_exists?(table_name, name: name)
       end
 
       def __copy_foreign_key(fk, to_column, **options)
@@ -994,15 +947,6 @@ module OnlineMigrations
         if fk.validated?
           validate_foreign_key(fk.from_table, fk.to_table, column: to_column, **options)
         end
-      end
-
-      # Can be replaced by native method in Active Record >= 7.1.
-      def __check_constraint_exists?(table_name, **options)
-        if !options.key?(:name) && !options.key?(:expression)
-          raise ArgumentError, "At least one of :name or :expression must be supplied"
-        end
-
-        check_constraint_for(table_name, **options).present?
       end
 
       def __exclusion_constraint_exists?(table_name, **options)

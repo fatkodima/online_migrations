@@ -68,17 +68,15 @@ module BackgroundSchemaMigrations
 
     def test_run_child_migration_completes_parent_if_needed
       m = create_sharded_migration
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       run_migration(child1)
-      run_migration(child2)
       assert child1.succeeded?
-      assert child2.succeeded?
-      assert child3.enqueued?
+      assert child2.enqueued?
       assert m.reload.running?
 
-      run_migration(child3)
-      assert child3.succeeded?
+      run_migration(child2)
+      assert child2.succeeded?
       assert m.reload.succeeded?
     end
 
@@ -113,10 +111,7 @@ module BackgroundSchemaMigrations
 
       index = @connection.indexes(:users).find { |i| i.name == "index_users_on_email" }
       assert index
-
-      if OnlineMigrations::Utils.ar_version >= 7.1
-        assert_not index.valid?
-      end
+      assert_not index.valid?
 
       User.delete_all # we can now create a unique index
 
@@ -126,10 +121,7 @@ module BackgroundSchemaMigrations
 
       index = @connection.indexes(:users).find { |i| i.name == "index_users_on_email" }
       assert index
-
-      if OnlineMigrations::Utils.ar_version >= 7.1
-        assert index.valid?
-      end
+      assert index.valid?
     end
 
     def test_adding_existing_index

@@ -102,12 +102,7 @@ module OnlineMigrations
     end
 
     def deprecator
-      @deprecator ||=
-        if Utils.ar_version >= 7.1
-          ActiveSupport::Deprecation.new(nil, "online_migrations")
-        else
-          ActiveSupport::Deprecation
-        end
+      @deprecator ||= ActiveSupport::Deprecation.new(nil, "online_migrations")
     end
 
     # @private
@@ -124,8 +119,6 @@ module OnlineMigrations
 
       if OnlineMigrations::Utils.ar_version >= 7.2
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache72)
-      elsif OnlineMigrations::Utils.ar_version >= 7.1
-        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache71)
       else
         ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
       end

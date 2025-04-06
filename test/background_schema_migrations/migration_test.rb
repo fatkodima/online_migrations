@@ -99,26 +99,22 @@ module BackgroundSchemaMigrations
     def test_progress_not_finished_sharded_migration
       m = create_sharded_migration
 
-      # child1 is for `:default` and same as child2.
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
 
       run_migration(child1)
-      assert_in_delta 100.0 / 3, m.progress, 1
+      assert_in_delta 50.0, m.progress
 
       run_migration(child2)
-      run_migration(child3)
       assert_in_delta 100.0, m.progress
     end
 
     def test_mark_as_succeeded_when_not_all_child_migrations_succeeded
       m = create_sharded_migration
-      child1, child2, child3 = m.children.to_a
+      child1, child2 = m.children.to_a
       run_migration(child1)
-      run_migration(child2)
 
       assert child1.succeeded?
-      assert child2.succeeded?
-      child3.update_column(:status, :failed) # bypass status validation
+      child2.update_column(:status, :failed) # bypass status validation
 
       m.reload # so the status is updated
 
@@ -145,11 +141,10 @@ module BackgroundSchemaMigrations
       children = m.children.order(:shard).to_a
       assert children.none?(&:composite?)
 
-      child1, child2, child3 = children
+      child1, child2 = children
 
-      assert_equal "default", child1.shard
-      assert_equal "shard_one", child2.shard
-      assert_equal "shard_two", child3.shard
+      assert_equal "shard_one", child1.shard
+      assert_equal "shard_two", child2.shard
     end
 
     def test_retry
@@ -179,8 +174,8 @@ module BackgroundSchemaMigrations
       assert m.started_at
       assert m.finished_at
 
-      child1, child2, child3 = m.children.to_a
-      migrations = [m, child1, child2, child3]
+      child1, child2 = m.children.to_a
+      migrations = [m, child1, child2]
       assert migrations.all?(&:succeeded?)
       assert_equal false, m.retry
 
@@ -194,7 +189,7 @@ module BackgroundSchemaMigrations
       migrations.each(&:reload)
       assert m.enqueued?
       assert child1.enqueued?
-      assert child3.succeeded?
+      assert child2.succeeded?
 
       # Retrying a child should retry a parent.
       m.update_column(:status, "failed")

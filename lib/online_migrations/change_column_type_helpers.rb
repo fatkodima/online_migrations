@@ -267,11 +267,7 @@ module OnlineMigrations
         __copy_indexes(table_name, column_name, tmp_column_name)
         __copy_foreign_keys(table_name, column_name, tmp_column_name)
         __copy_check_constraints(table_name, column_name, tmp_column_name)
-
-        # Exclusion constraints were added in https://github.com/rails/rails/pull/40224.
-        if Utils.ar_version >= 7.1
-          __copy_exclusion_constraints(table_name, column_name, tmp_column_name)
-        end
+        __copy_exclusion_constraints(table_name, column_name, tmp_column_name)
 
         if column_name == primary_key
           __finalize_primary_key_type_change(table_name, column_name, column_names)

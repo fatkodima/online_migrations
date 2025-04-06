@@ -321,8 +321,6 @@ module CommandChecker
     end
 
     def test_add_unique_constraint
-      skip if ar_version < 7.1
-
       assert_unsafe AddUniqueConstraint, <<~MSG
         Adding a unique constraint blocks reads and writes while the underlying index is being built.
         A safer approach is to create a unique index first, and then create a unique constraint using that index.
@@ -358,8 +356,6 @@ module CommandChecker
     end
 
     def test_add_unique_constraint_using_index
-      skip if ar_version < 7.1
-
       @connection.add_index(:users, :email, unique: true, name: "index_users_on_email")
       assert_safe AddUniqueConstraintUsingIndex
     end
@@ -497,8 +493,6 @@ module CommandChecker
     end
 
     def test_add_exclusion_constraint
-      skip if ar_version < 7.1
-
       assert_unsafe AddExclusionConstraint, "Adding an exclusion constraint blocks reads and writes while every row is checked."
     end
 
@@ -513,8 +507,6 @@ module CommandChecker
     end
 
     def test_add_exclusion_constraint_to_new_table
-      skip if ar_version < 7.1
-
       assert_safe AddExclusionConstraintNewTable
     end
 

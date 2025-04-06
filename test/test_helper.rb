@@ -38,16 +38,8 @@ else
   ActiveRecord::Migration.verbose = false
 end
 
-if OnlineMigrations::Utils.ar_version < 7.1
-  ActiveRecord.legacy_connection_handling = false
-end
-
 # Disallow ActiveSupport deprecations sprouting from this gem
-if OnlineMigrations::Utils.ar_version >= 7.1
-  ActiveRecord.deprecator.disallowed_warnings = :all
-else
-  ActiveSupport::Deprecation.disallowed_warnings = :all
-end
+ActiveRecord.deprecator.disallowed_warnings = :all
 
 # Is a boolean value and controls whether or not partial writes are used when creating new records
 # (i.e. whether inserts only set attributes that are different from the default). The default value is true.
@@ -67,10 +59,8 @@ def prepare_database
 
   if OnlineMigrations::Utils.ar_version >= 7.2
     ActiveRecord::SchemaMigration.new(connection.pool).create_table
-  elsif OnlineMigrations::Utils.ar_version >= 7.1
-    ActiveRecord::SchemaMigration.new(connection).create_table
   else
-    ActiveRecord::SchemaMigration.create_table
+    ActiveRecord::SchemaMigration.new(connection).create_table
   end
 end
 
