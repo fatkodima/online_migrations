@@ -358,13 +358,22 @@ module OnlineMigrations
     # @see #cleanup_column_type_change
     #
     def cleanup_columns_type_change(table_name, *column_names)
-      conversions = column_names.index_with do |column_name|
-        __change_type_column(column_name)
+      tmp_column_names = column_names.map { |column_name| __change_type_column(column_name) }
+
+      # Safely remove existing indexes and foreign keys first, if any.
+      tmp_column_names.each do |column_name|
+        __indexes_for(table_name, column_name).each do |index|
+          remove_index(table_name, name: index.name, algorithm: :concurrently)
+        end
+
+        __foreign_keys_for(table_name, column_name).each do |fk|
+          remove_foreign_key(table_name, name: fk.name)
+        end
       end
 
       transaction do
-        __remove_copy_triggers(table_name, conversions.keys, conversions.values)
-        remove_columns(table_name, *conversions.values)
+        __remove_copy_triggers(table_name, column_names, tmp_column_names)
+        remove_columns(table_name, *tmp_column_names)
       end
     end
 
