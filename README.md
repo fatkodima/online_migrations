@@ -64,76 +64,32 @@ An operation is classified as dangerous if it either:
 
 ## Example
 
-Consider the following migration:
-
-```ruby
-class AddAdminToUsers < ActiveRecord::Migration[8.0]
-  def change
-    add_column :users, :admin, :boolean, default: false, null: false
-  end
-end
-```
-
-If the `users` table is large, running this migration on a live PostgreSQL < 11 database will likely cause downtime.
-
-A safer approach would be to run something like the following:
-
-```ruby
-class AddAdminToUsers < ActiveRecord::Migration[8.0]
-  # Do not wrap the migration in a transaction so that locks are held for a shorter time.
-  disable_ddl_transaction!
-
-  def up
-    # Lower PostgreSQL's lock timeout to avoid statement queueing.
-    execute "SET lock_timeout TO '5s'" # The lock_timeout duration is customizable.
-
-    # Add the column without the default value and the not-null constraint.
-    add_column :users, :admin, :boolean
-
-    # Set the column's default value.
-    change_column_default :users, :admin, false
-
-    # Backfill the column in batches.
-    User.in_batches.update_all(admin: false)
-
-    # Add the not-null constraint. Beforehand, set a short statement timeout so that
-    # Postgres does not spend too much time performing the full table scan to verify
-    # the column contains no nulls.
-    execute "SET statement_timeout TO '5s'"
-    change_column_null :users, :admin, false
-  end
-
-  def down
-    remove_column :users, :admin
-  end
-end
-```
-
-When you actually run the original migration, you will get an error message:
+When you run a migration that's potentially dangerous, you'll see an error message like:
 
 ```txt
 ⚠️  [online_migrations] Dangerous operation detected ⚠️
 
-Adding a column with a non-null default blocks reads and writes while the entire table is rewritten.
-
+Active Record caches database columns at runtime, so if you drop a column, it can cause exceptions until your app reboots.
 A safer approach is to:
-1. add the column without a default value
-2. change the column default
-3. backfill existing rows with the new value
-4. add the NOT NULL constraint
 
-add_column_with_default takes care of all this steps:
+1. Ignore the column:
 
-class AddAdminToUsers < ActiveRecord::Migration[8.0]
-  disable_ddl_transaction!
-
-  def change
-    add_column_with_default :users, :admin, :boolean, default: false, null: false
+  class User < ApplicationRecord
+    self.ignored_columns += ["name"]
   end
-end
-```
 
-It suggests how to safely implement a migration, which essentially runs the steps similar to described in the previous example.
+2. Deploy
+3. Wrap column removing in a safety_assured { ... } block
+
+  class RemoveColumn < ActiveRecord::Migration[8.0]
+    def change
+      safety_assured { remove_column :users, :name }
+    end
+  end
+
+4. Remove column ignoring from step 1
+5. Deploy
+```
 
 ## Checks
 
