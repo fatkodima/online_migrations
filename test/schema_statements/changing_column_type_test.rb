@@ -364,6 +364,25 @@ module SchemaStatements
       assert @connection.index_exists?(:projects, :name_for_type_change)
     end
 
+    def test_revert_finalize_column_type_change_when_primary_key
+      user1 = User.create!
+
+      @connection.initialize_column_type_change(:users, :id, :bigint)
+      @connection.finalize_column_type_change(:users, :id)
+      @connection.revert_finalize_column_type_change(:users, :id)
+
+      assert_equal "id", @connection.primary_key(:users)
+      id_column = column_for(:users, :id)
+      assert_equal "integer", id_column.sql_type
+
+      old_id_column = column_for(:users, :id_for_type_change)
+      assert_equal "bigint", old_id_column.sql_type
+
+      # sequence is reassigned to the old column
+      user2 = User.create!
+      assert_equal user1.id + 1, user2.id
+    end
+
     def test_cleanup_column_type_change
       change_column_type(:projects, :name, :string)
       assert_not @connection.column_exists?(:projects, :name_for_type_change)
