@@ -406,12 +406,13 @@ module OnlineMigrations
         to_column    = to_column.to_s
 
         __indexes_for(table_name, from_column).each do |index|
+          columns = index.columns
           new_columns =
             # Expression index.
-            if index.columns.is_a?(String)
-              index.columns.gsub(/\b#{from_column}\b/, to_column)
+            if columns.is_a?(String)
+              columns.gsub(/\b#{from_column}\b/, to_column)
             else
-              index.columns.map do |column|
+              columns.map do |column|
                 column == from_column ? to_column : column
               end
             end
@@ -432,6 +433,16 @@ module OnlineMigrations
             opclasses[to_column] = opclasses.delete(from_column) if opclasses[from_column]
 
             options[:opclass] = opclasses
+          end
+
+          # If the index name is custom - do not rely on auto generated index names, because this
+          # doesn't work (idempotency check does not work, rails does not consider ':where' option)
+          # when there are partial and "classic" indexes on the same columns.
+          if index.name == index_name(table_name, columns)
+            options[:name] = index_name(table_name, new_columns)
+          else
+            truncated_index_name = index.name[0, max_identifier_length - "_2".length]
+            options[:name] = "#{truncated_index_name}_2"
           end
 
           add_index(table_name, new_columns, **options, algorithm: :concurrently)

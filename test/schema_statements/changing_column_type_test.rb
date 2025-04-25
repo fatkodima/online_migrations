@@ -236,6 +236,21 @@ module SchemaStatements
       assert_equal(1, @connection.indexes(:projects).count { |index| index.columns.include?("#{long_column_name}_for_type_change") })
     end
 
+    def test_finalize_column_type_change_copies_indexes_with_same_columns
+      assert @connection.index_exists?(:projects, :name)
+
+      # Need to add index with the same columns as existing (partial in this case).
+      # Rails' 'defined_for?' does not consider ':where' option, so without care the index
+      # considered as duplicate by idempotency check and will not be copied when copying indexes.
+      @connection.add_index(:projects, :name, where: "star_count > 0", name: "partial_index")
+      assert_equal 6, @connection.indexes(:projects).count
+
+      @connection.initialize_column_type_change(:projects, :name, :string)
+      @connection.finalize_column_type_change(:projects, :name)
+
+      assert_equal 9, @connection.indexes(:projects).count # 6 for 'name' and its duplicate column, 3 others
+    end
+
     def test_finalize_column_type_change_copies_foreign_key
       @connection.initialize_column_type_change(:projects, :user_id, :bigint)
       @connection.finalize_column_type_change(:projects, :user_id)
@@ -295,7 +310,7 @@ module SchemaStatements
 
       @connection.initialize_column_type_change(:projects, :company_id, :bigint)
       # Lets imagine, that the index was added before, manually, to the column.
-      @connection.add_index(:projects, :company_id_for_type_change, name: "my_custom_name") # use custom index name
+      @connection.add_index(:projects, :company_id_for_type_change)
 
       refute_sql("CREATE INDEX") do
         @connection.finalize_column_type_change(:projects, :company_id)

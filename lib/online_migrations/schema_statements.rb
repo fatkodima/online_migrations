@@ -715,7 +715,7 @@ module OnlineMigrations
 
       if index
         if index.valid?
-          Utils.say("Index was not created because it already exists.")
+          Utils.say("Index #{index.name} was not created because it already exists.")
           return
         else
           Utils.say("Recreating invalid index: table_name: #{table_name}, column_name: #{column_name}")
