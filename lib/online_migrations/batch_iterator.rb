@@ -83,12 +83,16 @@ module OnlineMigrations
 
     private
       def apply_limits(relation, column, start, finish, order)
+        arel_column = relation.arel_table[column]
+
         if start
-          relation = relation.where(relation.arel_table[column].public_send((order == :asc ? :gteq : :lteq), start))
+          predicate = order == :asc ? :gteq : :lteq
+          relation = relation.where(arel_column.public_send(predicate, start))
         end
 
         if finish
-          relation = relation.where(relation.arel_table[column].public_send((order == :asc ? :lteq : :gteq), finish))
+          predicate = order == :asc ? :lteq : :gteq
+          relation = relation.where(arel_column.public_send(predicate, finish))
         end
 
         relation
