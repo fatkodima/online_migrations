@@ -527,6 +527,13 @@ module OnlineMigrations
           # Lock the table explicitly to prevent new rows being inserted
           execute("LOCK TABLE #{quoted_table_name} IN ACCESS EXCLUSIVE MODE")
 
+          # https://stackoverflow.com/questions/47301722/how-can-view-depends-on-primary-key-constraint-in-postgres
+          #
+          # PG::DependentObjectsStillExist: ERROR:  cannot drop constraint appointments_pkey on table appointments because other objects depend on it (PG::DependentObjectsStillExist)
+          # DETAIL:  view appointment_statuses depends on constraint appointments_pkey on table appointments
+          # HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+          views = __drop_dependent_views(table_name)
+
           swap_column_names(table_name, column_name, tmp_column_name)
 
           # We need to update the trigger function in order to make PostgreSQL to
@@ -546,6 +553,8 @@ module OnlineMigrations
           execute("ALTER TABLE #{quoted_table_name} DROP CONSTRAINT #{quote_table_name(pkey_constraint_name)}")
           rename_index(table_name, pkey_index_name, pkey_constraint_name)
           execute("ALTER TABLE #{quoted_table_name} ADD CONSTRAINT #{quote_table_name(pkey_constraint_name)} PRIMARY KEY USING INDEX #{quote_table_name(pkey_constraint_name)}")
+
+          __recreate_views(views)
         end
       end
 
@@ -594,6 +603,41 @@ module OnlineMigrations
         tmp_column_names = column_names.map { |c| __change_type_column(c) }
         function_name = __copy_triggers_name(table_name, column_names, tmp_column_names)
         execute("ALTER FUNCTION #{quote_table_name(function_name)}() RESET ALL")
+      end
+
+      # https://stackoverflow.com/questions/69458819/is-there-any-way-to-list-all-the-views-related-to-a-table-in-the-existing-postgr
+      def __drop_dependent_views(table_name)
+        views = select_all(<<~SQL)
+          SELECT
+            u.view_schema AS schema,
+            u.view_name AS name,
+            v.view_definition AS definition,
+            c.relkind = 'm' AS materialized
+          FROM information_schema.view_table_usage u
+            JOIN information_schema.views v ON u.view_schema = v.table_schema
+              AND u.view_name = v.table_name
+            JOIN pg_class c ON c.relname = u.view_name
+          WHERE u.table_schema NOT IN ('information_schema', 'pg_catalog')
+            AND u.table_name = #{quote(table_name)}
+          ORDER BY u.view_schema, u.view_name
+        SQL
+
+        views.each do |row|
+          execute("DROP VIEW #{quote_table_name(row['schema'])}.#{quote_table_name(row['name'])}")
+        end
+
+        views
+      end
+
+      def __recreate_views(views)
+        views.each do |row|
+          schema, name, definition, materialized = row.values_at("schema", "name", "definition", "materialized")
+
+          execute(<<~SQL)
+            CREATE#{' MATERIALIZED' if materialized} VIEW #{quote_table_name(schema)}.#{quote_table_name(name)} AS
+            #{definition}
+          SQL
+        end
       end
   end
 end

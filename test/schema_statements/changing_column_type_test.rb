@@ -46,8 +46,8 @@ module SchemaStatements
 
     def teardown
       OnlineMigrations::BackgroundMigrations::Migration.delete_all
-      @connection.drop_table(:projects, if_exists: true)
-      @connection.drop_table(:users, if_exists: true)
+      @connection.drop_table(:projects, force: :cascade)
+      @connection.drop_table(:users, force: :cascade)
     end
 
     def test_initialize_column_type_change_creates_new_column
@@ -357,6 +357,23 @@ module SchemaStatements
       end
 
       assert foreign_key
+    end
+
+    def test_finalize_column_type_change_for_primary_key_recreates_views
+      Project.create!(name: "rails", description: "MVC framework")
+
+      @connection.execute(<<~SQL)
+        CREATE VIEW projects_view AS
+        SELECT name FROM projects
+        GROUP BY id
+      SQL
+
+      assert_equal 1, @connection.select_value("SELECT COUNT(*) FROM projects_view")
+
+      @connection.initialize_column_type_change(:projects, :id, :bigint)
+      @connection.finalize_column_type_change(:projects, :id)
+
+      assert_equal 1, @connection.select_value("SELECT COUNT(*) FROM projects_view")
     end
 
     def test_revert_finalize_column_type_change_raises_in_transaction
