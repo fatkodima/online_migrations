@@ -19,7 +19,7 @@ module OnlineMigrations
           return
         end
 
-        if index_exists?(table_name, column_name, **options)
+        if index_exists?(table_name, column_name, name: index.name, **options)
           Utils.raise_or_say("Index creation was not enqueued because the index already exists.")
           return
         end
