@@ -91,10 +91,13 @@ module OnlineMigrations
         else
           yield
         end
-      rescue ActiveRecord::LockWaitTimeout
+      rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked => e
         if current_attempt <= attempts
           current_delay = delay(current_attempt)
-          Utils.say("Lock timeout. Retrying in #{current_delay} seconds...")
+
+          problem = e.is_a?(ActiveRecord::Deadlocked) ? "Deadlock detected." : "Lock timeout."
+          Utils.say("#{problem} Retrying in #{current_delay} seconds...")
+
           sleep(current_delay)
           retry
         end

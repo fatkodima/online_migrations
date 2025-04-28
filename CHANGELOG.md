@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Retry deadlocks by lock retrier
+
 ## 0.26.0 (2025-04-28)
 
 - Drop support for Ruby < 3.1 and Rails < 7.1
