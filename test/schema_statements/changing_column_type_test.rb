@@ -258,6 +258,11 @@ module SchemaStatements
     end
 
     def test_finalize_column_type_change_copies_check_constraints
+      # Need to add a check constraint on a similarly named column to test
+      # that it correctly detects check constraints which include the needed column.
+      @connection.add_column(:projects, :external_star_count, :integer)
+      @connection.add_check_constraint(:projects, "external_star_count >= 0")
+
       @connection.initialize_column_type_change(:projects, :star_count, :integer)
       @connection.finalize_column_type_change(:projects, :star_count)
 

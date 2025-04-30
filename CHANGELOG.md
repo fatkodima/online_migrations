@@ -1,6 +1,7 @@
 ## master (unreleased)
 
 - Retry deadlocks by lock retrier
+- Fix copying check constraints on columns with similar names when changing column type
 
 ## 0.26.0 (2025-04-28)
 

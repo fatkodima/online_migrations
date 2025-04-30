@@ -477,10 +477,11 @@ module OnlineMigrations
       end
 
       def __copy_check_constraints(table_name, from_column, to_column)
-        check_constraints = check_constraints(table_name).select { |c| c.expression.include?(from_column) }
+        from_column_re = /\b#{from_column}\b/
+        check_constraints = check_constraints(table_name).select { |c| c.expression.match?(from_column_re) }
 
         check_constraints.each do |check|
-          new_expression = check.expression.gsub(from_column, to_column)
+          new_expression = check.expression.gsub(from_column_re, to_column)
 
           add_check_constraint(table_name, new_expression, validate: false)
 
