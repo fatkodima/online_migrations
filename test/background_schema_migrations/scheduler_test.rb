@@ -56,16 +56,20 @@ module BackgroundSchemaMigrations
     end
 
     def test_run_when_on_the_same_table_already_running
-      m1 = create_migration
+      @connection.add_check_constraint :users, "email IS NOT NULL", name: "email_not_null"
+      m1 = create_migration(
+        name: "email_not_null",
+        definition: 'ALTER TABLE "users" VALIDATE CONSTRAINT "email_not_null"'
+      )
       m1.update_column(:status, :running) # emulate running migration
 
-      _m2 = create_migration(
+      m2 = create_migration(
         definition: 'CREATE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("email")'
       )
 
-      assert_equal [m1], OnlineMigrations::BackgroundSchemaMigrations::Migration.running.to_a
+      assert m1.reload.running?
       run_scheduler
-      assert_equal [m1], OnlineMigrations::BackgroundSchemaMigrations::Migration.running.to_a
+      assert m2.reload.enqueued?
     end
 
     private

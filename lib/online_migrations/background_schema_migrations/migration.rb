@@ -26,24 +26,6 @@ module OnlineMigrations
       scope :queue_order, -> { order(created_at: :asc) }
       scope :active, -> { where(status: [:enqueued, :running, :errored]) }
 
-      scope :stuck, -> do
-        active.where(<<~SQL)
-          updated_at <= NOW() - interval '1 second' * (COALESCE(statement_timeout, 60*60*24) + 60*10)
-        SQL
-      end
-
-      scope :retriable, -> do
-        stuck_sql = connection.unprepared_statement { stuck.to_sql }
-
-        from(Arel.sql(<<~SQL))
-          (
-            (SELECT * FROM background_schema_migrations WHERE status = 'errored')
-            UNION
-            (#{stuck_sql})
-          ) AS #{table_name}
-        SQL
-      end
-
       alias_attribute :name, :migration_name
 
       enum :status, STATUSES.index_with(&:to_s)
@@ -102,8 +84,12 @@ module OnlineMigrations
       # Whether the migration is considered stuck (is running for some configured time).
       #
       def stuck?
-        stuck_timeout = (statement_timeout || 1.day) + 10.minutes
-        running? && updated_at <= stuck_timeout.seconds.ago
+        if index_addition?
+          running? && !index_build_in_progress?
+        else
+          stuck_timeout = (statement_timeout || 1.day) + 10.minutes
+          running? && updated_at <= stuck_timeout.seconds.ago
+        end
       end
 
       # Mark this migration as ready to be processed again.
@@ -184,6 +170,15 @@ module OnlineMigrations
           config = ::OnlineMigrations.config.background_schema_migrations
           self.max_attempts ||= config.max_attempts
           self.statement_timeout ||= config.statement_timeout
+        end
+
+        def index_build_in_progress?
+          indexes_in_progress = connection_class.connection.select_values(<<~SQL)
+            SELECT index_relid::regclass::text
+            FROM pg_stat_progress_create_index
+          SQL
+
+          indexes_in_progress.include?(name)
         end
 
         def with_statement_timeout(connection, timeout)
