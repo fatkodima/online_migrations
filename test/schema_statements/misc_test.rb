@@ -35,7 +35,7 @@ module SchemaStatements
     end
 
     def teardown
-      OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      OnlineMigrations::BackgroundDataMigrations::Migration.delete_all
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
       @connection.drop_table(:invoices, if_exists: true)
       @connection.drop_table(:users, if_exists: true)
@@ -80,14 +80,16 @@ module SchemaStatements
     end
 
     def test_backfill_column_in_background
-      m = @connection.backfill_column_in_background(:users, :admin, false, model_name: User)
+      @connection.backfill_column_in_background(:users, :admin, false, model_name: User)
+      m = last_data_migration
 
       assert_equal "BackfillColumn", m.migration_name
       assert_equal ["users", { "admin" => false }, "SchemaStatements::MiscTest::User"], m.arguments
     end
 
     def test_backfill_columns_in_background
-      m = @connection.backfill_columns_in_background(:users, { admin: false, status: "active" }, model_name: User)
+      @connection.backfill_columns_in_background(:users, { admin: false, status: "active" }, model_name: User)
+      m = last_data_migration
 
       assert_equal "BackfillColumn", m.migration_name
       assert_equal ["users", { "admin" => false, "status" => "active" }, "SchemaStatements::MiscTest::User"], m.arguments
@@ -101,14 +103,16 @@ module SchemaStatements
     end
 
     def test_copy_column_in_background
-      m = @connection.copy_column_in_background(:users, :name, :name_for_type_change, model_name: User)
+      @connection.copy_column_in_background(:users, :name, :name_for_type_change, model_name: User)
+      m = last_data_migration
 
       assert_equal "CopyColumn", m.migration_name
       assert_equal ["users", ["name"], ["name_for_type_change"], "SchemaStatements::MiscTest::User", { "name" => nil }], m.arguments
     end
 
     def test_copy_columns_in_background
-      m = @connection.copy_columns_in_background(:users, [:id, :name], [:id_for_type_change, :name_for_type_change], model_name: User)
+      @connection.copy_columns_in_background(:users, [:id, :name], [:id_for_type_change, :name_for_type_change], model_name: User)
+      m = last_data_migration
 
       assert_equal "CopyColumn", m.migration_name
       assert_equal ["users", ["id", "name"], ["id_for_type_change", "name_for_type_change"], "SchemaStatements::MiscTest::User", {}], m.arguments
@@ -122,14 +126,16 @@ module SchemaStatements
     end
 
     def test_reset_counters_in_background
-      m = @connection.reset_counters_in_background(User.name, :invoices, touch: true)
+      @connection.reset_counters_in_background(User.name, :invoices, touch: true)
+      m = last_data_migration
 
       assert_equal "ResetCounters", m.migration_name
       assert_equal [User.name, ["invoices"], { "touch" => true }], m.arguments
     end
 
     def test_delete_orphaned_records_in_background
-      m = @connection.delete_orphaned_records_in_background(Invoice.name, :user)
+      @connection.delete_orphaned_records_in_background(Invoice.name, :user)
+      m = last_data_migration
 
       assert_equal "DeleteOrphanedRecords", m.migration_name
       assert_equal [Invoice.name, ["user"]], m.arguments
@@ -137,44 +143,52 @@ module SchemaStatements
 
     def test_delete_associated_records_in_background
       user = User.create!
-      m = @connection.delete_associated_records_in_background(User.name, user.id, :invoices)
+      @connection.delete_associated_records_in_background(User.name, user.id, :invoices)
+      m = last_data_migration
 
       assert_equal "DeleteAssociatedRecords", m.migration_name
       assert_equal [User.name, user.id, "invoices"], m.arguments
     end
 
     def test_perform_action_on_relation_in_background
-      m = @connection.perform_action_on_relation_in_background(User.name, { banned: true }, :delete_all)
+      @connection.perform_action_on_relation_in_background(User.name, { banned: true }, :delete_all)
+      m = last_data_migration
 
       assert_equal "PerformActionOnRelation", m.migration_name
       assert_equal [User.name, { "banned" => true }, "delete_all", { "updates" => nil }], m.arguments
     end
 
     def test_enqueue_background_data_migration
-      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
-      m = @connection.enqueue_background_data_migration(
-        "MakeAllNonAdmins",
-        batch_max_attempts: 3,
-        sub_batch_pause_ms: 200
-      )
+      assert_equal 0, OnlineMigrations::BackgroundDataMigrations::Migration.count
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins", max_attempts: 3)
+      m = last_data_migration
 
       assert_equal "MakeAllNonAdmins", m.migration_name
-      assert_equal 3, m.batch_max_attempts
-      assert_equal 200, m.sub_batch_pause_ms
-      assert_equal OnlineMigrations.config.background_migrations.batch_size, m.batch_size
+      assert_equal 3, m.max_attempts
     end
 
     def test_enqueue_background_data_migration_is_idempotent
-      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+      assert_equal 0, OnlineMigrations::BackgroundDataMigrations::Migration.count
       2.times { @connection.enqueue_background_data_migration("MakeAllNonAdmins") }
-      assert_equal 1, OnlineMigrations::BackgroundMigrations::Migration.count
+      assert_equal 1, OnlineMigrations::BackgroundDataMigrations::Migration.count
+    end
+
+    def test_enqueue_background_data_migration_creates_migration_per_shard
+      assert_equal 0, OnlineMigrations::BackgroundDataMigrations::Migration.count
+      @connection.enqueue_background_data_migration("MakeAllDogsNice")
+
+      migrations = OnlineMigrations::BackgroundDataMigrations::Migration.all.to_a
+      assert_equal 2, migrations.size
+      assert_equal ["shard_one", "shard_two"], migrations.pluck(:shard).sort
     end
 
     def test_run_background_migrations_inline_true_in_local
       user = User.create!
       assert_nil user.admin
 
-      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      m = last_data_migration
+
       assert m.succeeded?
       assert_equal false, user.reload.admin
     end
@@ -183,10 +197,11 @@ module SchemaStatements
       user = User.create!
       assert_nil user.admin
 
-      m = OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
+      OnlineMigrations.config.stub(:run_background_migrations_inline, nil) do
         @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       end
 
+      m = last_data_migration
       assert m.enqueued?
       assert_nil user.reload.admin
     end
@@ -198,7 +213,8 @@ module SchemaStatements
       prev = OnlineMigrations.config.run_background_migrations_inline
       OnlineMigrations.config.run_background_migrations_inline = -> { false }
 
-      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      m = last_data_migration
       assert m.enqueued?
       assert_nil user.reload.admin
     ensure
@@ -214,17 +230,19 @@ module SchemaStatements
     def test_remove_background_data_migration
       @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       @connection.remove_background_data_migration("MakeAllNonAdmins")
-      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+      assert_equal 0, OnlineMigrations::BackgroundDataMigrations::Migration.count
     end
 
     def test_remove_background_data_migration_with_arguments
       @connection.enqueue_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
       @connection.remove_background_data_migration("MigrationWithArguments", 1, { "a" => 2 })
-      assert_equal 0, OnlineMigrations::BackgroundMigrations::Migration.count
+      assert_equal 0, OnlineMigrations::BackgroundDataMigrations::Migration.count
     end
 
     def test_ensure_background_data_migration_succeeded
-      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      m = last_data_migration
+
       assert m.succeeded?
       assert_nothing_raised do
         @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins")
@@ -232,7 +250,9 @@ module SchemaStatements
     end
 
     def test_ensure_background_data_migration_succeeded_with_arguments
-      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins", 1, { foo: "bar" }, 2)
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins", 1, { foo: "bar" }, 2)
+      m = last_data_migration
+
       assert m.succeeded?
       assert_nothing_raised do
         @connection.ensure_background_data_migration_succeeded("MakeAllNonAdmins", arguments: [1, { foo: "bar" }, 2])
@@ -250,7 +270,8 @@ module SchemaStatements
     end
 
     def test_ensure_background_data_migration_succeeded_when_migration_is_failed
-      m = @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      @connection.enqueue_background_data_migration("MakeAllNonAdmins")
+      m = last_data_migration
       m.update_column(:status, :failed)
 
       assert_raises_with_message(RuntimeError, /to be marked as 'succeeded'/i) do
@@ -259,7 +280,9 @@ module SchemaStatements
     end
 
     def test_ensure_background_schema_migration_succeeded
-      m = @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      m = last_schema_migration
+
       assert m.succeeded?
       assert_nothing_raised do
         @connection.ensure_background_schema_migration_succeeded(m.name)
@@ -275,7 +298,8 @@ module SchemaStatements
     end
 
     def test_ensure_background_schema_migration_succeeded_when_migration_is_failed
-      m = @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      m = last_schema_migration
       m.update_column(:status, :failed)
 
       assert_raises_with_message(RuntimeError, /to be marked as 'succeeded'/i) do
@@ -286,7 +310,9 @@ module SchemaStatements
     def test_validate_constraint_in_background
       @connection.add_foreign_key(:invoices, :users, name: "fk_invoices_user_id", validate: false)
 
-      m = @connection.validate_constraint_in_background(:invoices, "fk_invoices_user_id", connection_class_name: "Invoice")
+      @connection.validate_constraint_in_background(:invoices, "fk_invoices_user_id", connection_class_name: Invoice.name)
+      m = last_schema_migration
+
       assert_equal "fk_invoices_user_id", m.name
       assert_equal "invoices", m.table_name
       assert_equal 'ALTER TABLE "invoices" VALIDATE CONSTRAINT "fk_invoices_user_id"', m.definition
@@ -297,12 +323,12 @@ module SchemaStatements
         @connection.columns(table_name).find { |c| c.name == column_name.to_s }
       end
 
-      def get_statement_timeout
-        @connection.select_value("SHOW statement_timeout")
+      def last_data_migration
+        OnlineMigrations::BackgroundDataMigrations::Migration.last
       end
 
-      def set_statement_timeout(value)
-        @connection.execute("SET statement_timeout TO #{@connection.quote(value)}")
+      def last_schema_migration
+        OnlineMigrations::BackgroundSchemaMigrations::Migration.last
       end
   end
 end

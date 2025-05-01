@@ -37,13 +37,13 @@ module BackgroundSchemaMigrations
       assert_includes m.errors.full_messages, "Table name 'not_exists' does not exist"
     end
 
-    def test_table_connection_class_validation
+    def test_table_connection_class_check
       m = build_migration(connection_class_name: User.name)
       assert m.valid?
 
-      m = build_migration(connection_class_name: "Array")
-      assert_not m.valid?
-      assert_includes m.errors.full_messages, "Connection class name is not an ActiveRecord::Base child class"
+      assert_raises_with_message(StandardError, "connection_class_name is not an ActiveRecord::Base child class") do
+        build_migration(connection_class_name: "Array")
+      end
     end
 
     def test_name_validation
@@ -75,76 +75,8 @@ module BackgroundSchemaMigrations
           assert_equal 10, m.max_attempts
           assert_equal 20, m.statement_timeout
           assert m.enqueued?
-          assert_not m.composite?
-          assert_nil m.parent
         end
       end
-    end
-
-    def test_progress_succeded_migration
-      m = build_migration(status: :succeeded)
-      assert_in_delta 100.0, m.progress
-    end
-
-    def test_progress_succeded_sharded_migration
-      m = build_migration(connection_class_name: "ShardRecord", status: :succeeded)
-      assert_in_delta 100.0, m.progress
-    end
-
-    def test_progress_failed_migration
-      m = build_migration(status: :failed)
-      assert_in_delta 0.0, m.progress
-    end
-
-    def test_progress_not_finished_sharded_migration
-      m = create_sharded_migration
-
-      child1, child2 = m.children.to_a
-
-      run_migration(child1)
-      assert_in_delta 50.0, m.progress
-
-      run_migration(child2)
-      assert_in_delta 100.0, m.progress
-    end
-
-    def test_mark_as_succeeded_when_not_all_child_migrations_succeeded
-      m = create_sharded_migration
-      child1, child2 = m.children.to_a
-      run_migration(child1)
-
-      assert child1.succeeded?
-      child2.update_column(:status, :failed) # bypass status validation
-
-      m.reload # so the status is updated
-
-      assert_raises_with_message(ActiveRecord::RecordInvalid, /all child migrations must be succeeded/) do
-        m.succeeded!
-      end
-    end
-
-    def test_mark_as_failed_when_none_of_the_children_migrations_failed
-      m = create_sharded_migration
-      run_migration(m.children.first)
-      assert m.reload.running?
-
-      assert_raises_with_message(ActiveRecord::RecordInvalid, /at least one child migration must be failed/) do
-        m.failed!
-      end
-    end
-
-    def test_creates_child_migrations_for_sharded_migration
-      m = create_sharded_migration
-      assert m.composite?
-      assert_nil m.parent
-
-      children = m.children.order(:shard).to_a
-      assert children.none?(&:composite?)
-
-      child1, child2 = children
-
-      assert_equal "shard_one", child1.shard
-      assert_equal "shard_two", child2.shard
     end
 
     def test_retry
@@ -167,65 +99,24 @@ module BackgroundSchemaMigrations
       assert_nil m.backtrace
     end
 
-    def test_retry_composite
-      m = create_sharded_migration
-      run_migration(m)
-      assert m.succeeded?
-      assert m.started_at
-      assert m.finished_at
-
-      child1, child2 = m.children.to_a
-      migrations = [m, child1, child2]
-      assert migrations.all?(&:succeeded?)
-      assert_equal false, m.retry
-
-      m.update_column(:status, "failed")
-      child1.update_column(:status, "failed")
-
-      assert m.retry
-      assert m.started_at
-      assert_nil m.finished_at
-
-      migrations.each(&:reload)
-      assert m.enqueued?
-      assert child1.enqueued?
-      assert child2.succeeded?
-
-      # Retrying a child should retry a parent.
-      m.update_column(:status, "failed")
-      child1.update_column(:status, "failed")
-
-      assert child1.retry
-      assert child1.reload.enqueued?
-      assert m.reload.enqueued?
-    end
-
     private
-      def create_migration(
+      def create_migration(**attributes)
+        m = build_migration(**attributes)
+        m.save!
+        m
+      end
+
+      def build_migration(
         name: "index_users_on_email",
         table_name: "users",
         definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")',
         **attributes
       )
-        @connection.create_background_schema_migration(name, table_name, definition: definition, **attributes)
-      end
-
-      def create_sharded_migration
-        create_migration(
-          name: "index_dogs_on_name",
-          table_name: "dogs",
-          definition: 'CREATE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
-          connection_class_name: "ShardRecord"
-        )
-      end
-
-      def build_migration(**attributes)
         OnlineMigrations::BackgroundSchemaMigrations::Migration.new(
-          {
-            name: "index_users_on_email",
-            table_name: "users",
-            definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")',
-          }.merge(attributes)
+          name: name,
+          table_name: table_name,
+          definition: definition,
+          **attributes
         )
       end
 

@@ -8,6 +8,8 @@ require "minitest/autorun"
 # Required to be able to run single tests via command line.
 require "active_support/core_ext/string/strip"
 
+require "sidekiq/testing"
+
 # Needed for `developer_env?`
 module Rails
   def self.env
@@ -70,17 +72,13 @@ TestMigration = ActiveRecord::Migration::Current
 TestMigration.version = 20200101000001
 
 OnlineMigrations.configure do |config|
-  config.background_migrations.migrations_module = "BackgroundMigrations"
-
-  # Do not waste time sleeping in tests
-  config.background_migrations.batch_pause = 0.seconds
-  config.background_migrations.sub_batch_pause_ms = 0
+  config.background_data_migrations.migrations_module = "BackgroundDataMigrations"
 end
 
 require_relative "support/schema"
 require_relative "support/minitest_helpers"
 require_relative "support/models"
-require_relative "background_migrations/background_migrations"
+require_relative "background_data_migrations/data_migrations"
 
 # Load database schema into shards.
 [:shard_one, :shard_two].each do |shard|

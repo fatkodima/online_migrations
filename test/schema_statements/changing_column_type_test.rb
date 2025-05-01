@@ -45,7 +45,7 @@ module SchemaStatements
     end
 
     def teardown
-      OnlineMigrations::BackgroundMigrations::Migration.delete_all
+      OnlineMigrations::BackgroundDataMigrations::Migration.delete_all
       @connection.drop_table(:projects, force: :cascade)
       @connection.drop_table(:users, force: :cascade)
     end
@@ -183,20 +183,22 @@ module SchemaStatements
 
     def test_backfill_column_for_type_change_in_background
       @connection.initialize_column_type_change(:projects, :name, :string)
-      m = @connection.backfill_column_for_type_change_in_background(
+      @connection.backfill_column_for_type_change_in_background(
         :projects, :name, model_name: Project, type_cast_function: "jsonb"
       )
 
+      m = OnlineMigrations::BackgroundDataMigrations::Migration.last
       assert_equal "CopyColumn", m.migration_name
       assert_equal ["projects", ["name"], ["name_for_type_change"], "SchemaStatements::ChangingColumnTypeTest::Project", { "name" => "jsonb" }], m.arguments
     end
 
     def test_backfill_columns_for_type_change_in_background
       @connection.initialize_columns_type_change(:projects, [[:name, :string], [:description, :text]])
-      m = @connection.backfill_columns_for_type_change_in_background(
+      @connection.backfill_columns_for_type_change_in_background(
         :projects, :name, :description, model_name: Project, type_cast_functions: { "name" => "jsonb" }
       )
 
+      m = OnlineMigrations::BackgroundDataMigrations::Migration.last
       assert_equal "CopyColumn", m.migration_name
       assert_equal(["projects", ["name", "description"], ["name_for_type_change", "description_for_type_change"],
                     "SchemaStatements::ChangingColumnTypeTest::Project", { "name" => "jsonb" }], m.arguments)

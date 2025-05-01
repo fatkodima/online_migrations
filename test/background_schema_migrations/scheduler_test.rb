@@ -4,28 +4,23 @@ require "test_helper"
 
 module BackgroundSchemaMigrations
   class SchedulerTest < Minitest::Test
+    def setup
+      @connection = ActiveRecord::Base.connection
+      @connection.create_table(:users, force: true) do |t|
+        t.string :email
+      end
+    end
+
     def teardown
       OnlineMigrations::BackgroundSchemaMigrations::Migration.delete_all
       on_each_shard { Dog.connection.remove_index(:dogs, :name) }
+      @connection.drop_table(:users, if_exists: true)
     end
 
     def test_run
-      m = create_migration(
-        name: "index_dogs_on_name",
-        table_name: "dogs",
-        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
-        connection_class_name: "ShardRecord"
-      )
-      child1, child2 = m.children.to_a
+      m = create_migration
+      run_scheduler
 
-      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
-      scheduler.run
-
-      assert m.reload.running?
-      assert child1.reload.succeeded?
-
-      scheduler.run
-      assert child2.reload.succeeded?
       assert m.reload.succeeded?
     end
 
@@ -37,98 +32,65 @@ module BackgroundSchemaMigrations
         connection_class_name: "ShardRecord"
       )
 
-      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
-      scheduler.run(shard: :shard_two)
-
-      assert m.reload.running?
-
-      shard_one_migration = m.children.find_by(shard: :shard_one)
-      assert shard_one_migration.enqueued?
-
-      shard_two_migration = m.children.find_by(shard: :shard_two)
-      assert shard_two_migration.succeeded?
+      run_scheduler(shard: :shard_two)
+      assert m.reload.succeeded?
     end
 
-    def test_run_retries_failed_migrations
-      m = create_migration(
-        name: "index_dogs_on_name",
-        table_name: "dogs",
-        definition: 'CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "index_dogs_on_name" ON "dogs" ("name")',
-        connection_class_name: "ShardRecord"
-      )
-      child = m.children.first
+    def test_run_retries_errored_migrations
+      m = create_migration
 
-      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
-      scheduler.run
+      # Emulate errored migration.
+      m.update_column(:status, :errored)
 
-      # Emulate failed migration.
-      child.update_columns(status: :errored, attempts: child.max_attempts - 1)
-
-      assert m.reload.running?
-      assert child.reload.errored?
-
-      3.times { scheduler.run } # 2 children + 1 retry
+      run_scheduler
 
       assert m.reload.succeeded?
-      assert m.children.all?(&:succeeded?)
     end
 
     def test_run_retries_stuck_migrations
-      connection = ActiveRecord::Base.connection
-      connection.create_table(:users, force: true) do |t|
-        t.string :email
-      end
-
-      m = create_migration(
-        name: "index_users_on_email",
-        table_name: "users",
-        definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")',
-        statement_timeout: 1.hour
-      )
+      m = create_migration(statement_timeout: 1.hour)
       m.update(status: :running, updated_at: 2.hours.ago) # emulate stuck migration
 
-      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
-
-      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
-      scheduler.run
-
+      run_scheduler
       assert m.reload.succeeded?
-    ensure
-      connection.drop_table(:users)
     end
 
     def test_run_when_on_the_same_table_already_running
-      connection = ActiveRecord::Base.connection
-      connection.create_table(:users, force: true) do |t|
-        t.string :email
-      end
-
-      m1 = create_migration(
-        name: "index_users_on_email",
-        table_name: "users",
-        definition: 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_email" ON "users" ("email")'
-      )
+      m1 = create_migration
       m1.update_column(:status, :running) # emulate running migration
 
       _m2 = create_migration(
-        name: "index_users_on_name",
-        table_name: "users",
-        definition: 'CREATE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("name")'
+        definition: 'CREATE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("email")'
       )
 
-      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
-
-      scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
-      scheduler.run
-
-      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.running.count
-    ensure
-      connection.drop_table(:users)
+      assert_equal [m1], OnlineMigrations::BackgroundSchemaMigrations::Migration.running.to_a
+      run_scheduler
+      assert_equal [m1], OnlineMigrations::BackgroundSchemaMigrations::Migration.running.to_a
     end
 
     private
-      def create_migration(name:, table_name:, **options)
-        ActiveRecord::Base.connection.create_background_schema_migration(name, table_name, **options)
+      def create_migration(
+        name: "index_users_on_name",
+        table_name: "users",
+        definition: 'CREATE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("email")',
+        **options
+      )
+        OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+          @connection.enqueue_background_schema_migration(
+            name,
+            table_name,
+            definition: definition,
+            connection_class_name: "ActiveRecord::Base",
+            **options
+          )
+        end
+
+        OnlineMigrations::BackgroundSchemaMigrations::Migration.last
+      end
+
+      def run_scheduler(**options)
+        scheduler = OnlineMigrations::BackgroundSchemaMigrations::Scheduler.new
+        scheduler.run(**options)
       end
   end
 end

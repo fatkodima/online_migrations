@@ -133,6 +133,10 @@ module MinitestHelpers
   def on_shard(shard, &block)
     ShardRecord.connected_to(shard: shard, role: :writing, &block)
   end
+
+  def last_schema_migration
+    OnlineMigrations::BackgroundSchemaMigrations::Migration.last
+  end
 end
 
 Minitest::Test.class_eval do
@@ -143,4 +147,9 @@ Minitest::Test.class_eval do
   alias_method :assert_no_match, :refute_match
   alias_method :assert_not_nil, :refute_nil
   alias_method :assert_not_empty, :refute_empty
+
+  def after_teardown
+    Sidekiq::Worker.clear_all
+    super
+  end
 end
