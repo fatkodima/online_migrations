@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.27.0 (2025-05-01)
+
 - **WARNING**: This release has breaking changes! See `docs/0.27-upgrade.md` for release notes
 
 - Add ability to run background data migrations in parallel
