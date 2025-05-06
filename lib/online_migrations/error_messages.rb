@@ -230,6 +230,8 @@ during writes works automatically). For most column type changes, this does not 
 7. Finally, if everything works as expected, remove copy trigger and old column:
 
   class Cleanup<%= migration_name %> < <%= migration_parent %>
+    disable_ddl_transaction!
+
     def up
       <%= cleanup_code %>
     end

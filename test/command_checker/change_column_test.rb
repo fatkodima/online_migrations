@@ -79,6 +79,8 @@ module CommandChecker
         7. Finally, if everything works as expected, remove copy trigger and old column:
 
           class CleanupCommandChecker::ChangeColumnTest::ChangeColumnType < #{migration_parent}
+            disable_ddl_transaction!
+
             def up
               cleanup_column_type_change :files, :cost_per_gb
             end

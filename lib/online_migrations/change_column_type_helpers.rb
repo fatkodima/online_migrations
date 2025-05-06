@@ -152,7 +152,11 @@ module OnlineMigrations
     #   revert_initialize_column_type_change(:files, :size)
     #
     def revert_initialize_column_type_change(table_name, column_name, _new_type = nil, **_options)
-      cleanup_column_type_change(table_name, column_name)
+      tmp_column_name = __change_type_column(column_name)
+      transaction do
+        __remove_copy_triggers(table_name, column_name, tmp_column_name)
+        remove_column(table_name, tmp_column_name)
+      end
     end
 
     # Same as `revert_initialize_column_type_change` but for multiple columns.
@@ -160,7 +164,12 @@ module OnlineMigrations
     #
     def revert_initialize_columns_type_change(table_name, columns_and_types, **_options)
       column_names = columns_and_types.map(&:first)
-      cleanup_columns_type_change(table_name, *column_names)
+      tmp_column_names = column_names.map { |column_name| __change_type_column(column_name) }
+
+      transaction do
+        __remove_copy_triggers(table_name, column_names, tmp_column_names)
+        remove_columns(table_name, *tmp_column_names)
+      end
     end
 
     # Backfills data from the old column to the new column.
@@ -347,6 +356,7 @@ module OnlineMigrations
     #   the original column type to be able to revert.
     #
     def cleanup_column_type_change(table_name, column_name)
+      __ensure_not_in_transaction!
       cleanup_columns_type_change(table_name, column_name)
     end
 
@@ -354,6 +364,8 @@ module OnlineMigrations
     # @see #cleanup_column_type_change
     #
     def cleanup_columns_type_change(table_name, *column_names)
+      __ensure_not_in_transaction!
+
       tmp_column_names = column_names.map { |column_name| __change_type_column(column_name) }
 
       # Safely remove existing indexes and foreign keys first, if any.

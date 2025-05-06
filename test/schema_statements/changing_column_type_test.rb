@@ -418,6 +418,12 @@ module SchemaStatements
       assert_equal user1.id + 1, user2.id
     end
 
+    def test_cleanup_column_type_change_raises_in_transaction
+      assert_raises_in_transaction do
+        @connection.cleanup_column_type_change(:projects, :name)
+      end
+    end
+
     def test_cleanup_column_type_change
       change_column_type(:projects, :name, :string)
       assert_not @connection.column_exists?(:projects, :name_for_type_change)
