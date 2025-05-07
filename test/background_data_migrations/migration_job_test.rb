@@ -119,23 +119,25 @@ module BackgroundDataMigrations
     end
 
     def test_runs_on_shard
+      # Need to have records with different ids and to run on the second shard
+      # to ensure that both enumerator and each iteration are running on the correct shard.
       on_shard(:shard_one) do
-        Dog.create!(nice: nil)
+        Dog.create!(id: 1, nice: false)
       end
 
       on_shard(:shard_two) do
-        Dog.create!(nice: false)
+        Dog.create!(id: 2, nice: nil)
       end
 
-      m = create_migration("MakeAllDogsNice", connection_class_name: "ShardRecord", shard: "shard_one")
+      m = create_migration("MakeAllDogsNice", connection_class_name: "ShardRecord", shard: "shard_two")
       MigrationJob.perform_inline(m.id)
 
       on_shard(:shard_one) do
-        assert Dog.last.nice
+        assert_not Dog.last.nice
       end
 
       on_shard(:shard_two) do
-        assert_not Dog.last.nice
+        assert Dog.last.nice
       end
     ensure
       on_each_shard do

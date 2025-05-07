@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix background data migrations to enumerate using the correct shard
+
 ## 0.27.0 (2025-05-01)
 
 - **WARNING**: This release has breaking changes! See `docs/0.27-upgrade.md` for release notes

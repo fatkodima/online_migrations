@@ -45,10 +45,6 @@ module OnlineMigrations
         @migration.start
       end
 
-      def around_iteration(&block)
-        @migration.on_shard_if_present(&block)
-      end
-
       def on_resume
         @data_migration.after_resume
       end
@@ -140,6 +136,12 @@ module OnlineMigrations
       end
 
       private
+        # It would be better for sidekiq to have a callback like `around_perform`,
+        # but currently this is the way to make job iteration shard aware.
+        def iterate_with_enumerator(enumerator, arguments)
+          @migration.on_shard_if_present { super }
+        end
+
         THROTTLE_CHECK_INTERVAL = 5 # seconds
         private_constant :THROTTLE_CHECK_INTERVAL
 
