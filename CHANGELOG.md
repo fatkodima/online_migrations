@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.27.1 (2025-05-08)
+
 - Fix background data migrations to enumerate using the correct shard
 
 ## 0.27.0 (2025-05-01)
