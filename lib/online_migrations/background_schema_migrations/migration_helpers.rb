@@ -28,7 +28,7 @@ module OnlineMigrations
         schema_creation = ActiveRecord::ConnectionAdapters::PostgreSQL::SchemaCreation.new(self)
         definition = schema_creation.accept(create_index)
 
-        enqueue_background_schema_migration(index.name, table_name, definition: definition, **migration_options)
+        enqueue_background_schema_migration("Add index #{index.name}", table_name, definition: definition, **migration_options)
       end
 
       def remove_index_in_background(table_name, column_name = nil, name:, **options)
@@ -42,7 +42,7 @@ module OnlineMigrations
         end
 
         definition = "DROP INDEX CONCURRENTLY IF EXISTS #{quote_column_name(name)}"
-        enqueue_background_schema_migration(name, table_name, definition: definition, **migration_options)
+        enqueue_background_schema_migration("Remove index #{name}", table_name, definition: definition, **migration_options)
       end
 
       def validate_foreign_key_in_background(from_table, to_table = nil, **options)
@@ -62,7 +62,7 @@ module OnlineMigrations
           ALTER TABLE #{quote_table_name(table_name)}
           VALIDATE CONSTRAINT #{quote_table_name(constraint_name)}
         SQL
-        enqueue_background_schema_migration(constraint_name, table_name, definition: definition, **options)
+        enqueue_background_schema_migration("Validate #{constraint_name}", table_name, definition: definition, **options)
       end
 
       # Ensures that the background schema migration with the provided migration name succeeded.
@@ -78,7 +78,7 @@ module OnlineMigrations
       #   ensure_background_schema_migration_succeeded("index_users_on_email")
       #
       def ensure_background_schema_migration_succeeded(migration_name)
-        migrations = Migration.where(migration_name: migration_name).to_a
+        migrations = Migration.where("migration_name ILIKE ?", "%#{migration_name}%").to_a
 
         if migrations.empty?
           Utils.raise_in_prod_or_say_in_dev("Could not find background schema migration(s): '#{migration_name}'.")
@@ -97,11 +97,12 @@ module OnlineMigrations
         if connection_class_name
           klass = connection_class_name.constantize
           connection_class = Utils.find_connection_class(klass)
-          # Normalize to the real connection class name.
-          connection_class_name = connection_class.name
         else
           connection_class = ActiveRecord::Base
         end
+
+        # Normalize to the real connection class name.
+        connection_class_name = connection_class.name
 
         shards = Utils.shard_names(connection_class)
         shards = [nil] if shards.size == 1

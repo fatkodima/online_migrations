@@ -313,7 +313,7 @@ module SchemaStatements
       @connection.validate_constraint_in_background(:invoices, "fk_invoices_user_id", connection_class_name: Invoice.name)
       m = last_schema_migration
 
-      assert_equal "fk_invoices_user_id", m.name
+      assert_equal "Validate fk_invoices_user_id", m.name
       assert_equal "invoices", m.table_name
       assert_equal 'ALTER TABLE "invoices" VALIDATE CONSTRAINT "fk_invoices_user_id"', m.definition
     end

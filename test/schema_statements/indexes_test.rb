@@ -116,7 +116,7 @@ module SchemaStatements
       @connection.add_index_in_background(:users, :name, unique: true, connection_class_name: "User")
       m = last_schema_migration
 
-      assert_equal "index_users_on_name", m.name
+      assert_equal "Add index index_users_on_name", m.name
       assert_equal "users", m.table_name
       assert_equal 'CREATE UNIQUE INDEX CONCURRENTLY "index_users_on_name" ON "users" ("name")', m.definition
     end
@@ -179,7 +179,7 @@ module SchemaStatements
       @connection.add_index_in_background(:users, :name, name: "my_name", max_attempts: 5, statement_timeout: 10, connection_class_name: "User")
       m = last_schema_migration
 
-      assert_equal "my_name", m.name
+      assert_equal "Add index my_name", m.name
       assert_equal 5, m.max_attempts
       assert_equal 10, m.statement_timeout
     end
@@ -213,7 +213,7 @@ module SchemaStatements
       @connection.remove_index_in_background(:users, :name, name: "index_users_on_name", max_attempts: 5, statement_timeout: 10, connection_class_name: "User")
       m = last_schema_migration
 
-      assert_equal "index_users_on_name", m.name
+      assert_equal "Remove index index_users_on_name", m.name
       assert_equal 5, m.max_attempts
       assert_equal 10, m.statement_timeout
     end
@@ -224,6 +224,15 @@ module SchemaStatements
       assert_raises_with_message(ArgumentError, /when using multiple databases/i) do
         @connection.remove_index_in_background(:users, :name, name: "index_users_on_name")
       end
+    end
+
+    def test_adding_and_removing_index_in_background
+      name = "index_users_on_name"
+      @connection.add_index_in_background(:users, :name, name: name, connection_class_name: "User")
+      assert @connection.index_exists?(:users, :name)
+
+      @connection.remove_index_in_background(:users, :name, name: name, connection_class_name: "User")
+      assert_not @connection.index_exists?(:users, :name)
     end
 
     private

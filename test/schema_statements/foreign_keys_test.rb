@@ -69,7 +69,7 @@ module SchemaStatements
       connection.validate_foreign_key_in_background(:milestones, :projects, connection_class_name: "User")
       m = last_schema_migration
 
-      assert_equal "fk_rails_9bd0a0c791", m.name
+      assert_equal "Validate fk_rails_9bd0a0c791", m.name
       assert_equal "milestones", m.table_name
       assert_equal 'ALTER TABLE "milestones" VALIDATE CONSTRAINT "fk_rails_9bd0a0c791"', m.definition
     end
@@ -92,7 +92,7 @@ module SchemaStatements
       )
       m = last_schema_migration
 
-      assert_equal "my_foreign_key", m.name
+      assert_equal "Validate my_foreign_key", m.name
       assert_equal 15, m.max_attempts
     end
   end

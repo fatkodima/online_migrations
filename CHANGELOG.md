@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Include operation name into the background schema migrations names
+
 ## 0.27.1 (2025-05-08)
 
 - Fix background data migrations to enumerate using the correct shard
