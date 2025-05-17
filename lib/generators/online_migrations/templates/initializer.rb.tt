@@ -110,6 +110,9 @@ OnlineMigrations.configure do |config|
   # The number of seconds that must pass before the cancelling or pausing data migration is considered stuck.
   config.background_data_migrations.stuck_timeout = 5.minutes
 
+  # The pause interval between each data migration's `process` method execution (in seconds).
+  config.background_data_migrations.iteration_pause = Rails.env.production? ? 0.02 : 0
+
   # The callback to perform when an error occurs during the data migration.
   # config.background_data_migrations.error_handler = ->(error, errored_migration) do
   #   Bugsnag.notify(error) do |notification|
