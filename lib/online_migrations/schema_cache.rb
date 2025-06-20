@@ -138,7 +138,26 @@ module OnlineMigrations
 
       def renamed_column?(pool, table_name)
         column_renames = OnlineMigrations.config.column_renames
-        column_renames.key?(table_name) && pool.with_connection(&:views).include?(table_name)
+        return false unless column_renames.key?(table_name)
+
+        # If the table is qualified with a schema, we need to check if the view exists
+        # in that schema, otherwise we can just check the views in the default schema.
+        # This is necessary in Apps because each app has its own schema.
+        if table_name.include?('.')
+          schema, base_table_name = table_name.split('.')
+
+          pool.with_connection do |connection|
+            default_schema_search_path = connection.schema_search_path
+            begin
+              connection.schema_search_path = schema
+              connection.views.include?(base_table_name)
+            ensure
+              connection.schema_search_path = default_schema_search_path
+            end
+          end
+        else
+          pool.with_connection(&:views).include?(table_name)
+        end
       end
 
       def column_rename_table(table_name)
