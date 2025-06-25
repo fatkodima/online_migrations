@@ -52,15 +52,14 @@ module OnlineMigrations
     private
       def renamed_table?(connection, table_name)
         table_renames = OnlineMigrations.config.table_renames
-        if table_renames.key?(table_name)
-          views = connection.views
-          table_renames[table_name] if views.include?(table_name)
+        if table_renames.key?(table_name) && connection.view_exists?(table_name)
+          table_renames[table_name]
         end
       end
 
       def renamed_column?(connection, table_name)
         column_renames = OnlineMigrations.config.column_renames
-        column_renames.key?(table_name) && connection.views.include?(table_name)
+        column_renames.key?(table_name) && connection.view_exists?(table_name)
       end
 
       def column_rename_table(table_name)
@@ -131,14 +130,21 @@ module OnlineMigrations
       def renamed_table?(pool, table_name)
         table_renames = OnlineMigrations.config.table_renames
         if table_renames.key?(table_name)
-          views = pool.with_connection(&:views)
-          table_renames[table_name] if views.include?(table_name)
+          view_exists = pool.with_connection do |connection|
+            connection.view_exists?(table_name)
+          end
+
+          table_renames[table_name] if view_exists
         end
       end
 
       def renamed_column?(pool, table_name)
         column_renames = OnlineMigrations.config.column_renames
-        column_renames.key?(table_name) && pool.with_connection(&:views).include?(table_name)
+        return false if !column_renames.key?(table_name)
+
+        pool.with_connection do |connection|
+          connection.view_exists?(table_name)
+        end
       end
 
       def column_rename_table(table_name)
