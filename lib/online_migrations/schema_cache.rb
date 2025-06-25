@@ -147,12 +147,8 @@ module OnlineMigrations
           schema, base_table_name = table_name.split('.')
 
           pool.with_connection do |connection|
-            default_schema_search_path = connection.schema_search_path
-            begin
-              connection.schema_search_path = schema
+            connection.with(schema_search_path: schema) do
               connection.views.include?(base_table_name)
-            ensure
-              connection.schema_search_path = default_schema_search_path
             end
           end
         else
