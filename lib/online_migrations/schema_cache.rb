@@ -142,17 +142,17 @@ module OnlineMigrations
 
         # If the table is qualified with a schema, we need to check if the view exists
         # in that schema, otherwise we can just check the views in the default schema.
-        # This is necessary in Apps because each app has its own schema.
-        if table_name.include?('.')
-          schema, base_table_name = table_name.split('.')
-
-          pool.with_connection do |connection|
-            connection.with(schema_search_path: schema) do
-              connection.views.include?(base_table_name)
-            end
+        schema, table_name =
+          if table_name.include?('.')
+            table_name.split('.')
+          else
+            [nil, table_name]
           end
-        else
-          pool.with_connection(&:views).include?(table_name)
+
+        pool.with_connection do |connection|
+          connection.with(schema_search_path: schema || connection.schema_search_path) do
+            connection.view_exists?(table_name)
+          end
         end
       end
 
