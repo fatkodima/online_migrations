@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.28.0 (2025-06-26)
+
 - Support renaming columns and tables for tables within custom schemas
 - Include operation name into the background schema migrations names
 
