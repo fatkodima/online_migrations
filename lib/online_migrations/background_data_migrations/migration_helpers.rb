@@ -387,7 +387,7 @@ module OnlineMigrations
           migration = Migration.where(migration_name: migration_name, shard: shard).where("arguments = ?", arguments.to_json).first
           migration ||= Migration.create!(**options, migration_name: migration_name, arguments: arguments, shard: shard)
 
-          if Utils.run_background_migrations_inline?
+          if Utils.run_background_migrations_inline? && !migration.succeeded?
             job = OnlineMigrations.config.background_data_migrations.job
             job.constantize.perform_inline(migration.id)
           end
