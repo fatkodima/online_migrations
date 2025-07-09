@@ -19,31 +19,32 @@ module OnlineMigrations
     private
       def migrations_to_apply
         connection = BackgroundDataMigrations::Migration.connection
-        data_table = "background_migrations"
-        schema_table = "background_schema_migrations"
-        columns = connection.columns(data_table).map(&:name)
 
         migrations = []
-        if connection.table_exists?(data_table) && !columns.include?("shard")
+        if connection.table_exists?(:background_migrations) && !connection.column_exists?(:background_migrations, :shard)
           migrations << "add_sharding_to_online_migrations"
         end
 
-        if !connection.table_exists?(schema_table)
+        if !connection.table_exists?(:background_schema_migrations)
           migrations << "create_background_schema_migrations"
         end
 
-        indexes = connection.indexes(schema_table)
+        indexes = connection.indexes(:background_schema_migrations)
         unique_index = indexes.find { |i| i.unique && i.columns.sort == ["connection_class_name", "migration_name", "shard"] }
         if !unique_index
           migrations << "background_schema_migrations_change_unique_index"
         end
 
-        if connection.table_exists?(data_table) && !connection.column_exists?(data_table, :started_at)
+        if connection.table_exists?(:background_migrations) && !connection.column_exists?(:background_migrations, :started_at)
           migrations << "add_timestamps_to_background_migrations"
         end
 
-        if connection.table_exists?(data_table)
+        if connection.table_exists?(:background_migrations)
           migrations << "change_background_data_migrations"
+        end
+
+        if !connection.column_exists?(:background_data_migrations, :iteration_pause)
+          migrations << "background_data_migrations_add_iteration_pause"
         end
 
         migrations

@@ -297,6 +297,8 @@ module OnlineMigrations
           self.tick_total ||= on_shard_if_present do
             data_migration.count
           end
+
+          self.iteration_pause ||= config.iteration_pause
         end
 
         def instrument_status_change

@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Add `iteration_pause` column to background data migrations
+
+    Note: Run `bin/rails generate online_migrations:upgrade` if using background data migrations.
+    Make sure all data migrations finished before applying this migration or change its timestamp
+    to be older than all pending db migrations which will enqueue data migrations.
+
 ## 0.28.0 (2025-06-26)
 
 - Support renaming columns and tables for tables within custom schemas

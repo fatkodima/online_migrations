@@ -55,6 +55,17 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_adds_iteration_pause_to_background_data_migrations
+    simulate_transactional_test do
+      load_schema(4)
+      run_generator
+
+      assert_migration("db/migrate/background_data_migrations_add_iteration_pause.rb") do |content|
+        assert_includes content, "add_column :background_data_migrations, :iteration_pause, :float"
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do

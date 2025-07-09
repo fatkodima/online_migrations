@@ -128,7 +128,8 @@ module OnlineMigrations
           @data_migration.around_process do
             @migration.data_migration.process(item)
 
-            pause = OnlineMigrations.config.background_data_migrations.iteration_pause
+            # Migration is refreshed regularly by ticker.
+            pause = @migration.iteration_pause
             sleep(pause) if pause > 0
           end
           @ticker.tick

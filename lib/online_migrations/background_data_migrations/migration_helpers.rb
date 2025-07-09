@@ -369,7 +369,7 @@ module OnlineMigrations
       #     in development and test environments
       #
       def enqueue_background_data_migration(migration_name, *arguments, **options)
-        options.assert_valid_keys(:max_attempts, :connection_class_name)
+        options.assert_valid_keys(:max_attempts, :iteration_pause, :connection_class_name)
 
         migration_name = migration_name.name if migration_name.is_a?(Class)
         options[:connection_class_name] ||= compute_connection_class_name(migration_name, arguments)
