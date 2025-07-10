@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.29.0 (2025-07-10)
+
 - Add `iteration_pause` column to background data migrations
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background data migrations.
