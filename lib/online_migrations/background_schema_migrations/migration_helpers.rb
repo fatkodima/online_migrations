@@ -112,6 +112,9 @@ module OnlineMigrations
                                .find_or_create_by!(migration_name: migration_name, shard: shard, connection_class_name: connection_class_name)
 
           if Utils.run_background_migrations_inline?
+            # Run migration again in development.
+            migration.update_column(:status, :enqueued) if !migration.enqueued?
+
             runner = MigrationRunner.new(migration)
             runner.run
           end

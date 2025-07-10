@@ -155,6 +155,24 @@ module SchemaStatements
       assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
     end
 
+    def test_add_index_in_background_reruns_when_running_inline
+      prev = OnlineMigrations.config.run_background_migrations_inline
+      OnlineMigrations.config.run_background_migrations_inline = -> { true }
+
+      @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      assert @connection.index_exists?(:users, :name)
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+
+      @connection.remove_index(:users, :name)
+
+      # Once again.
+      @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      assert @connection.index_exists?(:users, :name)
+      assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    ensure
+      OnlineMigrations.config.run_background_migrations_inline = prev
+    end
+
     def test_add_index_in_background_when_using_multiple_databases
       # Enulate migration run on a primary shard. Now index exists on both tables.
       on_shard(:shard_one) do
