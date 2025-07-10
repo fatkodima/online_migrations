@@ -50,11 +50,6 @@ module BackgroundDataMigrations
       assert_in_delta 100.0, m.progress
     end
 
-    def test_progress_enqueued_migration
-      m = build_migration(status: :enqueued)
-      assert_in_delta 0.0, m.progress
-    end
-
     def test_progress_not_finished_migration
       2.times { User.create! }
       m = create_migration(migration_name: "MigrationWithCount")

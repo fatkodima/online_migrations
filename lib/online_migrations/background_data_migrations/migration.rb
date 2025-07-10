@@ -250,7 +250,7 @@ module OnlineMigrations
       def progress
         if succeeded?
           100.0
-        elsif enqueued? || tick_total == 0
+        elsif tick_total == 0
           0.0
         elsif tick_total
           ([tick_count.to_f / tick_total, 1.0].min * 100)
