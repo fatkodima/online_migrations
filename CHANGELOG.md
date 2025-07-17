@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix idempotency for adding/removing indexes in background
+
 ## 0.29.0 (2025-07-10)
 
 - Add `iteration_pause` column to background data migrations

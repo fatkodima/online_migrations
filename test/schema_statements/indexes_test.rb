@@ -131,6 +131,23 @@ module SchemaStatements
       assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
     end
 
+    def test_adding_index_in_background_is_noop_when_index_already_exists
+      # Emulate created, but not yet executed, schema migration.
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.add_index_in_background(:users, :name, connection_class_name: "User")
+      end
+
+      assert_not @connection.index_exists?(:users, :name)
+      @connection.add_index(:users, :name)
+      assert @connection.index_exists?(:users, :name)
+
+      migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.last
+      runner = OnlineMigrations::BackgroundSchemaMigrations::MigrationRunner.new(migration)
+      runner.run
+
+      assert @connection.index_exists?(:users, :name)
+    end
+
     def test_add_index_in_background_when_different_index_with_same_name_already_exists
       @connection.add_index(:users, :name, unique: true)
 
