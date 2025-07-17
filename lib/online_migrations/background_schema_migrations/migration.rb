@@ -138,7 +138,7 @@ module OnlineMigrations
                   if index.valid?
                     return
                   else
-                    connection.remove_index(table_name, name: name, algorithm: :concurrently)
+                    connection.remove_index(table_name, name: index.name, algorithm: :concurrently)
                   end
                 end
               end
