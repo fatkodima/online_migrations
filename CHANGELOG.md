@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.29.1 (2025-07-17)
+
 - Fix idempotency for adding/removing indexes in background
 
 ## 0.29.0 (2025-07-10)
