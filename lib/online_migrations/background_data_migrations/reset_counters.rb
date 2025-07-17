@@ -55,7 +55,7 @@ module OnlineMigrations
       end
 
       private
-        def has_many_association(counter_association) # rubocop:disable Naming/PredicateName
+        def has_many_association(counter_association) # rubocop:disable Naming/PredicatePrefix
           has_many_association = model.reflect_on_association(counter_association)
 
           if !has_many_association

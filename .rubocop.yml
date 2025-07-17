@@ -152,6 +152,10 @@ Naming/AccessorMethodName:
 Naming/BlockForwarding:
   Enabled: false
 
+# It is broken.
+Naming/PredicateMethod:
+  Enabled: false
+
 Gemspec/RequiredRubyVersion:
   Enabled: false
 
