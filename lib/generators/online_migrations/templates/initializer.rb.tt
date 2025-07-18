@@ -130,7 +130,7 @@ OnlineMigrations.configure do |config|
   config.background_schema_migrations.max_attempts = 5
 
   # Statement timeout value used when running background schema migration.
-  config.background_schema_migrations.statement_timeout = 1.hour
+  config.background_schema_migrations.statement_timeout = config.statement_timeout
 
   # The callback to perform when an error occurs during the background schema migration.
   # config.background_schema_migrations.error_handler = ->(error, errored_migration) do
