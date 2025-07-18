@@ -434,7 +434,7 @@ module OnlineMigrations
     #                           batch_size: 10_000, pause_ms: 100)
     #
     # @note This method should not be run within a transaction
-    # @note For PostgreSQL 11+ you can use `add_column` instead
+    # @note If default value is not volatile, for PostgreSQL 11+ you can use `add_column` instead.
     #
     def add_column_with_default(table_name, column_name, type, **options)
       default = options.fetch(:default)
