@@ -41,12 +41,6 @@ module SchemaStatements
       assert_equal 2, connection.foreign_keys(:milestones).size
     end
 
-    def test_validate_non_existing_foreign_key
-      assert_raises_with_message(ArgumentError, "has no foreign key") do
-        connection.validate_foreign_key :milestones, :non_existing
-      end
-    end
-
     def test_remove_foreign_key
       connection.add_foreign_key :milestones, :projects
       assert connection.foreign_key_exists?(:milestones, :projects)

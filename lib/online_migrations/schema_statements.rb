@@ -777,22 +777,6 @@ module OnlineMigrations
       end
     end
 
-    # Extends default method with disabled statement timeout while validation is run
-    #
-    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_foreign_key
-    #
-    def validate_foreign_key(from_table, to_table = nil, **options)
-      foreign_key = foreign_key_for!(from_table, to_table: to_table, **options)
-
-      # Skip costly operation if already validated.
-      return if foreign_key.validated?
-
-      # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
-      # It only conflicts with other validations, creating/removing indexes,
-      # and some other "ALTER TABLE"s.
-      super
-    end
-
     # Extends default method to be idempotent.
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_foreign_key
@@ -821,22 +805,6 @@ module OnlineMigrations
       else
         super
       end
-    end
-
-    # Extends default method with disabled statement timeout while validation is run
-    #
-    # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/PostgreSQL/SchemaStatements.html#method-i-validate_check_constraint
-    #
-    def validate_check_constraint(table_name, **options)
-      check_constraint = check_constraint_for!(table_name, **options)
-
-      # Skip costly operation if already validated.
-      return if check_constraint.validated?
-
-      # "VALIDATE CONSTRAINT" requires a "SHARE UPDATE EXCLUSIVE" lock.
-      # It only conflicts with other validations, creating/removing indexes,
-      # and some other "ALTER TABLE"s.
-      super
     end
 
     # Extends default method to be idempotent

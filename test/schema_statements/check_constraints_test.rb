@@ -52,46 +52,6 @@ module SchemaStatements
       end
     end
 
-    def test_validate_check_constraint_by_name
-      Milestone.create!(points: -1)
-
-      connection.add_check_constraint :milestones, "points >= 0", name: "points_check", validate: false
-
-      assert_raises(ActiveRecord::StatementInvalid) do
-        connection.validate_check_constraint :milestones, name: "points_check"
-      end
-
-      Milestone.delete_all
-      connection.validate_check_constraint :milestones, name: "points_check"
-
-      assert_raises(ActiveRecord::StatementInvalid) do
-        Milestone.create!(points: -1)
-      end
-    end
-
-    def test_validate_check_constraint_by_expression
-      Milestone.create!(points: -1)
-
-      connection.add_check_constraint :milestones, "points >= 0", validate: false
-
-      assert_raises(ActiveRecord::StatementInvalid) do
-        connection.validate_check_constraint :milestones, expression: "points >= 0"
-      end
-
-      Milestone.delete_all
-      connection.validate_check_constraint :milestones, expression: "points >= 0"
-
-      assert_raises(ActiveRecord::StatementInvalid) do
-        Milestone.create!(points: -1)
-      end
-    end
-
-    def test_validate_non_existing_check_constraint
-      assert_raises(ArgumentError, "has no check constraint") do
-        connection.validate_check_constraint :milestones, name: "non_existing"
-      end
-    end
-
     def test_remove_check_constraint
       connection.add_check_constraint :milestones, "points >= 0"
       assert_equal 1, connection.check_constraints(:milestones).size
