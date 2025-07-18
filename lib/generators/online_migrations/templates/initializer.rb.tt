@@ -33,7 +33,7 @@ OnlineMigrations.configure do |config|
 
   # Analyze tables after indexes are added.
   # Outdated statistics can sometimes hurt performance.
-  config.auto_analyze = false
+  config.auto_analyze = true
 
   # Alphabetize table columns when dumping the schema.
   config.alphabetize_schema = false
