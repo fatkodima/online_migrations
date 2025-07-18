@@ -558,11 +558,6 @@ module OnlineMigrations
               end
             end
           end
-
-          # Outdated statistics + a new index can hurt performance of existing queries.
-          if OnlineMigrations.config.auto_analyze && direction == :up
-            connection.execute("ANALYZE #{table_name}")
-          end
         end
       end
 

@@ -727,6 +727,11 @@ module OnlineMigrations
       # It only conflicts with constraint validations, creating/removing indexes,
       # and some other "ALTER TABLE"s.
       super
+
+      # Outdated statistics + a new index can hurt performance of existing queries.
+      if OnlineMigrations.config.auto_analyze
+        execute("ANALYZE #{table_name}")
+      end
     end
 
     # Extends default method to be idempotent.

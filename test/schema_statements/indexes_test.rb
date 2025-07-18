@@ -71,6 +71,14 @@ module SchemaStatements
       assert_equal 1, @connection.indexes(:users).size
     end
 
+    def test_add_index_analyzes_table_when_enabled
+      OnlineMigrations.config.stub(:auto_analyze, true) do
+        assert_sql("ANALYZE users") do
+          @connection.add_index(:users, :name)
+        end
+      end
+    end
+
     def test_remove_index
       @connection.add_index(:users, :name)
       assert @connection.index_exists?(:users, :name)

@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix analyzing tables when indexes are added
+
 ## 0.29.1 (2025-07-17)
 
 - Fix idempotency for adding/removing indexes in background

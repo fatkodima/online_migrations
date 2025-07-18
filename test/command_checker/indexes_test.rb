@@ -61,20 +61,6 @@ module CommandChecker
       end
     end
 
-    def test_add_index_does_not_analyze_table_by_default
-      refute_sql("ANALYZE users") do
-        assert_safe AddIndexConcurrently
-      end
-    end
-
-    def test_add_index_analyzes_table_when_enabled
-      OnlineMigrations.config.stub(:auto_analyze, true) do
-        assert_sql("ANALYZE users") do
-          assert_safe AddIndexConcurrently
-        end
-      end
-    end
-
     class AddIndexNewTable < TestMigration
       def change
         create_table :users_new do |t|
