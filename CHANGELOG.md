@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.29.2 (2025-07-21)
+
 - Fix analyzing tables when indexes are added
 
 ## 0.29.1 (2025-07-17)
