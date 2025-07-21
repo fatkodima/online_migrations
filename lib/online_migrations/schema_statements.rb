@@ -862,11 +862,11 @@ module OnlineMigrations
     # Executes the block with a retry mechanism that alters the `lock_timeout`
     # and sleep time between attempts.
     #
-    def with_lock_retries(&block)
+    def with_lock_retries(command = nil, *args, &block)
       __ensure_not_in_transaction!
 
       retrier = OnlineMigrations.config.lock_retrier
-      retrier.with_lock_retries(self, &block)
+      retrier.with_lock_retries(self, command, *args, &block)
     end
 
     private
