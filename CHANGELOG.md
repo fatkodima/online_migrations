@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix an edge case where a background index might not be added
+
 ## 0.29.2 (2025-07-21)
 
 - Fix analyzing tables when indexes are added

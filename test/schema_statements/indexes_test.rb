@@ -168,6 +168,16 @@ module SchemaStatements
       assert_equal 0, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
     end
 
+    def test_add_index_in_background_when_different_index_with_name_prefix_already_exists
+      @connection.add_index(:users, :name)
+
+      # Includes previous index name as its prefix.
+      @connection.add_index_in_background(:users, [:name, :company_id], connection_class_name: "User")
+
+      assert @connection.index_exists?(:users, :name)
+      assert @connection.index_exists?(:users, [:name, :company_id])
+    end
+
     def test_add_index_in_background_when_unfinished_migration_exists
       @connection.add_index(:users, :name, unique: true)
 

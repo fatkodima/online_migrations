@@ -133,7 +133,7 @@ module OnlineMigrations
 
             with_statement_timeout(connection, statement_timeout) do
               if index_addition?
-                index = connection.indexes(table_name).find { |i| name.include?(i.name) }
+                index = connection.indexes(table_name).find { |i| name.match?(/\b#{i.name}\b/) }
                 if index
                   if index.valid?
                     return
