@@ -157,6 +157,7 @@ end
 
 Minitest::Test.class_eval do
   include MinitestHelpers
+
   alias_method :assert_not, :refute
   alias_method :assert_not_equal, :refute_equal
   alias_method :assert_not_includes, :refute_includes
