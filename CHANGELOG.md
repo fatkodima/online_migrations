@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Add schema statement to lock retrier
+
 ## 0.29.3 (2025-08-19)
 
 - Fix an edge case where a background index might not be added
