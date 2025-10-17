@@ -801,7 +801,7 @@ module OnlineMigrations
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_check_constraint
     #
-    def add_check_constraint(table_name, expression, **options)
+    def add_check_constraint(table_name, expression, if_not_exists: false, **options)
       if check_constraint_exists?(table_name, expression: expression, **options)
         Utils.say(<<~MSG.squish)
           Check constraint was not created because it already exists (this may be due to an aborted migration or similar).
@@ -816,7 +816,7 @@ module OnlineMigrations
     #
     # @see https://edgeapi.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-remove_check_constraint
     #
-    def remove_check_constraint(table_name, expression = nil, **options)
+    def remove_check_constraint(table_name, expression = nil, if_exists: false, **options)
       if check_constraint_exists?(table_name, expression: expression, **options)
         super
       else

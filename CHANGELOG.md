@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix `remove_check_constraint` when using `:if_exists`
 - Add schema statement to lock retrier
 
 ## 0.29.3 (2025-08-19)

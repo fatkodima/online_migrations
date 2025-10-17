@@ -42,6 +42,15 @@ module SchemaStatements
       end
     end
 
+    def test_add_check_constraint_with_if_not_exists
+      connection.add_check_constraint :milestones, "points >= 0"
+      connection.add_check_constraint :milestones, "points >= 0", if_not_exists: true
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Milestone.create!(points: -1)
+      end
+    end
+
     def test_add_unvalidated_check_constraint
       Milestone.create!(points: -1)
 
@@ -65,6 +74,12 @@ module SchemaStatements
       assert_nothing_raised do
         connection.remove_check_constraint :milestones, "points >= 0"
       end
+    end
+
+    def test_remove_check_constraint_with_if_exists
+      connection.add_check_constraint :milestones, "points >= 0", name: "positive_points"
+      connection.remove_check_constraint :milestones, name: "positive_points", if_exists: true
+      assert_empty connection.check_constraints(:milestones)
     end
 
     def test_add_not_null_constraint
