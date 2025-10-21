@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix `NullLockRetrier#with_lock_retries` method signature
+
 ## 0.30.0 (2025-10-17)
 
 - Fix `remove_check_constraint` when using `:if_exists`
