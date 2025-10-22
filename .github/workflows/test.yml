@@ -48,6 +48,8 @@ jobs:
             gemfile: activerecord_72.gemfile
           - ruby-version: "3.4"
             gemfile: activerecord_80.gemfile
+          - ruby-version: "3.4"
+            gemfile: activerecord_81.gemfile
 
           # Test against latest versions just in case.
           - ruby-version: "3.4"
