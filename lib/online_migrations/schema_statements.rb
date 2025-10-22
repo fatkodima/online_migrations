@@ -630,6 +630,19 @@ module OnlineMigrations
       remove_check_constraint(table_name, name: name)
     end
 
+    # Extends default method to be idempotent and automatically recreate invalid indexes.
+    #
+    # @see https://api.rubyonrails.org/v8.1/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_column
+    #
+    def add_column(table_name, column_name, type, **options)
+      if column_exists?(table_name, column_name, type, **options)
+        Utils.say("Column was not added because it already exists (this may be due to an aborted migration " \
+                  "or similar) table_name: #{table_name}, column_name: #{column_name}")
+      else
+        super
+      end
+    end
+
     # Adds a reference to the table with minimal locking
     #
     # Active Record adds an index non-`CONCURRENTLY` to references by default, which blocks writes.

@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Make `add_column` idempotent
 - Fix `NullLockRetrier#with_lock_retries` method signature
 
 ## 0.30.0 (2025-10-17)

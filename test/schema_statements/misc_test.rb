@@ -49,6 +49,12 @@ module SchemaStatements
       end
     end
 
+    def test_add_column_is_idempotent
+      @connection.add_column(:users, :nice, :boolean)
+      @connection.add_column(:users, :nice, :boolean) # once again
+      assert @connection.column_exists?(:users, :nice)
+    end
+
     def test_add_exclusion_constraint
       user = User.create!
       start_date = 3.days.ago
