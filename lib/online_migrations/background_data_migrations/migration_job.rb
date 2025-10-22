@@ -6,6 +6,8 @@ module OnlineMigrations
     class MigrationJob
       include Sidekiq::IterableJob
 
+      sidekiq_options backtrace: true
+
       sidekiq_retry_in do |count, _exception, jobhash|
         migration_id = jobhash["args"].fetch(0)
         migration = Migration.find(migration_id)
