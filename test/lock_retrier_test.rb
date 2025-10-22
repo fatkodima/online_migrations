@@ -88,6 +88,22 @@ class LockRetrierTest < Minitest::Test
     OnlineMigrations.config.lock_retrier = previous
   end
 
+  def test_null_lock_retrier
+    previous = OnlineMigrations.config.lock_retrier
+
+    # Setting config.lock_retrier to +OnlineMigrations::NullLockRetrier+
+    OnlineMigrations.config.lock_retrier = nil
+
+    with_table_locked(:users) do
+      assert_lock_timeout { migrate(LockRetriesMigration) }
+    end
+
+    # Does not retry migration
+    assert_equal 1, $migrate_attempts
+  ensure
+    OnlineMigrations.config.lock_retrier = previous
+  end
+
   private
     def with_table_locked(table_name)
       connection = ActiveRecord::Base.connection_pool.checkout

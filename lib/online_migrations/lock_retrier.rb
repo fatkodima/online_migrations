@@ -251,7 +251,7 @@ module OnlineMigrations
     def delay(_attempt, _command = nil, _arguments = [])
     end
 
-    def with_lock_retries(_connection)
+    def with_lock_retries(_connection, _command = nil, *_arguments)
       yield
     end
   end
