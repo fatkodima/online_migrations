@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.31.0 (2025-10-22)
+
 - Store backtraces for failed background data migrations jobs
 - Make `add_column` idempotent
 - Fix `NullLockRetrier#with_lock_retries` method signature
