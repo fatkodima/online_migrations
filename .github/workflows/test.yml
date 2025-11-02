@@ -66,6 +66,7 @@ jobs:
         run: |
           createdb online_migrations_shard_one
           createdb online_migrations_shard_two
+          createdb online_migrations_shard_no_database_tasks
         env:
           PGHOST: localhost
           PGUSER: postgres

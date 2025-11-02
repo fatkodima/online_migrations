@@ -81,7 +81,7 @@ require_relative "support/models"
 require_relative "background_data_migrations/data_migrations"
 
 # Load database schema into shards.
-[:shard_one, :shard_two].each do |shard|
+[:shard_one, :shard_two, :shard_no_database_tasks].each do |shard|
   ShardRecord.connected_to(shard: shard, role: :writing) do
     connection = ShardRecord.connection
     connection.create_table(:dogs, force: true) do |t|

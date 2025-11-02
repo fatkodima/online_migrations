@@ -127,7 +127,14 @@ module OnlineMigrations
           # This is the way that currently is used in ActiveRecord tests themselves.
           pool_manager = ActiveRecord::Base.connection_handler.send(:get_pool_manager, ancestor.name)
 
-          return pool_manager.shard_names if pool_manager
+          if pool_manager
+            shards_with_database_tasks = pool_manager.shard_names.select do |shard_name|
+              pool_config = pool_manager.get_pool_config(:writing, shard_name)
+              pool_config.db_config.database_tasks? if pool_config
+            end
+
+            return shards_with_database_tasks
+          end
         end
       end
 

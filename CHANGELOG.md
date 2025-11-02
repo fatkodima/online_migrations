@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Do not attempt running background migrations on database with `database_tasks: false`
+
 ## 0.31.0 (2025-10-22)
 
 - Store backtraces for failed background data migrations jobs

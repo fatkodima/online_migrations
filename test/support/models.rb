@@ -20,6 +20,7 @@ class ShardRecord < ActiveRecord::Base
   connects_to shards: {
     shard_one: { writing: :shard_one, reading: :shard_one },
     shard_two: { writing: :shard_two, reading: :shard_two },
+    shard_no_database_tasks: { writing: :shard_no_database_tasks, reading: :shard_no_database_tasks },
   }
 end
 
