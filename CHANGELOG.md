@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.31.1 (2025-11-11)
+
 - Do not attempt running background migrations on database with `database_tasks: false`
 
 ## 0.31.0 (2025-10-22)
