@@ -37,7 +37,16 @@ module OnlineMigrations
           # TODO: use 'cursor' accessor from sidekiq in the future.
           # https://github.com/sidekiq/sidekiq/pull/6606
           @migration.persist_progress(@_cursor, ticks, duration)
-          @migration.reload
+
+          # When using a scheduler, these are running only from a single shard, but when inline -
+          # these are run from each shard (not needed, but simplifies the implementation).
+          #
+          # Do not reload the migration when running inline, because it can be from a different shard
+          # than the "default" shard (which is used to lookup background migrations).
+          if !Utils.run_background_migrations_inline?
+            # Reload to check if the migration's status changed etc.
+            @migration.reload
+          end
         end
 
         @throttle_checked_at = current_time
