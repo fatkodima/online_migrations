@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.31.2 (2025-11-13)
+
 - Fix running background data migrations inline
 
 ## 0.31.1 (2025-11-11)
