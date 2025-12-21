@@ -426,7 +426,7 @@ module OnlineMigrations
               validate_constraint_code: command_str(:validate_not_null_constraint, table_name, column_name, name: constraint_name),
               table_name: table_name,
               column_name: column_name,
-              default: default,
+              default_value: default,
               remove_constraint_code: command_str(:remove_check_constraint, table_name, name: constraint_name),
               change_column_null_code: command_str(:change_column_null, table_name, column_name, false),
             }

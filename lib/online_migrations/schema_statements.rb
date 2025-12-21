@@ -852,6 +852,33 @@ module OnlineMigrations
     end
 
     # @private
+    # From rails 8.2 this will be used by fixtures code.
+    # https://github.com/rails/rails/commit/3415223ed2765c61ae348622dc8d2681efd910d7
+    def reset_column_sequences!(tables)
+      views = self.views
+
+      table_renames = OnlineMigrations.config.table_renames
+      renamed_tables = table_renames.slice(*views)
+
+      column_renames = OnlineMigrations.config.column_renames
+      renamed_columns = column_renames.slice(*views)
+
+      tables = tables.map do |table|
+        if renamed_tables.key?(table)
+          renamed_tables[table]
+        elsif renamed_columns.key?(table)
+          __tmp_table_name_for_column_rename(table)
+        else
+          table
+        end
+      end
+
+      super
+    end
+
+    # @private
+    # Was used by fixtures code in rails < 8.2.
+    # Delete when rails < 8.2 is no longer supported.
     def pk_and_sequence_for(table)
       views = self.views
 

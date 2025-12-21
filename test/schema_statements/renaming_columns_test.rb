@@ -231,7 +231,11 @@ module SchemaStatements
       User.reset_column_information
 
       _user1 = User.create!(id: 100_000, fname: "Old")
-      @connection.reset_pk_sequence!("users")
+      if OnlineMigrations::Utils.ar_version <= 8.1
+        @connection.reset_pk_sequence!("users")
+      else
+        @connection.reset_column_sequences!(["users"])
+      end
       user2 = User.create!(fname: "New")
       assert_equal user2, User.last
     end

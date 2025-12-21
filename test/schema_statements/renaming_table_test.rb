@@ -124,7 +124,11 @@ module SchemaStatements
       ProjectNew.reset_column_information
 
       _project1 = ProjectNew.create!(id: 100_000, name: "Old")
-      @connection.reset_pk_sequence!("projects")
+      if OnlineMigrations::Utils.ar_version <= 8.1
+        @connection.reset_pk_sequence!("projects")
+      else
+        @connection.reset_column_sequences!(["projects"])
+      end
       project2 = ProjectNew.create!(name: "New")
       assert_equal project2, ProjectNew.last
     end

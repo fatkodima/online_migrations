@@ -3,6 +3,7 @@
 require "logger"
 require "online_migrations"
 
+require "minitest/mock"
 require "minitest/autorun"
 
 # Required to be able to run single tests via command line.

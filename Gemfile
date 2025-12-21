@@ -5,10 +5,11 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in online_migrations.gemspec
 gemspec
 
-gem "minitest", "~> 5.0"
-gem "rake", "~> 12.0"
+gem "minitest"
+gem "minitest-mock"
+gem "rake"
 gem "sidekiq", "7.3.3"
-gem "rubocop", "< 2"
+gem "rubocop"
 gem "rubocop-minitest"
 gem "rubocop-disable_syntax"
 
