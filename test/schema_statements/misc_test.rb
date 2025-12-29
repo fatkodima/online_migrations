@@ -324,6 +324,19 @@ module SchemaStatements
       assert_equal 'ALTER TABLE "invoices" VALIDATE CONSTRAINT "fk_invoices_user_id"', m.definition
     end
 
+    def test_validate_constraint_in_background_with_same_name_but_different_table
+      constraint_name = "organization_id_null"
+      @connection.add_column(:users, :organization_id, :bigint)
+      @connection.add_not_null_constraint(:users, :organization_id, validate: false, name: constraint_name)
+      @connection.validate_constraint_in_background(:users, constraint_name, connection_class_name: User.name)
+
+      @connection.add_column(:invoices, :organization_id, :bigint)
+      @connection.add_not_null_constraint(:invoices, :organization_id, validate: false, name: constraint_name)
+      @connection.validate_constraint_in_background(:invoices, constraint_name, connection_class_name: Invoice.name)
+
+      assert_equal 2, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+    end
+
     private
       def column_for(table_name, column_name)
         @connection.columns(table_name).find { |c| c.name == column_name.to_s }

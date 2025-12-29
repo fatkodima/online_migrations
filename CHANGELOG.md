@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Fix enqueueing background data migrations with the same name on different tables
+
+    Note: Run `bin/rails generate online_migrations:upgrade` if using background schema migrations.
+
 ## 0.31.2 (2025-11-13)
 
 - Fix running background data migrations inline

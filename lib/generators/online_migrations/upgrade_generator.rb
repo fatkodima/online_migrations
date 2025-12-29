@@ -30,7 +30,7 @@ module OnlineMigrations
         end
 
         indexes = connection.indexes(:background_schema_migrations)
-        unique_index = indexes.find { |i| i.unique && i.columns.sort == ["connection_class_name", "migration_name", "shard"] }
+        unique_index = indexes.find { |i| i.unique && i.columns.sort == ["connection_class_name", "migration_name", "shard", "table_name"] }
         if !unique_index
           migrations << "background_schema_migrations_change_unique_index"
         end

@@ -41,7 +41,7 @@ ActiveRecord::Schema.define do
     t.string :connection_class_name
     t.timestamps
 
-    t.index [:migration_name, :shard, :connection_class_name], unique: true,
+    t.index [:migration_name, :table_name, :shard, :connection_class_name], unique: true,
       name: :index_background_schema_migrations_on_unique_configuration
   end
 end

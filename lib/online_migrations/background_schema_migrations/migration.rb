@@ -33,7 +33,7 @@ module OnlineMigrations
       validates :table_name, presence: true, length: { maximum: MAX_IDENTIFIER_LENGTH }
       validates :definition, presence: true
       validates :migration_name, presence: true, uniqueness: {
-        scope: [:connection_class_name, :shard],
+        scope: [:table_name, :connection_class_name, :shard],
         message: ->(object, data) do
           message = "(#{data[:value]}) has already been taken."
           if object.index_addition?

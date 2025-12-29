@@ -108,8 +108,8 @@ module OnlineMigrations
         shards = [nil] if shards.size == 1
 
         shards.each do |shard|
-          migration = Migration.create_with(**options, table_name: table_name)
-                               .find_or_create_by!(migration_name: migration_name, shard: shard, connection_class_name: connection_class_name)
+          migration = Migration.create_with(**options)
+                               .find_or_create_by!(migration_name: migration_name, table_name: table_name, shard: shard, connection_class_name: connection_class_name)
 
           if Utils.run_background_migrations_inline?
             # Run migration again in development.

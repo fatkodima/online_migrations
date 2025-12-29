@@ -70,7 +70,7 @@ ActiveRecord::Schema.define do
 
     t.foreign_key :background_schema_migrations, column: :parent_id, on_delete: :cascade
 
-    t.index [:migration_name, :shard, :connection_class_name], unique: true,
+    t.index [:migration_name, :table_name, :shard, :connection_class_name], unique: true,
       name: :index_background_schema_migrations_on_unique_configuration
   end
 end
