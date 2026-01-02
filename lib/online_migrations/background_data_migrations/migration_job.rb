@@ -140,7 +140,7 @@ module OnlineMigrations
             @migration.data_migration.process(item)
 
             # Migration is refreshed regularly by ticker.
-            pause = @migration.iteration_pause
+            pause = @migration.iteration_pause.to_f
             sleep(pause) if pause > 0
           end
           @ticker.tick

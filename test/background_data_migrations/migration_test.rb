@@ -31,13 +31,16 @@ module BackgroundDataMigrations
     end
 
     def test_sets_defaults
-      m = create_migration
-
-      assert m.enqueued?
-
       config = OnlineMigrations.config.background_data_migrations
-      assert_equal config.max_attempts, m.max_attempts
-      assert_equal config.iteration_pause, m.iteration_pause
+
+      config.stub(:max_attempts, 20) do
+        config.stub(:iteration_pause, 10) do
+          m = create_migration
+          assert m.enqueued?
+          assert_equal config.max_attempts, m.max_attempts
+          assert_equal 10, m.iteration_pause
+        end
+      end
     end
 
     def test_normalizes_migration_name

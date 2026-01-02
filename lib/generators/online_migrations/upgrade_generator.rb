@@ -47,6 +47,11 @@ module OnlineMigrations
           migrations << "background_data_migrations_add_iteration_pause"
         end
 
+        iteration_pause_column = connection.columns(:background_data_migrations).find { |c| c.name == "iteration_pause" }
+        if iteration_pause_column && iteration_pause_column.default
+          migrations << "background_data_migrations_remove_iteration_pause_default"
+        end
+
         migrations
       end
 

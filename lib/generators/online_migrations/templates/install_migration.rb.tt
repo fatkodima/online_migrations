@@ -13,7 +13,7 @@ class InstallOnlineMigrations < <%= migration_parent %>
       t.bigint :tick_count, default: 0, null: false
       t.float :time_running, default: 0.0, null: false
       t.integer :max_attempts, null: false
-      t.float :iteration_pause, default: 0.0, null: false
+      t.float :iteration_pause, null: false
       t.string :error_class
       t.string :error_message
       t.string :backtrace, array: true

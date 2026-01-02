@@ -1,0 +1,7 @@
+class BackgroundDataMigrationsRemoveIterationPauseDefault < <%= migration_parent %>
+  def change
+    safety_assured("Table is small") do
+      change_column_default :background_data_migrations, :iteration_pause, nil
+    end
+  end
+end
