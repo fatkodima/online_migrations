@@ -6,14 +6,18 @@ module OnlineMigrations
     class MigrationStatusValidator < ActiveModel::Validator
       VALID_STATUS_TRANSITIONS = {
         # enqueued -> running occurs when the migration starts performing.
-        "enqueued" => ["running", "cancelled"],
+        # enqueued -> paused occurs when the migration is paused before starting.
+        "enqueued" => ["running", "paused", "cancelled"],
         # running -> succeeded occurs when the migration completes successfully.
         # running -> errored occurs when the migration raised an error during the last run.
         # running -> failed occurs when the migration raises an error when running and retry attempts exceeded.
         "running" => ["succeeded", "errored", "failed", "cancelled"],
+        # paused -> enqueued occurs when the migration is resumed after being paused.
+        # paused -> cancelled when the user cancels the migration after it is paused.
+        "paused" => ["enqueued", "cancelled"],
         # errored -> running occurs when previously errored migration starts running
         # errored -> failed occurs when the migration raises an error when running and retry attempts exceeded.
-        "errored" => ["running", "failed", "cancelled"],
+        "errored" => ["running", "failed", "paused", "cancelled"],
         # failed -> enqueued occurs when the failed migration is enqueued to be retried.
         # failed -> running occurs when the failed migration is retried.
         "failed" => ["enqueued", "running", "cancelled"],

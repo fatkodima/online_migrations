@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Allow background schema migrations to be pausable/resumable (only when not running)
+
 - Fix enqueueing background data migrations with the same name on different tables
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background schema migrations.

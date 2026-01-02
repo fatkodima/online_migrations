@@ -14,6 +14,7 @@ module OnlineMigrations
         "enqueued",    # The migration has been enqueued by the user.
         "running",     # The migration is being performed by a migration executor.
         "errored",     # The migration raised an error during last run.
+        "paused",      # The migration was paused before it started executing by the user.
         "failed",      # The migration raises an error when running and retry attempts exceeded.
         "succeeded",   # The migration finished without error.
         "cancelled",   # The migration was cancelled by the user.
@@ -24,7 +25,7 @@ module OnlineMigrations
       self.table_name = :background_schema_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
-      scope :active, -> { where(status: [:enqueued, :running, :errored]) }
+      scope :active, -> { where(status: [:enqueued, :running, :errored, :paused]) }
 
       alias_attribute :name, :migration_name
 
@@ -57,21 +58,19 @@ module OnlineMigrations
         succeeded? || failed? || cancelled?
       end
 
-      # Returns whether the migration is active, which is defined as
-      # having a status of enqueued, or running.
+      # Returns whether the migration is active.
       #
       # @return [Boolean] whether the migration is active.
       #
       def active?
-        enqueued? || running?
+        enqueued? || running? || errored? || paused?
       end
 
-      alias cancel cancelled!
-
       # Returns whether this migration is pausable.
+      # It is pausable only when it is not currently running.
       #
       def pausable?
-        false
+        enqueued? || errored?
       end
 
       # Dummy method to support the same interface as background data migrations.
@@ -89,6 +88,45 @@ module OnlineMigrations
         else
           stuck_timeout = (statement_timeout || 1.day) + 10.minutes
           running? && updated_at <= stuck_timeout.seconds.ago
+        end
+      end
+
+      # Cancel this schema migration. No-op if migration is completed.
+      #
+      # @return [Boolean] whether this schema migration was cancelled.
+      #
+      def cancel
+        if enqueued? || errored? || paused? || stuck?
+          cancelled!
+          true
+        else
+          false
+        end
+      end
+
+      # Pause this schema migration. No-op if migration is completed or running.
+      #
+      # @return [Boolean] whether this schema migration was paused.
+      #
+      def pause
+        if enqueued? || errored?
+          paused!
+          true
+        else
+          paused?
+        end
+      end
+
+      # Resume this schema migration. No-op if migration is not paused.
+      #
+      # @return [Boolean] whether this schema migration was resumed.
+      #
+      def resume
+        if paused?
+          enqueued!
+          true
+        else
+          false
         end
       end
 
