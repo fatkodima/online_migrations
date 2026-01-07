@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.32.0 (2026-01-07)
+
 - Add ability to create delayed background migrations
 
   ```ruby
