@@ -4,7 +4,7 @@ module OnlineMigrations
   module BackgroundSchemaMigrations
     module MigrationHelpers
       def add_index_in_background(table_name, column_name, **options)
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
 
         options[:algorithm] = :concurrently
         index, algorithm, if_not_exists = add_index_options(table_name, column_name, **options)
@@ -34,7 +34,7 @@ module OnlineMigrations
       def remove_index_in_background(table_name, column_name = nil, name:, **options)
         raise ArgumentError, "Index name must be specified" if name.blank?
 
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
 
         if !index_exists?(table_name, column_name, **options, name: name)
           Utils.raise_or_say("Index deletion was not enqueued because the index does not exist.")
@@ -46,7 +46,7 @@ module OnlineMigrations
       end
 
       def validate_foreign_key_in_background(from_table, to_table = nil, **options)
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
 
         if !foreign_key_exists?(from_table, to_table, **options)
           Utils.raise_or_say("Foreign key validation was not enqueued because the foreign key does not exist.")
@@ -87,7 +87,7 @@ module OnlineMigrations
         end
       end
 
-      def enqueue_background_schema_migration(migration_name, table_name, connection_class_name: nil, **options)
+      def enqueue_background_schema_migration(migration_name, table_name, connection_class_name: nil, delay: false, **options)
         options.assert_valid_keys(:definition, :max_attempts, :statement_timeout)
 
         if Utils.multiple_databases? && !connection_class_name
@@ -107,8 +107,10 @@ module OnlineMigrations
         shards = Utils.shard_names(connection_class)
         shards = [nil] if shards.size == 1
 
+        status = delay ? :delayed : :enqueued
+
         shards.each do |shard|
-          migration = Migration.create_with(**options)
+          migration = Migration.create_with(**options, status: status)
                                .find_or_create_by!(migration_name: migration_name, table_name: table_name, shard: shard, connection_class_name: connection_class_name)
 
           if Utils.run_background_migrations_inline?

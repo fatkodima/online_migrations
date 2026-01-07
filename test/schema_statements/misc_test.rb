@@ -227,6 +227,14 @@ module SchemaStatements
       OnlineMigrations.config.run_background_migrations_inline = prev
     end
 
+    def test_delayed_enqueue_background_data_migration
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.enqueue_background_data_migration("MakeAllNonAdmins", delay: true)
+        m = last_data_migration
+        assert m.delayed?
+      end
+    end
+
     def test_remove_non_existing_background_migration
       assert_nothing_raised do
         @connection.remove_background_data_migration("NonExistent")

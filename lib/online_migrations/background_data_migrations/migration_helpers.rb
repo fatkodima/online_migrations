@@ -338,6 +338,7 @@ module OnlineMigrations
       #
       # @param migration_name [String, Class] Background migration class name
       # @param arguments [Array] Extra arguments to pass to the migration instance when the migration runs
+      # @param delay [Boolean] Whether this migration should be delayed and approved by the user to start running.
       # @option options [Integer] :max_attempts (5) Maximum number of batch run attempts
       # @option options [String, nil] :connection_class_name Class name to use to get connections
       #
@@ -368,7 +369,7 @@ module OnlineMigrations
       # @note For convenience, the enqueued background data migration is run inline
       #     in development and test environments
       #
-      def enqueue_background_data_migration(migration_name, *arguments, **options)
+      def enqueue_background_data_migration(migration_name, *arguments, delay: false, **options)
         options.assert_valid_keys(:max_attempts, :iteration_pause, :connection_class_name)
 
         migration_name = migration_name.name if migration_name.is_a?(Class)
@@ -381,13 +382,15 @@ module OnlineMigrations
         connection_class = options[:connection_class_name].constantize
         shards = Utils.shard_names(connection_class)
         shards = [nil] if shards.size == 1
+        status = delay ? :delayed : :enqueued
 
         shards.each do |shard|
           # Can't use `find_or_create_by` or hash syntax here, because it does not correctly work with json `arguments`.
           migration = Migration.where(migration_name: migration_name, shard: shard).where("arguments = ?", arguments.to_json).first
-          migration ||= Migration.create!(**options, migration_name: migration_name, arguments: arguments, shard: shard)
+          migration ||= Migration.create!(**options, status: status, migration_name: migration_name, arguments: arguments, shard: shard)
 
           if Utils.run_background_migrations_inline? && !migration.succeeded?
+            migration.update_column(:status, :enqueued) if !migration.enqueued?
             job = OnlineMigrations.config.background_data_migrations.job
             job.constantize.perform_inline(migration.id)
           end

@@ -45,6 +45,9 @@ module OnlineMigrations
         # cancelling -> failed occurs when the job raises an exception after the
         #   user has cancelled it.
         "cancelling" => ["cancelled", "succeeded", "failed"],
+        # delayed -> enqueued occurs when the delayed migration was approved by the user to start running.
+        # delayed -> cancelled occurs when the delayed migration was cancelled.
+        "delayed" => ["enqueued", "cancelled"],
       }
 
       def validate(record)

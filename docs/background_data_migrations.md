@@ -324,6 +324,14 @@ Data Migrations can be in various states during its execution:
   migration.cancel
   ```
 
+* **delayed**: A migration was created, but waiting approval from the user to start running.
+
+  To create a delayed migration, you can pass a `delayed: true` option:
+
+  ```ruby
+  enqueue_background_data_migration("MyMigration", delay: true)
+  ```
+
 To get the progress (assuming `#count` method on data migration class was defined):
 
 ```ruby

@@ -17,6 +17,9 @@ module OnlineMigrations
         # failed -> enqueued occurs when the failed migration is enqueued to be retried.
         # failed -> running occurs when the failed migration is retried.
         "failed" => ["enqueued", "running", "cancelled"],
+        # delayed -> enqueued occurs when the delayed migration was approved by the user to start running.
+        # delayed -> cancelled occurs when the delayed migration was cancelled.
+        "delayed" => ["enqueued", "cancelled"],
       }
 
       def validate(record)

@@ -1,5 +1,14 @@
 ## master (unreleased)
 
+- Add ability to create delayed background migrations
+
+  ```ruby
+  add_index_in_background(:users, :name, delay: true)
+  enqueue_background_data_migration("MyMigration", delay: true)
+  ```
+
+  They will start only after approval from the user.
+
 - Fix enqueueing background data migrations with the same name on different tables
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background schema migrations.

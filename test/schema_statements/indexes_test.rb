@@ -243,6 +243,14 @@ module SchemaStatements
       end
     end
 
+    def test_delayed_add_index_in_background
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.add_index_in_background(:users, :name, connection_class_name: "User", delay: true)
+        m = last_schema_migration
+        assert m.delayed?
+      end
+    end
+
     def test_remove_index_in_background_raises_without_name
       @connection.add_index(:users, :name)
       assert_raises_with_message(ArgumentError, /Index name must be specified/i) do

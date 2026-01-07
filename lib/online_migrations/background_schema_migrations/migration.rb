@@ -17,6 +17,7 @@ module OnlineMigrations
         "failed",      # The migration raises an error when running and retry attempts exceeded.
         "succeeded",   # The migration finished without error.
         "cancelled",   # The migration was cancelled by the user.
+        "delayed",     # The migration was created, but waiting approval from the user to start running.
       ]
 
       MAX_IDENTIFIER_LENGTH = 63
@@ -66,8 +67,6 @@ module OnlineMigrations
         enqueued? || running?
       end
 
-      alias cancel cancelled!
-
       # Returns whether this migration is pausable.
       #
       def pausable?
@@ -111,6 +110,32 @@ module OnlineMigrations
           true
         else
           false
+        end
+      end
+
+      # Enqueue this data migration. No-op if migration is not delayed.
+      #
+      # @return [Boolean] whether this data migration was enqueued.
+      #
+      def enqueue
+        if delayed?
+          enqueued!
+          true
+        else
+          false
+        end
+      end
+
+      # Cancel this schema migration. No-op if migration is completed.
+      #
+      # @return [Boolean] whether this schema migration was cancelled.
+      #
+      def cancel
+        if completed?
+          false
+        elsif enqueued? || errored? || delayed? || stuck?
+          cancelled!
+          true
         end
       end
 

@@ -19,6 +19,7 @@ module OnlineMigrations
         "succeeded",   # The migration finished without error.
         "cancelling",  # The migration has been told to cancel but is finishing work.
         "cancelled",   # The migration was cancelled by the user.
+        "delayed",     # The migration was created, but waiting approval from the user to start running.
       ]
 
       COMPLETED_STATUSES = ["succeeded", "failed", "cancelled"]
@@ -130,6 +131,19 @@ module OnlineMigrations
         end
       end
 
+      # Enqueue this data migration. No-op if migration is not delayed.
+      #
+      # @return [Boolean] whether this data migration was enqueued.
+      #
+      def enqueue
+        if delayed?
+          enqueued!
+          true
+        else
+          false
+        end
+      end
+
       # Cancel this data migration. No-op if migration is completed.
       #
       # @return [Boolean] whether this data migration was cancelled.
@@ -137,7 +151,7 @@ module OnlineMigrations
       def cancel
         return false if completed?
 
-        if paused? || stuck?
+        if paused? || delayed? || stuck?
           update!(status: :cancelled, finished_at: Time.current)
         elsif enqueued?
           cancelled!
@@ -155,7 +169,7 @@ module OnlineMigrations
       def pause
         return false if completed?
 
-        if enqueued? || stuck?
+        if enqueued? || delayed? || stuck?
           paused!
         else
           pausing!

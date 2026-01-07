@@ -139,6 +139,14 @@ Background Schema Migrations can be in various states during its execution:
 * **succeeded**: A migration finished without error.
 * **cancelled**: A migration was cancelled by the user.
 
+* **delayed**: A migration was created, but waiting approval from the user to start running.
+
+  To create a delayed migration, you can pass a `delayed: true` option:
+
+  ```ruby
+  add_index_in_background(:users, :name, delay: true)
+  ```
+
 ## Configuring
 
 There are a few configurable options for the Background Schema Migrations. Custom configurations should be placed in a `online_migrations.rb` initializer.
