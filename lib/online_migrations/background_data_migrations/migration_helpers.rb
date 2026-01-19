@@ -382,7 +382,7 @@ module OnlineMigrations
         connection_class = options[:connection_class_name].constantize
         shards = Utils.shard_names(connection_class)
         shards = [nil] if shards.size == 1
-        status = delay ? :delayed : :enqueued
+        status = delay ? :delayed : :pending
 
         shards.each do |shard|
           # Can't use `find_or_create_by` or hash syntax here, because it does not correctly work with json `arguments`.

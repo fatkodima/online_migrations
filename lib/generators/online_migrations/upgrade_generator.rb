@@ -52,6 +52,11 @@ module OnlineMigrations
           migrations << "background_data_migrations_remove_iteration_pause_default"
         end
 
+        status_column = connection.columns(:background_data_migrations).find { |c| c.name == "status" }
+        if status_column.default == "enqueued"
+          migrations << "background_migrations_change_status_default"
+        end
+
         migrations
       end
 

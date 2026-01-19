@@ -192,14 +192,4 @@ module BackgroundDataMigrations
       collection.count
     end
   end
-
-  class FailingProcessMigration < SimpleDataMigration
-    def collection
-      [1, 2]
-    end
-
-    def process(_item)
-      raise "Boom!"
-    end
-  end
 end

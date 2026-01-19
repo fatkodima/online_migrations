@@ -208,7 +208,7 @@ module SchemaStatements
       end
 
       m = last_data_migration
-      assert m.enqueued?
+      assert m.pending?
       assert_nil user.reload.admin
     end
 
@@ -221,7 +221,7 @@ module SchemaStatements
 
       @connection.enqueue_background_data_migration("MakeAllNonAdmins")
       m = last_data_migration
-      assert m.enqueued?
+      assert m.pending?
       assert_nil user.reload.admin
     ensure
       OnlineMigrations.config.run_background_migrations_inline = prev

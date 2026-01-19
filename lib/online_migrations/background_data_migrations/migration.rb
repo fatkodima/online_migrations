@@ -11,11 +11,13 @@ module OnlineMigrations
       include ShardAware
 
       STATUSES = [
-        "enqueued",    # The migration has been enqueued by the user.
+        "pending",     # The migration has been created by the user.
+        "enqueued",    # The migration has been enqueued by the scheduler.
         "running",     # The migration is being performed by a migration executor.
         "pausing",     # The migration has been told to pause but is finishing work.
         "paused",      # The migration was paused in the middle of the run by the user.
-        "failed",      # The migration raises an exception when running.
+        "errored",     # The migration raised an error during last run.
+        "failed",      # The migration raises an error when running and retry attempts exceeded.
         "succeeded",   # The migration finished without error.
         "cancelling",  # The migration has been told to cancel but is finishing work.
         "cancelled",   # The migration was cancelled by the user.
@@ -25,8 +27,10 @@ module OnlineMigrations
       COMPLETED_STATUSES = ["succeeded", "failed", "cancelled"]
 
       ACTIVE_STATUSES = [
+        "pending",
         "enqueued",
         "running",
+        "failed",
         "pausing",
         "paused",
         "cancelling",
@@ -87,7 +91,7 @@ module OnlineMigrations
       end
 
       # Returns whether the migration is active, which is defined as
-      # having a status of enqueued, running, pausing, paused, or cancelling.
+      # having a status of pending, enqueued, running, pausing, paused, or cancelling.
       #
       # @return [Boolean] whether the migration is active.
       #
@@ -107,22 +111,18 @@ module OnlineMigrations
       end
 
       # Returns whether a migration is stuck, which is defined as having a status of
-      # cancelling or pausing, and not having been updated in the last 5 minutes.
+      # running, cancelling or pausing, and not having been updated in the last 5 minutes.
       #
       # @return [Boolean] whether the migration is stuck.
       #
       def stuck?
         stuck_timeout = OnlineMigrations.config.background_data_migrations.stuck_timeout
-        (cancelling? || pausing?) && updated_at <= stuck_timeout.ago
+        (running? || cancelling? || pausing?) && updated_at <= stuck_timeout.ago
       end
 
       # @private
       def start
-        if running? && !started?
-          update!(started_at: Time.current)
-          data_migration.after_start
-          true
-        elsif enqueued?
+        if enqueued?
           update!(status: :running, started_at: Time.current)
           data_migration.after_start
           true
@@ -137,7 +137,7 @@ module OnlineMigrations
       #
       def enqueue
         if delayed?
-          enqueued!
+          pending!
           true
         else
           false
@@ -153,7 +153,7 @@ module OnlineMigrations
 
         if paused? || delayed? || stuck?
           update!(status: :cancelled, finished_at: Time.current)
-        elsif enqueued?
+        elsif pending? || enqueued? || errored?
           cancelled!
         else
           cancelling!
@@ -169,7 +169,7 @@ module OnlineMigrations
       def pause
         return false if completed?
 
-        if enqueued? || delayed? || stuck?
+        if pending? || enqueued? || delayed? || stuck? || errored?
           paused!
         else
           pausing!
@@ -184,7 +184,7 @@ module OnlineMigrations
       #
       def resume
         if paused?
-          enqueued!
+          pending!
           true
         else
           false
@@ -235,13 +235,14 @@ module OnlineMigrations
       end
 
       # @private
-      def persist_error(error)
+      def persist_error(error, attempt)
         backtrace = error.backtrace
         backtrace_cleaner = OnlineMigrations.config.backtrace_cleaner
         backtrace = backtrace_cleaner.clean(backtrace) if backtrace_cleaner
+        status = attempt >= max_attempts ? :failed : :errored
 
         update!(
-          status: :failed,
+          status: status,
           finished_at: Time.current,
           error_class: error.class.name,
           error_message: error.message,
@@ -290,7 +291,7 @@ module OnlineMigrations
       def retry
         if failed?
           update!(
-            status: :enqueued,
+            status: :pending,
             started_at: nil,
             finished_at: nil,
             error_class: nil,

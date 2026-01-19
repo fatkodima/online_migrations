@@ -77,6 +77,18 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_changes_status_default_for_background_data_migrations
+    simulate_transactional_test do
+      load_schema(6)
+      run_generator
+
+      assert_migration("db/migrate/background_migrations_change_status_default.rb") do |content|
+        assert_includes content, 'change_column_default :background_data_migrations, :status, from: "enqueued", to: "pending"'
+        assert_includes content, 'change_column_default :background_schema_migrations, :status, from: "enqueued", to: "pending"'
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do

@@ -34,13 +34,13 @@ module OnlineMigrations
         relation = relation.where(shard: shard) if shard
 
         with_lock do
-          running = relation.running
-          enqueued = relation.enqueued
+          stuck_migrations, active_migrations = relation.running.partition(&:stuck?)
+          runnable_migrations = relation.pending + stuck_migrations
 
           # Ensure no more than 'concurrency' migrations are running at the same time.
-          remaining_to_enqueue = concurrency - running.count
+          remaining_to_enqueue = concurrency - active_migrations.count
           if remaining_to_enqueue > 0
-            migrations_to_enqueue = enqueued.limit(remaining_to_enqueue)
+            migrations_to_enqueue = runnable_migrations.take(remaining_to_enqueue)
             migrations_to_enqueue.each do |migration|
               enqueue_migration(migration)
             end
@@ -67,10 +67,11 @@ module OnlineMigrations
         def enqueue_migration(migration)
           job = OnlineMigrations.config.background_data_migrations.job
           job_class = job.constantize
+          migration.update!(status: :enqueued)
 
           jid = job_class.perform_async(migration.id)
           if jid
-            migration.update!(status: :running, jid: jid)
+            migration.update!(jid: jid)
           end
         end
     end

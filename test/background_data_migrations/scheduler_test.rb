@@ -29,7 +29,7 @@ module BackgroundDataMigrations
       assert_equal [m.id], job["args"]
 
       m.reload
-      assert m.running?
+      assert m.enqueued?
       assert_not_nil m.jid
     end
 
@@ -45,11 +45,11 @@ module BackgroundDataMigrations
       assert_equal [m2.id], job["args"]
 
       m2.reload
-      assert m2.running?
+      assert m2.enqueued?
       assert_not_nil m2.jid
 
       m1.reload
-      assert m1.enqueued?
+      assert m1.pending?
       assert_nil m1.jid
     end
 
@@ -61,14 +61,14 @@ module BackgroundDataMigrations
       scheduler.run(concurrency: 1)
 
       assert_equal 1, OnlineMigrations::BackgroundDataMigrations::MigrationJob.jobs.size
-      assert m1.reload.running?
-      assert m2.reload.enqueued?
+      assert m1.reload.enqueued?
+      assert m2.reload.pending?
 
       run_scheduler(concurrency: 2)
 
       assert_equal 2, OnlineMigrations::BackgroundDataMigrations::MigrationJob.jobs.size
-      assert m1.reload.running?
-      assert m2.reload.running?
+      assert m1.reload.enqueued?
+      assert m2.reload.enqueued?
     end
 
     class CustomJob < OnlineMigrations::BackgroundDataMigrations::MigrationJob
@@ -80,7 +80,7 @@ module BackgroundDataMigrations
         run_scheduler
 
         assert_equal 1, CustomJob.jobs.size
-        assert m.reload.running?
+        assert m.reload.enqueued?
       end
     end
 

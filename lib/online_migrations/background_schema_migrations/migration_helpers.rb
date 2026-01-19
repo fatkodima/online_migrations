@@ -107,7 +107,7 @@ module OnlineMigrations
         shards = Utils.shard_names(connection_class)
         shards = [nil] if shards.size == 1
 
-        status = delay ? :delayed : :enqueued
+        status = delay ? :delayed : :pending
 
         shards.each do |shard|
           migration = Migration.create_with(**options, status: status)
@@ -115,7 +115,7 @@ module OnlineMigrations
 
           if Utils.run_background_migrations_inline?
             # Run migration again in development.
-            migration.update_column(:status, :enqueued) if !migration.enqueued?
+            migration.update_column(:status, :pending) if !migration.pending?
 
             runner = MigrationRunner.new(migration)
             runner.run
