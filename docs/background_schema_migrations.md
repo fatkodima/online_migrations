@@ -132,7 +132,7 @@ Available events:
 
 Background Schema Migrations can be in various states during its execution:
 
-* **enqueued**: A migration has been enqueued by the user.
+* **pending**: A migration has been created by the user.
 * **running**: A migration is being performed by a migration executor.
 * **errored**: A migration raised an error during last run.
 * **failed**: A migration raises an error when running and retry attempts exceeded.

@@ -1,5 +1,9 @@
 ## master (unreleased)
 
+- Change background migrations default status to "pending"
+
+    Note: Run `bin/rails generate online_migrations:upgrade` if using background migrations.
+
 - Fix copying partial indexes when changing column type
 
 ## 0.32.0 (2026-01-07)

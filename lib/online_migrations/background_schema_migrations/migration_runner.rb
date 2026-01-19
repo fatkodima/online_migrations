@@ -13,7 +13,7 @@ module OnlineMigrations
       def run
         return if migration.cancelled? || migration.succeeded?
 
-        migration.running! if migration.enqueued? || migration.errored?
+        migration.running! if migration.pending? || migration.errored?
         migration_payload = { migration: migration }
 
         if migration.attempts == 0

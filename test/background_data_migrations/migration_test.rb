@@ -24,9 +24,9 @@ module BackgroundDataMigrations
 
       m.status = :succeeded
       assert_not m.valid?
-      assert_includes m.errors.full_messages, "Status cannot transition data migration from status 'enqueued' to 'succeeded'"
+      assert_includes m.errors.full_messages, "Status cannot transition data migration from status 'pending' to 'succeeded'"
 
-      m.status = :running
+      m.status = :enqueued
       assert m.valid?
     end
 
@@ -36,7 +36,7 @@ module BackgroundDataMigrations
       config.stub(:max_attempts, 20) do
         config.stub(:iteration_pause, 10) do
           m = create_migration
-          assert m.enqueued?
+          assert m.pending?
           assert_equal config.max_attempts, m.max_attempts
           assert_equal 10, m.iteration_pause
         end
@@ -57,7 +57,7 @@ module BackgroundDataMigrations
       2.times { User.create! }
       m = create_migration(migration_name: "MigrationWithCount")
 
-      m.update!(status: :running, tick_count: 1)
+      m.update!(tick_count: 1)
       assert_in_delta 50.0, m.progress
 
       m.update!(tick_count: 2)
@@ -87,7 +87,7 @@ module BackgroundDataMigrations
       assert_nil m.started_at
       assert_nil m.finished_at
       assert_nil m.error_class
-      assert m.enqueued?
+      assert m.pending?
     end
 
     private

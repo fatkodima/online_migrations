@@ -162,12 +162,9 @@ module BackgroundDataMigrations
       assert_not_nil m.finished_at
     end
 
-    def test_stores_current_state
-    end
-
     def test_cancells_cancelling_migration
       m = create_migration("ArrayCollectionMigration")
-      m.running! # emulate that the migration was picked up by the scheduler
+      m.update_column(:status, :running) # emulate that the migration was picked up by the scheduler
       m.cancel
       assert m.cancelling?
 
@@ -187,7 +184,7 @@ module BackgroundDataMigrations
 
     def test_pauses_pausing_migration
       m = create_migration("ArrayCollectionMigration")
-      m.running! # emulate that the migration was picked up by the scheduler
+      m.update_column(:status, :running) # emulate that the migration was picked up by the scheduler
       m.pause
       assert m.pausing?
 
@@ -263,7 +260,7 @@ module BackgroundDataMigrations
 
     private
       def create_migration(migration_name, **attributes)
-        OnlineMigrations::BackgroundDataMigrations::Migration.create!(migration_name: migration_name, **attributes)
+        OnlineMigrations::BackgroundDataMigrations::Migration.create!(migration_name: migration_name, status: :enqueued, **attributes)
       end
   end
 end

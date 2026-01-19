@@ -5,10 +5,10 @@ ActiveRecord::Schema.define do
   enable_extension "citext"
   enable_extension "btree_gist"
 
-  create_table :background_data_migrations do |t|
+  create_table :background_data_migrations, force: :cascade do |t|
     t.string :migration_name, null: false
     t.jsonb :arguments, default: [], null: false
-    t.string :status, default: "pending", null: false
+    t.string :status, default: "enqueued", null: false
     t.string :shard
     t.string :cursor
     t.string :jid
@@ -29,11 +29,11 @@ ActiveRecord::Schema.define do
       unique: true, name: :index_background_data_migrations_on_unique_configuration
   end
 
-  create_table :background_schema_migrations do |t|
+  create_table :background_schema_migrations, force: :cascade do |t|
     t.string :migration_name, null: false
     t.string :table_name, null: false
     t.string :definition, null: false
-    t.string :status, default: "pending", null: false
+    t.string :status, default: "enqueued", null: false
     t.string :shard
     t.integer :statement_timeout
     t.datetime :started_at

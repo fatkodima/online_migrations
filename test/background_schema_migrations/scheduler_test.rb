@@ -69,7 +69,7 @@ module BackgroundSchemaMigrations
 
       assert m1.reload.running?
       run_scheduler
-      assert m2.reload.enqueued?
+      assert m2.reload.pending?
     end
 
     private

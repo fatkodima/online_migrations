@@ -59,7 +59,7 @@ module BackgroundSchemaMigrations
 
       m.status = :succeeded
       assert_not m.valid?
-      assert_includes m.errors.full_messages, "Status cannot transition background schema migration from status enqueued to succeeded"
+      assert_includes m.errors.full_messages, "Status cannot transition background schema migration from status pending to succeeded"
 
       m.status = :running
       assert m.valid?
@@ -74,7 +74,7 @@ module BackgroundSchemaMigrations
 
           assert_equal 10, m.max_attempts
           assert_equal 20, m.statement_timeout
-          assert m.enqueued?
+          assert m.pending?
         end
       end
     end
@@ -90,7 +90,7 @@ module BackgroundSchemaMigrations
       assert m.retry
 
       m.reload
-      assert m.enqueued?
+      assert m.pending?
       assert_equal 0, m.attempts
       assert_nil m.started_at
       assert_nil m.finished_at

@@ -32,7 +32,7 @@ module BackgroundSchemaMigrations
 
     def test_run_runs_migration
       m = create_migration
-      assert m.enqueued?
+      assert m.pending?
 
       run_migration(m)
 

@@ -3,7 +3,7 @@ class InstallOnlineMigrations < <%= migration_parent %>
     create_table :background_data_migrations do |t|
       t.string :migration_name, null: false
       t.jsonb :arguments, default: [], null: false
-      t.string :status, default: "enqueued", null: false
+      t.string :status, default: "pending", null: false
       t.string :shard
       t.string :cursor
       t.string :jid
@@ -28,7 +28,7 @@ class InstallOnlineMigrations < <%= migration_parent %>
       t.string :migration_name, null: false
       t.string :table_name, null: false
       t.string :definition, null: false
-      t.string :status, default: "enqueued", null: false
+      t.string :status, default: "pending", null: false
       t.string :shard
       t.integer :statement_timeout
       t.datetime :started_at

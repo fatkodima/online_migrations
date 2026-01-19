@@ -300,7 +300,8 @@ end
 
 Data Migrations can be in various states during its execution:
 
-* **enqueued**: A migration has been enqueued by the user.
+* **pending**: A migration has been created by the user.
+* **enqueued**: A migration has been enqueued by the scheduler.
 * **running**: A migration is being performed by a migration executor.
 * **pausing**: A migration has been told to pause but is finishing work.
 * **paused**: A migration was paused in the middle of the run by the user.
@@ -312,7 +313,8 @@ Data Migrations can be in various states during its execution:
   migration.pause
   ```
 
-* **failed**: A migration raises an exception when running.
+* **errored**: A migration raised an error during last run.
+* **failed**: A migration raises an error when running and retry attempts exceeded.
 * **succeeded**: A migration finished without error.
 * **cancelling**: A migration has been told to cancel but is finishing work.
 * **cancelled**: A migration was cancelled by the user.

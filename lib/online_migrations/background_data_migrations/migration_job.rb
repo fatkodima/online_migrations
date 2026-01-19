@@ -8,21 +8,15 @@ module OnlineMigrations
 
       sidekiq_options backtrace: true
 
-      sidekiq_retry_in do |count, _exception, jobhash|
+      sidekiq_retry_in do |count, exception, jobhash|
         migration_id = jobhash["args"].fetch(0)
         migration = Migration.find(migration_id)
+        migration.persist_error(exception, count + 1)
+        OnlineMigrations.config.background_data_migrations.error_handler.call(exception, migration)
 
         if count + 1 >= migration.max_attempts
           :kill
         end
-      end
-
-      sidekiq_retries_exhausted do |jobhash, exception|
-        migration_id = jobhash["args"].fetch(0)
-        migration = Migration.find(migration_id)
-        migration.persist_error(exception)
-
-        OnlineMigrations.config.background_data_migrations.error_handler.call(exception, migration)
       end
 
       TICKER_INTERVAL = 5 # seconds
@@ -57,6 +51,15 @@ module OnlineMigrations
       end
 
       def on_resume
+        if @migration.errored? # the job was retried
+          @migration.update!(
+            status: :running,
+            error_class: nil,
+            error_message: nil,
+            backtrace: nil
+          )
+        end
+
         @data_migration.after_resume
       end
 

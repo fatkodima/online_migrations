@@ -11,7 +11,7 @@ module OnlineMigrations
       include ShardAware
 
       STATUSES = [
-        "enqueued",    # The migration has been enqueued by the user.
+        "pending",     # The migration has been created by the user.
         "running",     # The migration is being performed by a migration executor.
         "errored",     # The migration raised an error during last run.
         "failed",      # The migration raises an error when running and retry attempts exceeded.
@@ -25,7 +25,7 @@ module OnlineMigrations
       self.table_name = :background_schema_migrations
 
       scope :queue_order, -> { order(created_at: :asc) }
-      scope :active, -> { where(status: [:enqueued, :running, :errored]) }
+      scope :active, -> { where(status: [:pending, :running, :errored]) }
 
       alias_attribute :name, :migration_name
 
@@ -59,12 +59,12 @@ module OnlineMigrations
       end
 
       # Returns whether the migration is active, which is defined as
-      # having a status of enqueued, or running.
+      # having a status of pending, or running.
       #
       # @return [Boolean] whether the migration is active.
       #
       def active?
-        enqueued? || running?
+        pending? || running?
       end
 
       # Returns whether this migration is pausable.
@@ -98,7 +98,7 @@ module OnlineMigrations
       def retry
         if failed?
           update!(
-            status: :enqueued,
+            status: :pending,
             attempts: 0,
             started_at: nil,
             finished_at: nil,
@@ -119,7 +119,7 @@ module OnlineMigrations
       #
       def enqueue
         if delayed?
-          enqueued!
+          pending!
           true
         else
           false
@@ -133,7 +133,7 @@ module OnlineMigrations
       def cancel
         if completed?
           false
-        elsif enqueued? || errored? || delayed? || stuck?
+        elsif pending? || errored? || delayed? || stuck?
           cancelled!
           true
         end
