@@ -436,7 +436,10 @@ module OnlineMigrations
           }
 
           options[:using] = index.using if index.using
-          options[:where] = index.where if index.where
+
+          if index.where
+            options[:where] = index.where.gsub(/\b#{from_column}\b/, to_column)
+          end
 
           if index.opclasses.present?
             opclasses = index.opclasses.dup

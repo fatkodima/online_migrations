@@ -33,6 +33,7 @@ module SchemaStatements
         t.index :long_name
         t.index "lower(name)"
         t.index "lower(long_name)"
+        t.index :user_id, where: "user_id IS NOT NULL"
 
         t.foreign_key :users
         t.check_constraint "star_count >= 0"
@@ -224,6 +225,15 @@ module SchemaStatements
       assert_equal(2, @connection.indexes(:projects).count { |index| index.columns.include?("name_for_type_change") })
     end
 
+    def test_finalize_column_type_change_copies_indexes_with_where_clause
+      @connection.initialize_column_type_change(:projects, :user_id, :bigint)
+      @connection.finalize_column_type_change(:projects, :user_id)
+
+      indexes = @connection.indexes(:projects)
+      assert_equal(1, indexes.count { |index| index.where && index.where.include?("user_id_for_type_change IS NOT NULL") })
+      assert_equal(1, indexes.count { |index| index.where && index.where.include?("user_id IS NOT NULL") })
+    end
+
     def test_finalize_column_type_change_copies_indexes_with_long_names
       long_column_name = "a" * (@connection.max_identifier_length - "index_projects_on_".length)
 
@@ -245,12 +255,12 @@ module SchemaStatements
       # Rails' 'defined_for?' does not consider ':where' option, so without care the index
       # considered as duplicate by idempotency check and will not be copied when copying indexes.
       @connection.add_index(:projects, :name, where: "star_count > 0", name: "partial_index")
-      assert_equal 6, @connection.indexes(:projects).count
+      assert_equal 7, @connection.indexes(:projects).count
 
       @connection.initialize_column_type_change(:projects, :name, :string)
       @connection.finalize_column_type_change(:projects, :name)
 
-      assert_equal 9, @connection.indexes(:projects).count # 6 for 'name' and its duplicate column, 3 others
+      assert_equal 10, @connection.indexes(:projects).count # 6 for 'name' and its duplicate column, 3 others
     end
 
     def test_finalize_column_type_change_copies_foreign_key
