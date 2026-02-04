@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.33.0 (2026-02-04)
+
 - Change background migrations default status to "pending"
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background migrations.
