@@ -13,12 +13,14 @@ module OnlineMigrations
         # enqueued -> failed occurs when the migration job fails to be enqueued, or
         #   if the migration is deleted before is starts running.
         "enqueued" => ["running", "paused", "cancelled", "failed"],
+        # running -> enqueued occurs when the migration is stuck and rescheduled by the scheduler.
         # running -> succeeded occurs when the migration completes successfully.
         # running -> pausing occurs when a user pauses the migration as it's performing.
         # running -> cancelling occurs when a user cancels the migration as it's performing.
         # running -> errored occurs when the migration raised an error during the last run.
         # running -> failed occurs when the migration raises an error when running and retry attempts exceeded.
         "running" => [
+          "enqueued",
           "succeeded",
           "pausing",
           "cancelling",

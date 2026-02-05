@@ -48,7 +48,7 @@ module BackgroundDataMigrations
       assert_equal "MakeAllNonAdmins", m.migration_name
     end
 
-    def test_progress_succeded_migration
+    def test_progress_succeeded_migration
       m = build_migration(status: :succeeded)
       assert_in_delta 100.0, m.progress
     end
