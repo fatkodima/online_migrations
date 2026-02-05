@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.33.1 (2026-02-05)
+
 - Allow "running" to "enqueued" state transition for stuck background data migrations
 
 ## 0.33.0 (2026-02-04)
