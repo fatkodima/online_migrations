@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Allow "running" to "enqueued" state transition for stuck background data migrations
+
 ## 0.33.0 (2026-02-04)
 
 - Change background migrations default status to "pending"
