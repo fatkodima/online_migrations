@@ -1,4 +1,4 @@
-class BackgroundDataMigrationsChangeStatusDefault < <%= migration_parent %>
+class BackgroundMigrationsChangeStatusDefault < <%= migration_parent %>
   def change
     safety_assured do
       change_column_default :background_data_migrations, :status, from: "enqueued", to: "pending"
