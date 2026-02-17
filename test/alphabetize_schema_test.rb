@@ -44,11 +44,7 @@ class AlphabetizeSchemaTest < Minitest::Test
   private
     def dump_schema
       io = StringIO.new
-      if OnlineMigrations::Utils.ar_version >= 7.2
-        ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection.pool, io)
-      else
-        ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection, io)
-      end
+      ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection.pool, io)
       io.string
     end
 end

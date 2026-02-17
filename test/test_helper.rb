@@ -29,10 +29,8 @@ ActiveRecord::Base.configurations =
 
 ActiveRecord::Base.establish_connection(:test)
 
-if OnlineMigrations::Utils.ar_version >= 7.2
-  # https://github.com/rails/rails/pull/50284
-  ActiveRecord::Base.automatically_invert_plural_associations = true
-end
+# https://github.com/rails/rails/pull/50284
+ActiveRecord::Base.automatically_invert_plural_associations = true
 
 if ENV["VERBOSE"]
   ActiveRecord::Base.logger = ActiveSupport::Logger.new($stdout)
@@ -60,11 +58,7 @@ def prepare_database
     connection.drop_table(table_name, force: :cascade)
   end
 
-  if OnlineMigrations::Utils.ar_version >= 7.2
-    ActiveRecord::SchemaMigration.new(connection.pool).create_table
-  else
-    ActiveRecord::SchemaMigration.new(connection).create_table
-  end
+  ActiveRecord::SchemaMigration.new(connection.pool).create_table
 end
 
 prepare_database

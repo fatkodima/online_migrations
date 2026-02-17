@@ -208,12 +208,8 @@ module OnlineMigrations
 
         # Extension point, do not remove this method.
         def with_connection(&block)
-          if Utils.ar_version >= 7.2
-            # https://github.com/rails/rails/pull/51083
-            connection_class.with_connection(&block)
-          else
-            yield connection_class.connection
-          end
+          # https://github.com/rails/rails/pull/51083
+          connection_class.with_connection(&block)
         end
 
         def with_statement_timeout(connection, timeout)

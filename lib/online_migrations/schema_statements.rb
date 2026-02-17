@@ -992,12 +992,7 @@ module OnlineMigrations
 
       def __tmp_table_name_for_column_rename(table_name)
         suffix = "_column_rename"
-
-        # On ActiveRecord 7.1 can use table_name_length instead of max_identifier_length,
-        # see https://github.com/rails/rails/pull/45136.
-        # Also we need to account for "_pkey", because older versions does not correctly rename
-        # tables with long names. Remove when supporting newer versions only.
-        prefix_length = max_identifier_length - "_pkey".size - suffix.length
+        prefix_length = max_identifier_length - suffix.length
         table_name[0, prefix_length] + suffix
       end
   end

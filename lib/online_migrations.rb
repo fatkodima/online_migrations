@@ -116,15 +116,10 @@ module OnlineMigrations
       ActiveRecord::Migration.prepend(OnlineMigrations::Migration)
       ActiveRecord::Migrator.prepend(OnlineMigrations::Migrator)
       ActiveRecord::SchemaDumper.prepend(OnlineMigrations::SchemaDumper)
+      ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
 
       ActiveRecord::Tasks::DatabaseTasks.singleton_class.prepend(OnlineMigrations::DatabaseTasks)
       ActiveRecord::Migration::CommandRecorder.include(OnlineMigrations::CommandRecorder)
-
-      if OnlineMigrations::Utils.ar_version >= 7.2
-        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache72)
-      else
-        ActiveRecord::ConnectionAdapters::SchemaCache.prepend(OnlineMigrations::SchemaCache)
-      end
 
       if !ActiveRecord::Batches::BatchEnumerator.method_defined?(:use_ranges)
         ActiveRecord::Batches::BatchEnumerator.include(OnlineMigrations::ActiveRecordBatchEnumerator)

@@ -43,8 +43,6 @@ jobs:
       matrix:
         include:
           - ruby-version: "3.1"
-            gemfile: activerecord_71.gemfile
-          - ruby-version: "3.1"
             gemfile: activerecord_72.gemfile
           - ruby-version: "4.0"
             gemfile: activerecord_80.gemfile
