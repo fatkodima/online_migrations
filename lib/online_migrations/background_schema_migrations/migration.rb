@@ -151,28 +151,28 @@ module OnlineMigrations
       # @private
       def run
         on_shard_if_present do
-          connection = connection_class.connection
+          with_connection do |connection|
+            connection.with_lock_retries do
+              statement_timeout = self.statement_timeout || OnlineMigrations.config.statement_timeout
 
-          connection.with_lock_retries do
-            statement_timeout = self.statement_timeout || OnlineMigrations.config.statement_timeout
-
-            with_statement_timeout(connection, statement_timeout) do
-              if index_addition?
-                index = connection.indexes(table_name).find { |i| name.match?(/\b#{i.name}\b/) }
-                if index
-                  if index.valid?
-                    return
-                  else
-                    connection.remove_index(table_name, name: index.name, algorithm: :concurrently)
+              with_statement_timeout(connection, statement_timeout) do
+                if index_addition?
+                  index = connection.indexes(table_name).find { |i| name.match?(/\b#{i.name}\b/) }
+                  if index
+                    if index.valid?
+                      return
+                    else
+                      connection.remove_index(table_name, name: index.name, algorithm: :concurrently)
+                    end
                   end
                 end
-              end
 
-              connection.execute(definition)
+                connection.execute(definition)
 
-              # Outdated statistics + a new index can hurt performance of existing queries.
-              if OnlineMigrations.config.auto_analyze
-                connection.execute("ANALYZE #{table_name}")
+                # Outdated statistics + a new index can hurt performance of existing queries.
+                if OnlineMigrations.config.auto_analyze
+                  connection.execute("ANALYZE #{table_name}")
+                end
               end
             end
           end
@@ -204,6 +204,10 @@ module OnlineMigrations
           SQL
 
           indexes_in_progress.include?(name)
+        end
+
+        def with_connection(&block)
+          connection_class.with_connection(&block)
         end
 
         def with_statement_timeout(connection, timeout)
