@@ -40,7 +40,7 @@ Check the [source code](https://github.com/fatkodima/online_migrations/blob/mast
 
 ## Requiring safety_assured reason
 
-To require safety reason explanation when calling `safery_assured` (disabled by default):
+To require safety reason explanation when calling `safety_assured` (disabled by default):
 
 ```ruby
 config.require_safety_assured_reason = true

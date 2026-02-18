@@ -12,7 +12,7 @@ OnlineMigrations.configure do |config|
   # Set the version of the production database so the right checks are run in development.
   # config.target_version = 17
 
-  # Configure whether to require safety reason explanation when calling #safery_assured.
+  # Configure whether to require safety reason explanation when calling #safety_assured.
   config.require_safety_assured_reason = false
 
   # Configure whether to perform checks when migrating down.

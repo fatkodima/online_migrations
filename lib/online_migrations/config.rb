@@ -73,7 +73,7 @@ module OnlineMigrations
       end
     end
 
-    # Whether to require safety reason explanation when calling #safery_assured
+    # Whether to require safety reason explanation when calling #safety_assured
     #
     # Disabled by default
     # @return [Boolean]
