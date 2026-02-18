@@ -94,7 +94,7 @@
 - Drop support for Ruby < 3.1 and Rails < 7.1
 - Add check for `change_column` for columns with check constraints
 
-- Allow to require safety reason explanation when calling `safery_assured`
+- Allow to require safety reason explanation when calling `safety_assured`
 
   ```ruby
   # config/initializers/online_migrations.rb
