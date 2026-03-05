@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix message for adding to `ignored_columns` when renaming a column
+
 ## 0.33.1 (2026-02-05)
 
 - Allow "running" to "enqueued" state transition for stuck background data migrations
