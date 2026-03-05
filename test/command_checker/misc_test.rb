@@ -182,9 +182,15 @@ module CommandChecker
           end
 
         4. Replace usages of the old column with a new column in the codebase
-        5. Deploy
-        6. Remove the column rename config from step 1
-        7. Remove the VIEW created in step 3 and finally rename the column:
+        5. If the model has `ignored_columns` set, or you enabled
+          `enumerate_columns_in_select_statements`, ignore the old column:
+
+          self.ignored_columns += [:name]
+
+        6. Deploy
+        7. Remove the column rename config from step 1
+        8. Remove the column ignore from step 5, if added
+        9. Remove the VIEW created in step 3 and finally rename the column:
 
           class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent}
             def change
@@ -192,7 +198,7 @@ module CommandChecker
             end
           end
 
-        8. Deploy
+        10. Deploy
       MSG
     end
 
@@ -213,32 +219,6 @@ module CommandChecker
             config.active_record.partial_inserts = true
         MSG
       end
-    end
-
-    def test_rename_column_with_enumerate_columns_in_select_statements
-      previous = ActiveRecord::Base.enumerate_columns_in_select_statements
-      ActiveRecord::Base.enumerate_columns_in_select_statements = true
-
-      assert_unsafe RenameColumn, <<~MSG
-        5. Ignore old column
-
-          self.ignored_columns += [:name]
-
-        6. Deploy
-        7. Remove the column rename config from step 1
-        8. Remove the column ignore from step 5
-        9. Remove the VIEW created in step 3 and finally rename the column:
-
-          class FinalizeCommandChecker::MiscTest::RenameColumn < #{migration_parent}
-            def change
-              finalize_column_rename :users, :name, :first_name
-            end
-          end
-
-        10. Deploy
-      MSG
-    ensure
-      ActiveRecord::Base.enumerate_columns_in_select_statements = previous
     end
 
     class RenameColumnNewTable < TestMigration
@@ -536,7 +516,7 @@ module CommandChecker
 
     def test_prints_more_details_link
       assert_unsafe RenameColumn, <<~MSG
-        8. Deploy
+        10. Deploy
 
         For more details, see https://github.com/fatkodima/online_migrations#renaming-a-column
       MSG

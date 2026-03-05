@@ -441,8 +441,9 @@ It will use a combination of a VIEW and column aliasing to work with both column
    ```
 
 4. Replace usages of the old column with a new column in the codebase
-5. If you enabled Active Record `enumerate_columns_in_select_statements` setting in your application
-   (is disabled by default in Active Record >= 7), then you need to ignore old column:
+5. If the model has `ignored_columns` set, or you enabled Active Record
+   `enumerate_columns_in_select_statements` setting (is disabled by default in Active Record >= 7),
+   then you need to ignore the old column:
 
    ```ruby
    class User < ApplicationRecord

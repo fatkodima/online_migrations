@@ -148,14 +148,14 @@ It will use a combination of a VIEW and column aliasing to work with both column
   end
 
 4. Replace usages of the old column with a new column in the codebase
-<% if ActiveRecord::Base.enumerate_columns_in_select_statements %>
-5. Ignore old column
+5. If the model has `ignored_columns` set, or you enabled
+  `enumerate_columns_in_select_statements`, ignore the old column:
 
   self.ignored_columns += [:<%= column_name %>]
 
 6. Deploy
 7. Remove the column rename config from step 1
-8. Remove the column ignore from step 5
+8. Remove the column ignore from step 5, if added
 9. Remove the VIEW created in step 3 and finally rename the column:
 
   class Finalize<%= migration_name %> < <%= migration_parent %>
@@ -165,19 +165,7 @@ It will use a combination of a VIEW and column aliasing to work with both column
   end
 
 10. Deploy
-<% else %>
-5. Deploy
-6. Remove the column rename config from step 1
-7. Remove the VIEW created in step 3 and finally rename the column:
-
-  class Finalize<%= migration_name %> < <%= migration_parent %>
-    def change
-      finalize_column_rename :<%= table_name %>, :<%= column_name %>, :<%= new_column %>
-    end
-  end
-
-8. Deploy
-<% end %>",
+",
 
       change_column_with_not_null:
 "Changing the type is safe, but setting NOT NULL is not.",
