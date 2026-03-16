@@ -1,6 +1,7 @@
 ## master (unreleased)
 
 - Fix message for adding to `ignored_columns` when renaming a column
+- Schedule background data migration jobs only after committing the database transaction
 
 ## 0.33.1 (2026-02-05)
 
