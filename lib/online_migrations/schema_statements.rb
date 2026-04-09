@@ -705,7 +705,7 @@ module OnlineMigrations
         add_foreign_key(table_name, foreign_table_name, **foreign_key, column: column_name, validate: false)
 
         if foreign_key[:validate] != false
-          validate_foreign_key(table_name, foreign_table_name, **foreign_key)
+          validate_foreign_key(table_name, foreign_table_name, **foreign_key, column: column_name)
         end
       end
     end

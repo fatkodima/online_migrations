@@ -115,6 +115,17 @@ module SchemaStatements
       assert_equal 2, connection.foreign_keys(:milestones).size
     end
 
+    def test_add_reference_concurrently_validates_correct_foreign_key_when_multiple_reference_same_table
+      connection.add_reference_concurrently :milestones, :project, foreign_key: true
+      connection.add_reference_concurrently :milestones, :root_project, foreign_key: { to_table: :projects }
+
+      foreign_keys = connection.foreign_keys(:milestones)
+      assert_equal 2, foreign_keys.size
+      foreign_keys.each do |fk|
+        assert fk.validated?, "Expected foreign key on #{fk.column} to be validated"
+      end
+    end
+
     def test_polymorphic_add_reference_concurrently
       connection.create_table(:images)
       connection.add_reference_concurrently(:images, :imageable, polymorphic: true, index: true)
