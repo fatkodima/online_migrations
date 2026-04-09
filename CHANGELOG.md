@@ -1,4 +1,5 @@
 ## master (unreleased)
+- Fix validating foreign key in `add_reference_concurrently` when multiple foreign keys target the same table
 
 ## 0.33.2 (2026-03-16)
 
