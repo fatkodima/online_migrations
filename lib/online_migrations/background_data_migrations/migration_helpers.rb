@@ -339,6 +339,7 @@ module OnlineMigrations
       # @param migration_name [String, Class] Background migration class name
       # @param arguments [Array] Extra arguments to pass to the migration instance when the migration runs
       # @param delay [Boolean] Whether this migration should be delayed and approved by the user to start running.
+      # @param shard [String, Symbol] Specific shard this migration will be enqueued for. Defaults to all shards.
       # @option options [Integer] :max_attempts (5) Maximum number of batch run attempts
       # @option options [String, nil] :connection_class_name Class name to use to get connections
       #
@@ -369,7 +370,7 @@ module OnlineMigrations
       # @note For convenience, the enqueued background data migration is run inline
       #     in development and test environments
       #
-      def enqueue_background_data_migration(migration_name, *arguments, delay: false, **options)
+      def enqueue_background_data_migration(migration_name, *arguments, delay: false, shard: nil, **options)
         options.assert_valid_keys(:max_attempts, :iteration_pause, :connection_class_name)
 
         migration_name = migration_name.name if migration_name.is_a?(Class)
@@ -380,8 +381,16 @@ module OnlineMigrations
         end
 
         connection_class = options[:connection_class_name].constantize
-        shards = Utils.shard_names(connection_class)
-        shards = [nil] if shards.size == 1
+        shards = Utils.shard_names(connection_class).map(&:to_s)
+        if shards.size == 1
+          shards = [nil]
+        elsif shard
+          shard = shard.to_s
+          raise "Unknown shard: #{shard}" if !shards.include?(shard)
+
+          shards = [shard]
+        end
+
         status = delay ? :delayed : :pending
 
         shards.each do |shard|

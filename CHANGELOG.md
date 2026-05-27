@@ -1,6 +1,14 @@
 ## master (unreleased)
 
 - Drop support for Rails < 7.2
+
+- Add ability to enqueue background migrations for specific shards (if using sharding)
+
+  ```ruby
+  add_index_in_background(:users, :name, connection_class_name: "ApplicationRecord", shard: :shard_one)
+  enqueue_background_data_migration("MyMigration", shard: :shard_one)
+  ```
+
 - Fix validating foreign key in `add_reference_concurrently` when multiple foreign keys target the same table
 
 ## 0.33.2 (2026-03-16)
@@ -25,7 +33,7 @@
 - Add ability to create delayed background migrations
 
   ```ruby
-  add_index_in_background(:users, :name, delay: true)
+  add_index_in_background(:users, :name, connection_class_name: "ApplicationRecord", delay: true)
   enqueue_background_data_migration("MyMigration", delay: true)
   ```
 

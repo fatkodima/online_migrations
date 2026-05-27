@@ -4,7 +4,7 @@ module OnlineMigrations
   module BackgroundSchemaMigrations
     module MigrationHelpers
       def add_index_in_background(table_name, column_name, **options)
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay, :shard)
 
         options[:algorithm] = :concurrently
         index, algorithm, if_not_exists = add_index_options(table_name, column_name, **options)
@@ -34,7 +34,7 @@ module OnlineMigrations
       def remove_index_in_background(table_name, column_name = nil, name:, **options)
         raise ArgumentError, "Index name must be specified" if name.blank?
 
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay, :shard)
 
         if !index_exists?(table_name, column_name, **options, name: name)
           Utils.raise_or_say("Index deletion was not enqueued because the index does not exist.")
@@ -46,7 +46,7 @@ module OnlineMigrations
       end
 
       def validate_foreign_key_in_background(from_table, to_table = nil, **options)
-        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay)
+        migration_options = options.extract!(:max_attempts, :statement_timeout, :connection_class_name, :delay, :shard)
 
         if !foreign_key_exists?(from_table, to_table, **options)
           Utils.raise_or_say("Foreign key validation was not enqueued because the foreign key does not exist.")
@@ -87,7 +87,7 @@ module OnlineMigrations
         end
       end
 
-      def enqueue_background_schema_migration(migration_name, table_name, connection_class_name: nil, delay: false, **options)
+      def enqueue_background_schema_migration(migration_name, table_name, connection_class_name: nil, delay: false, shard: nil, **options)
         options.assert_valid_keys(:definition, :max_attempts, :statement_timeout)
 
         if Utils.multiple_databases? && !connection_class_name
@@ -104,8 +104,15 @@ module OnlineMigrations
         # Normalize to the real connection class name.
         connection_class_name = connection_class.name
 
-        shards = Utils.shard_names(connection_class)
-        shards = [nil] if shards.size == 1
+        shards = Utils.shard_names(connection_class).map(&:to_s)
+        if shards.size == 1
+          shards = [nil]
+        elsif shard
+          shard = shard.to_s
+          raise "Unknown shard: #{shard}" if !shards.include?(shard)
+
+          shards = [shard]
+        end
 
         status = delay ? :delayed : :pending
 

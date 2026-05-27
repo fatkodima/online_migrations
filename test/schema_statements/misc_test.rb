@@ -235,6 +235,24 @@ module SchemaStatements
       end
     end
 
+    def test_enqueue_background_data_migration_for_specific_shard
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.enqueue_background_data_migration("MakeAllDogsNice", shard: :shard_one)
+        assert_equal 1, OnlineMigrations::BackgroundDataMigrations::Migration.count
+
+        m = last_data_migration
+        assert_equal "shard_one", m.shard
+      end
+    end
+
+    def test_enqueue_background_data_migration_for_specific_shard_raises_for_unknown_shard
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        assert_raises_with_message(StandardError, /Unknown shard: unknown_shard/i) do
+          @connection.enqueue_background_data_migration("MakeAllDogsNice", shard: :unknown_shard)
+        end
+      end
+    end
+
     def test_remove_non_existing_background_migration
       assert_nothing_raised do
         @connection.remove_background_data_migration("NonExistent")

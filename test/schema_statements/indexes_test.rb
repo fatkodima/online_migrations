@@ -251,6 +251,34 @@ module SchemaStatements
       end
     end
 
+    def test_add_index_in_background_for_specific_shard
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        @connection.add_index_in_background(:dogs, :name, connection_class_name: "ShardRecord", shard: :shard_one)
+        assert_equal 1, OnlineMigrations::BackgroundSchemaMigrations::Migration.count
+
+        m = last_schema_migration
+        assert_equal "shard_one", m.shard
+      end
+    ensure
+      on_shard(:shard_one) { Dog.connection.remove_index(:dogs, :name) }
+    end
+
+    def test_add_index_in_background_for_specific_shard_raises_for_unknown_shard
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        assert_raises_with_message(StandardError, /Unknown shard: unknown_shard/i) do
+          @connection.add_index_in_background(:dogs, :name, connection_class_name: "ShardRecord", shard: :unknown_shard)
+        end
+      end
+    end
+
+    def test_enqueue_background_data_migration_for_specific_shard_raises_for_unknown_shard
+      OnlineMigrations.config.stub(:run_background_migrations_inline, -> { false }) do
+        assert_raises_with_message(StandardError, /Unknown shard: unknown_shard/i) do
+          @connection.enqueue_background_data_migration("MakeAllDogsNice", shard: :unknown_shard)
+        end
+      end
+    end
+
     def test_remove_index_in_background_raises_without_name
       @connection.add_index(:users, :name)
       assert_raises_with_message(ArgumentError, /Index name must be specified/i) do
