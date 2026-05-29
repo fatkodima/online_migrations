@@ -37,7 +37,7 @@ module OnlineMigrations
 
         with_lock do
           stuck_migrations, active_migrations = relation.running.partition(&:stuck?)
-          runnable_migrations = relation.pending + stuck_migrations
+          runnable_migrations = migrations_with_existing_classes(relation.pending) + stuck_migrations
 
           # Ensure no more than 'concurrency' migrations are running at the same time.
           remaining_to_enqueue = concurrency - active_migrations.count
@@ -68,6 +68,17 @@ module OnlineMigrations
               Migration.connection.execute("LOCK #{Migration.table_name} IN ACCESS EXCLUSIVE MODE")
               yield
             end
+          end
+        end
+
+        def migrations_with_existing_classes(migrations)
+          migrations.select do |migration|
+            # Detect if the data migration class exists.
+            # It may not yet exist if the data migration was enqueued before the deploy finished.
+            migration.data_migration
+            true
+          rescue DataMigration::NotFoundError
+            false
           end
         end
 

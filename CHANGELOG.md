@@ -2,6 +2,11 @@
 
 - Drop support for Rails < 7.2
 
+- Do not schedule background data migrations with non existent data migration classes
+
+    This prevents a situation when the background data migration was enqueued and started running
+    before the deploy completes and the data migration class is available.
+
 - Add ability to enqueue background migrations for specific shards (if using sharding)
 
   ```ruby

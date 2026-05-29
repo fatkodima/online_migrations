@@ -18,10 +18,8 @@ class DataMigrationTest < Minitest::Test
   end
 
   def test_named_raises_if_name_does_not_refer_to_migration
-    error = assert_raises(OnlineMigrations::DataMigration::NotFoundError) do
+    assert_raises_with_message(ArgumentError, /NotAMigration is not a Data Migration/i) do
       OnlineMigrations::DataMigration.named("NotAMigration")
     end
-    assert_includes error.message, "NotAMigration is not a Data Migration"
-    assert_equal "NotAMigration", error.name
   end
 end

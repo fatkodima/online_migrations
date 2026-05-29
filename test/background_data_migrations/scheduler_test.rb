@@ -86,6 +86,15 @@ module BackgroundDataMigrations
       assert_not_nil m.jid
     end
 
+    def test_ignores_migrations_with_non_existent_classes
+      m = create_migration(migration_name: "MakeAllNonAdmins") # some existent migration to pass validations
+      m.update_columns(migration_name: "NonExistent") # emulate non existent migration class
+
+      run_scheduler
+
+      assert_empty OnlineMigrations::BackgroundDataMigrations::MigrationJob.jobs
+    end
+
     class CustomJob < OnlineMigrations::BackgroundDataMigrations::MigrationJob
     end
 

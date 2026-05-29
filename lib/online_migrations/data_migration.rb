@@ -16,6 +16,7 @@ module OnlineMigrations
       # @return [DataMigration] the Data Migration with the given name.
       #
       # @raise [NotFoundError] if a Data Migration with the given name does not exist.
+      # @raise [ArgumentError] if a Data Migration with the given name is not a subclass of DataMigration.
       #
       def named(name)
         namespace = OnlineMigrations.config.background_data_migrations.migrations_module.constantize
@@ -26,7 +27,7 @@ module OnlineMigrations
 
         raise NotFoundError.new("Data Migration #{name} not found", name) if migration.nil?
         if !(migration.is_a?(Class) && migration < self)
-          raise NotFoundError.new("#{name} is not a Data Migration", name)
+          raise ArgumentError, "#{name} is not a Data Migration"
         end
 
         migration
