@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.34.0 (2026-05-29)
+
 - Drop support for Rails < 7.2
 
 - Do not schedule background data migrations with non existent data migration classes
