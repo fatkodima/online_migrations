@@ -55,6 +55,18 @@ module SchemaStatements
       assert @connection.column_exists?(:users, :nice)
     end
 
+    def test_add_column_is_idempotent_for_bigint
+      @connection.add_column(:users, :manager_id, :bigint)
+      assert_nothing_raised { @connection.add_column(:users, :manager_id, :bigint) }
+      assert @connection.column_exists?(:users, :manager_id)
+    end
+
+    def test_add_column_is_idempotent_with_boolean_default
+      @connection.add_column(:users, :active, :boolean, default: false)
+      assert_nothing_raised { @connection.add_column(:users, :active, :boolean, default: false) }
+      assert @connection.column_exists?(:users, :active)
+    end
+
     def test_add_exclusion_constraint
       user = User.create!
       start_date = 3.days.ago

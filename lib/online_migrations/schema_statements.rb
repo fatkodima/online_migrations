@@ -635,7 +635,7 @@ module OnlineMigrations
     # @see https://api.rubyonrails.org/v8.1/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_column
     #
     def add_column(table_name, column_name, type, **options)
-      if column_exists?(table_name, column_name, type, **options)
+      if column_exists?(table_name, column_name)
         Utils.say("Column was not added because it already exists (this may be due to an aborted migration " \
                   "or similar) table_name: #{table_name}, column_name: #{column_name}")
       else
