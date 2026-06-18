@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "erb"
-require "set"
 
 module OnlineMigrations
   # @private

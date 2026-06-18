@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Drop support for Ruby < 3.3
+
 ## 0.34.0 (2026-05-29)
 
 - Drop support for Rails < 7.2

@@ -16,7 +16,7 @@ See [comparison to `strong_migrations`](#comparison-to-strong_migrations)
 
 ## Requirements
 
-- Ruby 3.1+
+- Ruby 3.3+
 - Rails 7.2+
 - PostgreSQL 12+
 
