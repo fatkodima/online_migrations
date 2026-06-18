@@ -54,7 +54,7 @@ Style/ConditionalAssignment:
   Enabled: false
 
 Style/SafeNavigation:
-  Enabled: false
+  MaxChainLength: 1
 
 Style/NumericLiterals:
   Enabled: false
@@ -93,7 +93,6 @@ Style/ArgumentsForwarding:
 Style/DisableSyntax:
   DisableSyntax:
     - unless
-    - safe_navigation
     - endless_methods
     - arguments_forwarding
     - numbered_parameters

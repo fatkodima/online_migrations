@@ -843,8 +843,8 @@ module OnlineMigrations
 
       def index_include_column?(index, column)
         index.columns.include?(column) ||
-          (index.include && index.include.include?(column)) ||
-          (index.where && index.where.include?(column))
+          index.include&.include?(column) ||
+          index.where&.include?(column)
       end
 
       def run_custom_checks(method, args)

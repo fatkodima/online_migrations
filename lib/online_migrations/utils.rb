@@ -145,7 +145,7 @@ module OnlineMigrations
 
       def run_background_migrations_inline?
         run_inline = OnlineMigrations.config.run_background_migrations_inline
-        run_inline && run_inline.call
+        run_inline.call if run_inline.present?
       end
     end
   end

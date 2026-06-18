@@ -111,7 +111,7 @@ module OnlineMigrations
 
         relation.update_all(updates)
 
-        progress.call(relation) if progress
+        progress.call(relation) if progress.present?
 
         sleep(pause_ms * 0.001) if pause_ms > 0
       end
