@@ -45,7 +45,7 @@ module OnlineMigrations
 
       true
     end
-    ruby2_keywords(:check) if respond_to?(:ruby2_keywords, true)
+    ruby2_keywords(:check)
 
     def version_safe?
       version && version <= OnlineMigrations.config.start_after
@@ -575,7 +575,7 @@ module OnlineMigrations
 
         if index_def
           existing_options = [:name, :columns, :unique, :where, :type, :using, :opclasses].filter_map do |option|
-            [option, index_def.public_send(option)] if index_def.respond_to?(option)
+            [option, index_def.public_send(option)]
           end.to_h
 
           @removed_indexes << IndexDefinition.new(table: table_name, **existing_options)

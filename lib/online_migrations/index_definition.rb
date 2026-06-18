@@ -28,7 +28,7 @@ module OnlineMigrations
       return false if type != other.type
       return false if using != other.using
       return false if where != other.where
-      return false if other.respond_to?(:opclasses) && opclasses != other.opclasses
+      return false if opclasses != other.opclasses
 
       if unique && !other.unique
         false

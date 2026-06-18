@@ -48,7 +48,7 @@ module OnlineMigrations
           record(:"#{method}", args, &block)  #   record(:create_table, args, &block)
         end                                   # end
       RUBY
-      ruby2_keywords(method) if respond_to?(:ruby2_keywords, true)
+      ruby2_keywords(method)
     end
 
     private

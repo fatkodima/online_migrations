@@ -393,10 +393,8 @@ module OnlineMigrations
       def __options_from_column(column, options)
         result = {}
         options.each do |option|
-          if column.respond_to?(option)
-            value = column.public_send(option)
-            result[option] = value if !value.nil?
-          end
+          value = column.public_send(option)
+          result[option] = value if !value.nil?
         end
         result
       end
