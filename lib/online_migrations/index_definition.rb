@@ -3,10 +3,11 @@
 module OnlineMigrations
   # @private
   class IndexDefinition
-    attr_reader :table, :columns, :unique, :opclasses, :where, :type, :using
+    attr_reader :table, :name, :columns, :unique, :opclasses, :where, :type, :using
 
     def initialize(**options)
-      @table = options[:table]
+      @table = options[:table]&.to_s
+      @name = options[:name]&.to_s
       @columns = Array(options[:columns]).map(&:to_s)
       @unique = options[:unique]
       @opclasses = options[:opclass] || {}
@@ -20,7 +21,7 @@ module OnlineMigrations
       # For ActiveRecord::ConnectionAdapters::IndexDefinition is for expression indexes,
       # `columns` is a string
       table == other.table &&
-        columns.intersect?(Array(other.columns))
+        ((name && name == other.name) || columns.intersect?(Array(other.columns)))
     end
 
     # @param other [OnlineMigrations::IndexDefinition, ActiveRecord::ConnectionAdapters::IndexDefinition]

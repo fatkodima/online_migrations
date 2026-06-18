@@ -1,6 +1,7 @@
 ## master (unreleased)
 
 - Drop support for Ruby < 3.3
+- Make "replacing an index" check independent of the live database state
 
 ## 0.34.0 (2026-05-29)
 

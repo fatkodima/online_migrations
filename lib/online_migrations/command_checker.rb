@@ -573,13 +573,21 @@ module OnlineMigrations
             Array(index.columns).map(&:to_s) == Array(options[:column]).map(&:to_s)
         end
 
-        if index_def
-          existing_options = [:name, :columns, :unique, :where, :type, :using, :opclasses].filter_map do |option|
-            [option, index_def.public_send(option)]
-          end.to_h
+        # IndexDefinition expects "columns", but "remove_index" API uses "column".
+        options[:columns] = options[:column]
 
-          @removed_indexes << IndexDefinition.new(table: table_name, **existing_options)
-        end
+        # Fall back to the declared options when the index isn't present in the database,
+        # so an index remove → add is still recorded and caught.
+        existing_options =
+          [:name, :columns, :unique, :where, :type, :using, :opclasses].index_with do |option|
+            if index_def
+              index_def.public_send(option)
+            else
+              options[option]
+            end
+          end.compact
+
+        @removed_indexes << IndexDefinition.new(table: table_name, **existing_options)
       end
 
       def add_foreign_key(from_table, to_table, **options)

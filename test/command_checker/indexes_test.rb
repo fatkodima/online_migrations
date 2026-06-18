@@ -226,5 +226,18 @@ module CommandChecker
 
       assert_unsafe ReplaceIndexAlmostCoveringIndexExists, /removing an old index/i
     end
+
+    class ReplaceIndexSameNameMissingFromDb < TestMigration
+      disable_ddl_transaction!
+
+      def up
+        remove_index :projects, name: "idx_projects_creator", algorithm: :concurrently
+        add_index :projects, :creator_id, name: "idx_projects_creator", algorithm: :concurrently
+      end
+    end
+
+    def test_replace_index_same_name_missing_from_db
+      assert_unsafe ReplaceIndexSameNameMissingFromDb, /removing an old index/i
+    end
   end
 end
