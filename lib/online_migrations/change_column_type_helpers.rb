@@ -212,7 +212,14 @@ module OnlineMigrations
       conversions = column_names.map do |column_name|
         tmp_column = __change_type_column(column_name)
 
-        old_value = Arel::Table.new(table_name)[column_name]
+        old_value = begin
+          # Delete after supporting only ActiveRecord >= 8.2
+          Arel::Table.new(table_name)[column_name]
+        rescue ArgumentError
+          # https://github.com/rails/rails/commit/b1650993b02497ae7d0d8b984d40bc036e62c681
+          Arel::Table.new(name: table_name)[column_name]
+        end
+
         if (type_cast_function = type_cast_functions.with_indifferent_access[column_name])
           old_value =
             case type_cast_function
