@@ -192,4 +192,10 @@ module BackgroundDataMigrations
       collection.count
     end
   end
+
+  class HeavyCountMigration < WithCountMigration
+    def count
+      ActiveRecord::Base.connection.execute("select pg_sleep(100)")
+    end
+  end
 end

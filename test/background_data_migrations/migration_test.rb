@@ -37,6 +37,7 @@ module BackgroundDataMigrations
         config.stub(:iteration_pause, 10) do
           m = create_migration
           assert m.pending?
+          assert_nil m.tick_total
           assert_equal config.max_attempts, m.max_attempts
           assert_equal 10, m.iteration_pause
         end
@@ -55,7 +56,8 @@ module BackgroundDataMigrations
 
     def test_progress_not_finished_migration
       2.times { User.create! }
-      m = create_migration(migration_name: "MigrationWithCount")
+      # tick_total is calculated on migration run time, so need to set explicitly.
+      m = create_migration(migration_name: "MigrationWithCount", tick_total: 2)
 
       m.update!(tick_count: 1)
       assert_in_delta 50.0, m.progress
@@ -66,7 +68,8 @@ module BackgroundDataMigrations
 
     def test_progress_running_migration_without_records
       assert_equal 0, EmptyCollection.new.count
-      m = create_migration(migration_name: "EmptyCollection")
+      # tick_total is calculated on migration run time, so need to set explicitly.
+      m = create_migration(migration_name: "EmptyCollection", tick_total: 0)
       assert_in_delta 0.0, m.progress
     end
 

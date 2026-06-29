@@ -106,6 +106,16 @@ module BackgroundDataMigrations
       assert_equal 3, m.reload.tick_total
     end
 
+    def test_gracefully_handles_heavy_count_method
+      @connection.execute("set statement_timeout to '0.01s'")
+      m = create_migration("HeavyCountMigration")
+      MigrationJob.perform_inline(m.id)
+
+      assert_nil m.tick_total
+    ensure
+      @connection.execute("set statement_timeout to '10s'")
+    end
+
     def test_stores_metadada_about_the_data_migration
       m = create_migration("ArrayCollectionMigration")
       MigrationJob.perform_inline(m.id)

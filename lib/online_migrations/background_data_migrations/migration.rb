@@ -123,7 +123,13 @@ module OnlineMigrations
       # @private
       def start
         if enqueued?
-          update!(status: :running, started_at: Time.current)
+          # Defer `tick_total` calculation to the migration starting time
+          # instead of the enqueueing time to avoid failed deploys.
+          self.tick_total ||= safely_calculate_tick_total
+          self.status = :running
+          self.started_at = Time.current
+          save!
+
           data_migration.after_start
           true
         else
@@ -309,11 +315,18 @@ module OnlineMigrations
         def set_defaults
           config = ::OnlineMigrations.config.background_data_migrations
           self.max_attempts ||= config.max_attempts
-          self.tick_total ||= on_shard_if_present do
+          self.iteration_pause ||= config.iteration_pause
+        end
+
+        def safely_calculate_tick_total
+          on_shard_if_present do
             data_migration.count
           end
-
-          self.iteration_pause ||= config.iteration_pause
+        rescue ActiveRecord::QueryCanceled
+          # `tick_total` is not required and is used only for progress tracking.
+          # Probably the `count` method was implemented in a non-efficient way.
+          # Better to not track progress than have a failing migration.
+          nil
         end
 
         def instrument_status_change
