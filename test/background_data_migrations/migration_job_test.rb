@@ -107,13 +107,24 @@ module BackgroundDataMigrations
     end
 
     def test_gracefully_handles_heavy_count_method
+      previous = OnlineMigrations.config.background_data_migrations.error_handler
+
       @connection.execute("set statement_timeout to '0.01s'")
       m = create_migration("HeavyCountMigration")
+
+      handled_error = nil
+      OnlineMigrations.config.background_data_migrations.error_handler = ->(error, errored_migration) do
+        handled_error = error
+        assert_equal m, errored_migration
+      end
+
       MigrationJob.perform_inline(m.id)
 
       assert_nil m.tick_total
+      assert_instance_of ActiveRecord::QueryCanceled, handled_error
     ensure
       @connection.execute("set statement_timeout to '10s'")
+      OnlineMigrations.config.background_data_migrations.error_handler = previous
     end
 
     def test_stores_metadada_about_the_data_migration

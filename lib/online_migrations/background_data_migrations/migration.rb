@@ -322,7 +322,9 @@ module OnlineMigrations
           on_shard_if_present do
             data_migration.count
           end
-        rescue ActiveRecord::QueryCanceled
+        rescue ActiveRecord::QueryCanceled => e
+          OnlineMigrations.config.background_data_migrations.error_handler.call(e, self)
+
           # `tick_total` is not required and is used only for progress tracking.
           # Probably the `count` method was implemented in a non-efficient way.
           # Better to not track progress than have a failing migration.
