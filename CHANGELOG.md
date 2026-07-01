@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.35.0 (2026-07-01)
+
 - Drop support for Ruby < 3.3
 - Defer `tick_total` calculation to the background data migration starting time instead of enqueueing time
 - Make "replacing an index" check independent of the live database state
