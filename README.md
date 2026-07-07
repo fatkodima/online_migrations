@@ -342,6 +342,8 @@ during writes works automatically). For most column type changes, this does not 
 
    ```ruby
    class CleanupChangeFilesSizeType < ActiveRecord::Migration[8.0]
+     disable_ddl_transaction!
+
      def up
        cleanup_column_type_change :files, :size
      end
