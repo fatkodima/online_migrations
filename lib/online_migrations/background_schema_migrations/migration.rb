@@ -23,6 +23,7 @@ module OnlineMigrations
       MAX_IDENTIFIER_LENGTH = 63
 
       self.table_name = :background_schema_migrations
+      self.ignored_columns += ["parent_id", "composite"]
 
       scope :queue_order, -> { order(created_at: :asc) }
       scope :active, -> { where(status: [:pending, :running, :errored]) }
