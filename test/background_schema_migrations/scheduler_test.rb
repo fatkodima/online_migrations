@@ -47,14 +47,6 @@ module BackgroundSchemaMigrations
       assert m.reload.succeeded?
     end
 
-    def test_run_retries_stuck_migrations
-      m = create_migration(statement_timeout: 1.hour)
-      m.update(status: :running, updated_at: 2.hours.ago) # emulate stuck migration
-
-      run_scheduler
-      assert m.reload.succeeded?
-    end
-
     def test_run_when_on_the_same_table_already_running
       @connection.add_check_constraint :users, "email IS NOT NULL", name: "email_not_null"
       m1 = create_migration(

@@ -35,8 +35,8 @@ module OnlineMigrations
 
       private
         def find_migration(**options)
-          stuck_migrations, active_migrations = Migration.running.partition(&:stuck?)
-          runnable_migrations = (Migration.pending + Migration.errored + stuck_migrations).sort_by(&:created_at)
+          active_migrations = Migration.running.to_a
+          runnable_migrations = (Migration.pending + Migration.errored).sort_by(&:created_at)
 
           if options.key?(:shard)
             runnable_migrations = runnable_migrations.select { |migration| migration.shard.to_s == options[:shard].to_s }

@@ -36,11 +36,10 @@ module OnlineMigrations
         migrations_to_enqueue = []
 
         with_lock do
-          stuck_migrations, active_migrations = relation.running.partition(&:stuck?)
-          runnable_migrations = migrations_with_existing_classes(relation.pending) + stuck_migrations
+          runnable_migrations = migrations_with_existing_classes(relation.pending)
 
           # Ensure no more than 'concurrency' migrations are running at the same time.
-          remaining_to_enqueue = concurrency - active_migrations.count
+          remaining_to_enqueue = concurrency - relation.running.count
           if remaining_to_enqueue > 0
             runnable_migrations.take(remaining_to_enqueue).each do |migration|
               migration.update!(status: :enqueued)

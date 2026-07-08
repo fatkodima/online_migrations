@@ -71,21 +71,6 @@ module BackgroundDataMigrations
       assert m2.reload.enqueued?
     end
 
-    def test_stuck_migration_is_rescheduled
-      m = create_migration(migration_name: "MakeAllNonAdmins", status: "running", updated_at: 1.hour.ago)
-
-      run_scheduler
-
-      jobs = OnlineMigrations::BackgroundDataMigrations::MigrationJob.jobs
-      assert_equal 1, jobs.size
-      job = jobs.last
-      assert_equal [m.id], job["args"]
-
-      m.reload
-      assert m.enqueued?
-      assert_not_nil m.jid
-    end
-
     def test_ignores_migrations_with_non_existent_classes
       m = create_migration(migration_name: "MakeAllNonAdmins") # some existent migration to pass validations
       m.update_columns(migration_name: "NonExistent") # emulate non existent migration class

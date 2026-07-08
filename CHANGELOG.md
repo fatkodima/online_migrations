@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Do not automatically retry stuck background migrations
+
 ## 0.35.0 (2026-07-01)
 
 - Drop support for Ruby < 3.3
