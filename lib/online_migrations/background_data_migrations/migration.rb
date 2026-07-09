@@ -52,6 +52,8 @@ module OnlineMigrations
 
       enum :status, STATUSES.index_with(&:to_s)
 
+      serialize :cursor, coder: JSON
+
       validates :migration_name, presence: true
       validates :arguments, uniqueness: { scope: [:migration_name, :shard] }
 
@@ -64,6 +66,13 @@ module OnlineMigrations
       def self.normalize_migration_name(migration_name)
         namespace = ::OnlineMigrations.config.background_data_migrations.migrations_module
         migration_name.sub(/^(::)?#{namespace}::/, "")
+      end
+
+      # TODO: delete in some future version
+      def cursor
+        self[:cursor]
+      rescue JSON::ParserError
+        cursor_before_type_cast
       end
 
       def migration_name=(class_name)

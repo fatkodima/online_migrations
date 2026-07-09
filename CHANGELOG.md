@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Serialize to JSON `cursor` value for background data migrations
 - Do not automatically retry stuck background migrations
 
 ## 0.35.0 (2026-07-01)

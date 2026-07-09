@@ -78,6 +78,21 @@ module BackgroundDataMigrations
       assert_instance_of MakeAllNonAdmins, m.data_migration
     end
 
+    def test_complex_cursor
+      m = create_migration(cursor: ["users", 1])
+      m.reload
+      assert_equal ["users", 1], m.cursor
+    end
+
+    def test_cursor_in_old_format
+      m = create_migration
+      # Emulate storing old formatted cursor.
+      @connection.execute("UPDATE background_data_migrations SET cursor = 'value'")
+      m.reload
+
+      assert_equal "value", m.cursor
+    end
+
     def test_retry
       m = create_migration
       m.update_column(:status, :succeeded)
