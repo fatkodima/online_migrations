@@ -72,6 +72,7 @@ module OnlineMigrations
         # Job was manually cancelled.
         @migration.cancel if cancelled?
 
+        @migration.update!(jid: nil)
         @migration.complete
       end
 

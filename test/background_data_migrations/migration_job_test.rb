@@ -185,7 +185,7 @@ module BackgroundDataMigrations
 
     def test_cancells_cancelling_migration
       m = create_migration("ArrayCollectionMigration")
-      m.update_column(:status, :running) # emulate that the migration was picked up by the scheduler
+      m.update_columns(status: :running, jid: "deadbeef") # emulate that the migration was picked up by the scheduler
       m.cancel
       assert m.cancelling?
 
@@ -198,14 +198,14 @@ module BackgroundDataMigrations
       assert_equal 1, ArrayCollectionMigration.after_cancel_called
 
       m.reload
-      assert_nil m.started_at
       assert_not_nil m.finished_at
+      assert_nil m.jid
       assert m.cancelled?
     end
 
     def test_pauses_pausing_migration
       m = create_migration("ArrayCollectionMigration")
-      m.update_column(:status, :running) # emulate that the migration was picked up by the scheduler
+      m.update_columns(status: :running, jid: "deadbeef") # emulate that the migration was picked up by the scheduler
       m.pause
       assert m.pausing?
 
@@ -219,8 +219,8 @@ module BackgroundDataMigrations
       assert_equal 0, ArrayCollectionMigration.after_cancel_called
 
       m.reload
-      assert_nil m.started_at
       assert_nil m.finished_at
+      assert_nil m.jid
       assert m.paused?
     end
 
@@ -257,7 +257,7 @@ module BackgroundDataMigrations
         throttler_called == 2
       end
 
-      m = create_migration("ArrayCollectionMigration")
+      m = create_migration("ArrayCollectionMigration", jid: "deadbeef")
 
       throttled_called = 0
       ActiveSupport::Notifications.subscribe("throttled.background_data_migrations") do |*, payload|
@@ -275,6 +275,7 @@ module BackgroundDataMigrations
       assert_equal 1, ArrayCollectionMigration.around_process_called
       assert throttled_called
       assert_equal 1, m.reload.cursor.to_i
+      assert_equal "deadbeef", m.jid
     ensure
       OnlineMigrations.config.throttler = previous
     end
