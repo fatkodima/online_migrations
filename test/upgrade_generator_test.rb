@@ -89,6 +89,17 @@ class UpgradeGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  def test_converts_cursor_for_background_data_migrations
+    simulate_transactional_test do
+      load_schema(6)
+      run_generator
+
+      assert_migration("db/migrate/background_data_migrations_convert_cursor.rb") do |content|
+        assert_includes content, ".find_each"
+      end
+    end
+  end
+
   private
     def simulate_transactional_test
       ActiveRecord::Base.transaction do

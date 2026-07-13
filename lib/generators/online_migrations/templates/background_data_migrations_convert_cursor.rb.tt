@@ -1,0 +1,9 @@
+class BackgroundDataMigrationsConvertCursor < <%= migration_parent %>
+  def change
+    up_only do
+      OnlineMigrations::DataMigrations::Migration.find_each do |migration|
+        OnlineMigrations::DataMigrations::Migration.where(id: migration.id).update_all(cursor: migration.cursor)
+      end
+    end
+  end
+end

@@ -57,6 +57,8 @@ module OnlineMigrations
           migrations << "background_migrations_change_status_default"
         end
 
+        migrations << "background_data_migrations_convert_cursor"
+
         migrations
       end
 
