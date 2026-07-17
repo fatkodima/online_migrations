@@ -120,13 +120,13 @@ module OnlineMigrations
       end
 
       # Returns whether a migration is stuck, which is defined as having a status of
-      # running, cancelling or pausing, and not having been updated in the last 5 minutes.
+      # cancelling or pausing, and not having been updated in the last 5 minutes.
       #
       # @return [Boolean] whether the migration is stuck.
       #
       def stuck?
         stuck_timeout = OnlineMigrations.config.background_data_migrations.stuck_timeout
-        (running? || cancelling? || pausing?) && updated_at <= stuck_timeout.ago
+        (cancelling? || pausing?) && updated_at <= stuck_timeout.ago
       end
 
       # @private

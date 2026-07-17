@@ -4,6 +4,7 @@
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background migrations.
 
+- Do not consider running background migrations as stuck
 - Do not automatically retry stuck background migrations
 
 ## 0.35.0 (2026-07-01)

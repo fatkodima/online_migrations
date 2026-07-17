@@ -81,15 +81,10 @@ module OnlineMigrations
       def progress
       end
 
-      # Whether the migration is considered stuck (is running for some configured time).
+      # Whether the migration is considered stuck.
       #
       def stuck?
-        if index_addition?
-          running? && !index_build_in_progress?
-        else
-          stuck_timeout = (statement_timeout || 1.day) + 10.minutes
-          running? && updated_at <= stuck_timeout.seconds.ago
-        end
+        index_addition? && running? && !index_build_in_progress?
       end
 
       # Mark this migration as ready to be processed again.
