@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.36.0 (2026-07-20)
+
 - Serialize to JSON `cursor` value for background data migrations
 
     Note: Run `bin/rails generate online_migrations:upgrade` if using background migrations.
