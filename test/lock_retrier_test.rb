@@ -88,6 +88,101 @@ class LockRetrierTest < Minitest::Test
     OnlineMigrations.config.lock_retrier = previous
   end
 
+  class AddIndexConcurrentlyMigration < TestMigration
+    disable_ddl_transaction!
+
+    def change
+      add_index :users, :name, algorithm: :concurrently
+    end
+  end
+
+  class RemoveIndexConcurrentlyMigration < TestMigration
+    disable_ddl_transaction!
+
+    def change
+      remove_index :users, :name, algorithm: :concurrently
+    end
+  end
+
+  class AddReferenceConcurrentlyMigration < TestMigration
+    disable_ddl_transaction!
+
+    def change
+      add_reference_concurrently :users, :project
+    end
+  end
+
+  class AddReferenceMigration < TestMigration
+    disable_ddl_transaction!
+
+    def change
+      add_reference :users, :project, index: { algorithm: :concurrently }
+    end
+  end
+
+  def test_concurrent_lock_timeout
+    @connection.add_column(:users, :name, :string)
+
+    statements = with_concurrent_lock_retrier do
+      lock_statements { migrate(AddIndexConcurrentlyMigration) }
+    end
+
+    assert_equal ["SET lock_timeout TO '5000ms'", "SET lock_timeout TO '180000ms'",
+                  "CREATE INDEX CONCURRENTLY", "SET lock_timeout TO '5s'",
+                  "SET lock_timeout TO '5ms'"], statements
+  end
+
+  def test_concurrent_lock_timeout_when_removing_an_index
+    @connection.add_column(:users, :name, :string)
+    @connection.add_index(:users, :name)
+
+    statements = with_concurrent_lock_retrier do
+      lock_statements { migrate(RemoveIndexConcurrentlyMigration) }
+    end
+
+    assert_equal ["SET lock_timeout TO '5000ms'", "SET lock_timeout TO '180000ms'",
+                  "DROP INDEX CONCURRENTLY", "SET lock_timeout TO '5s'",
+                  "SET lock_timeout TO '5ms'"], statements
+  end
+
+  # `add_reference_concurrently` issues an "ACCESS EXCLUSIVE" ADD COLUMN and a
+  # concurrent index build under one command, so only the index statement may
+  # get the longer timeout.
+  def test_concurrent_lock_timeout_is_not_applied_to_other_statements_in_the_same_command
+    statements = with_concurrent_lock_retrier do
+      lock_statements { migrate(AddReferenceConcurrentlyMigration) }
+    end
+
+    assert_equal ["SET lock_timeout TO '5000ms'", "ALTER TABLE", "SET lock_timeout TO '180000ms'",
+                  "CREATE INDEX CONCURRENTLY", "SET lock_timeout TO '5s'",
+                  "SET lock_timeout TO '5ms'"], statements
+  end
+
+  def test_concurrent_lock_timeout_with_plain_add_reference
+    statements = with_concurrent_lock_retrier do
+      lock_statements { migrate(AddReferenceMigration) }
+    end
+
+    assert_equal ["SET lock_timeout TO '5000ms'", "ALTER TABLE", "SET lock_timeout TO '180000ms'",
+                  "CREATE INDEX CONCURRENTLY", "SET lock_timeout TO '5s'",
+                  "SET lock_timeout TO '5ms'"], statements
+  end
+
+  def test_concurrent_lock_timeout_is_not_set_by_default
+    @connection.add_column(:users, :name, :string)
+
+    previous = OnlineMigrations.config.lock_retrier
+    OnlineMigrations.config.lock_retrier =
+      OnlineMigrations::ConstantLockRetrier.new(attempts: 1, delay: 0, lock_timeout: 5.seconds)
+
+    statements = lock_statements { migrate(AddIndexConcurrentlyMigration) }
+
+    assert_equal ["SET lock_timeout TO '5000ms'", "CREATE INDEX CONCURRENTLY",
+                  "SET lock_timeout TO '5ms'"], statements
+  ensure
+    OnlineMigrations.config.lock_retrier = previous
+  end
+
   def test_null_lock_retrier
     previous = OnlineMigrations.config.lock_retrier
 
@@ -123,6 +218,30 @@ class LockRetrierTest < Minitest::Test
       yield
     ensure
       OnlineMigrations.config.lock_retrier = previous
+    end
+
+    def with_concurrent_lock_retrier
+      previous = OnlineMigrations.config.lock_retrier
+      OnlineMigrations.config.lock_retrier = OnlineMigrations::ConstantLockRetrier.new(
+        attempts: 1, delay: 0, lock_timeout: 5.seconds, concurrent_lock_timeout: 3.minutes
+      )
+
+      yield
+    ensure
+      OnlineMigrations.config.lock_retrier = previous
+    end
+
+    # The lock timeout changes and the DDL they are meant to cover, in the order
+    # PostgreSQL received them.
+    def lock_statements(&block)
+      track_queries(&block).filter_map do |sql|
+        case sql
+        when /\ASET lock_timeout/ then sql
+        when /\ACREATE INDEX CONCURRENTLY/ then "CREATE INDEX CONCURRENTLY"
+        when /\ADROP INDEX CONCURRENTLY/ then "DROP INDEX CONCURRENTLY"
+        when /\AALTER TABLE/ then "ALTER TABLE"
+        end
+      end
     end
 
     def assert_lock_timeout(&block)

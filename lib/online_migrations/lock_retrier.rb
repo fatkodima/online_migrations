@@ -79,6 +79,25 @@ module OnlineMigrations
       raise NotImplementedError
     end
 
+    # Returns database lock timeout value (in seconds) for `CREATE INDEX CONCURRENTLY`
+    # and `DROP INDEX CONCURRENTLY`, which is applied per statement
+    #
+    # Return `nil` (the default) to use the value returned by `#lock_timeout`.
+    #
+    def concurrent_lock_timeout; end
+
+    # Executes the block with `lock_timeout` set to `#concurrent_lock_timeout`
+    #
+    # @param connection The connection on which to set the lock timeout
+    # @return [void]
+    #
+    def with_concurrent_lock_timeout(connection, &block)
+      timeout = concurrent_lock_timeout
+      return yield if timeout.nil? || lock_retries_disabled?
+
+      with_lock_timeout(connection, timeout.in_milliseconds, &block)
+    end
+
     # Executes the block with a retry mechanism that alters the `lock_timeout`
     # and sleep time between attempts.
     #
@@ -148,12 +167,15 @@ module OnlineMigrations
     # @param attempts [Integer] Maximum number of attempts
     # @param delay [Numeric] Sleep time after unsuccessful lock attempt (in seconds)
     # @param lock_timeout [Numeric, nil] Database lock timeout value (in seconds)
+    # @param concurrent_lock_timeout [Numeric, nil] Database lock timeout value (in seconds)
+    #   for concurrent index statements
     #
-    def initialize(attempts:, delay:, lock_timeout: nil)
+    def initialize(attempts:, delay:, lock_timeout: nil, concurrent_lock_timeout: nil)
       super()
       @attempts = attempts
       @delay = delay
       @lock_timeout = lock_timeout
+      @concurrent_lock_timeout = concurrent_lock_timeout
     end
 
     # LockRetrier API implementation
@@ -182,6 +204,13 @@ module OnlineMigrations
     def delay(_attempt, _command = nil, _arguments = [])
       @delay
     end
+
+    # LockRetrier API implementation
+    #
+    # @return [Numeric, nil] Database lock timeout value for concurrent index statements (in seconds)
+    # @see LockRetrier#concurrent_lock_timeout
+    #
+    attr_reader :concurrent_lock_timeout
   end
 
   # `LockRetrier` implementation that uses exponential delay with jitter between tries
@@ -201,13 +230,16 @@ module OnlineMigrations
     # @param base_delay [Numeric] Base sleep time to calculate total sleep time after unsuccessful lock attempt (in seconds)
     # @param max_delay [Numeric] Maximum sleep time after unsuccessful lock attempt (in seconds)
     # @param lock_timeout [Numeric] Database lock timeout value (in seconds)
+    # @param concurrent_lock_timeout [Numeric, nil] Database lock timeout value (in seconds)
+    #   for concurrent index statements
     #
-    def initialize(attempts:, base_delay:, max_delay:, lock_timeout: nil)
+    def initialize(attempts:, base_delay:, max_delay:, lock_timeout: nil, concurrent_lock_timeout: nil)
       super()
       @attempts = attempts
       @base_delay = base_delay
       @max_delay = max_delay
       @lock_timeout = lock_timeout
+      @concurrent_lock_timeout = concurrent_lock_timeout
     end
 
     # LockRetrier API implementation
@@ -237,6 +269,13 @@ module OnlineMigrations
     def delay(attempt, _command = nil, _arguments = [])
       (rand * [@max_delay, @base_delay * (2**(attempt - 1))].min).ceil
     end
+
+    # LockRetrier API implementation
+    #
+    # @return [Numeric, nil] Database lock timeout value for concurrent index statements (in seconds)
+    # @see LockRetrier#concurrent_lock_timeout
+    #
+    attr_reader :concurrent_lock_timeout
   end
 
   # @private
