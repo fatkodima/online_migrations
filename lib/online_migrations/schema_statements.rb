@@ -739,7 +739,7 @@ module OnlineMigrations
       # "CREATE INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
       # It only conflicts with constraint validations, creating/removing indexes,
       # and some other "ALTER TABLE"s.
-      super
+      __with_concurrent_lock_timeout(options[:algorithm]) { super }
 
       # Outdated statistics + a new index can hurt performance of existing queries.
       if OnlineMigrations.config.auto_analyze
@@ -772,7 +772,7 @@ module OnlineMigrations
         # "DROP INDEX CONCURRENTLY" requires a "SHARE UPDATE EXCLUSIVE" lock.
         # It only conflicts with constraint validations, other creating/removing indexes,
         # and some "ALTER TABLE"s.
-        super
+        __with_concurrent_lock_timeout(options[:algorithm]) { super }
       else
         Utils.say("Index was not removed because it does not exist.")
       end
@@ -910,6 +910,15 @@ module OnlineMigrations
     end
 
     private
+      # `add_reference` and `add_reference_concurrently` add a column and then build
+      # the index under one command, so the index statement needs its own timeout.
+      def __with_concurrent_lock_timeout(algorithm, &block)
+        return yield if algorithm != :concurrently
+
+        retrier = OnlineMigrations.config.lock_retrier
+        retrier.with_concurrent_lock_timeout(self, &block)
+      end
+
       # Private methods are prefixed with `__` to avoid clashes with existing or future
       # Active Record methods
       def __ensure_not_in_transaction!(method_name = caller[0])

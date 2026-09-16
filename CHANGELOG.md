@@ -1,5 +1,20 @@
 ## master (unreleased)
 
+- Add `concurrent_lock_timeout` to the lock retrier, applied per statement to
+  `CREATE INDEX CONCURRENTLY` and `DROP INDEX CONCURRENTLY`
+
+    ```ruby
+    config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
+      attempts: 30,
+      base_delay: 0.01.seconds,
+      max_delay: 1.minute,
+      lock_timeout: 0.2.seconds,
+      concurrent_lock_timeout: 10.minutes
+    )
+    ```
+
+    Unset by default, which keeps the previous behavior.
+
 ## 0.36.0 (2026-07-20)
 
 - Serialize to JSON `cursor` value for background data migrations

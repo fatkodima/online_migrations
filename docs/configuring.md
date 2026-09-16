@@ -117,10 +117,15 @@ When a statement within transaction fails - the whole transaction is retried. If
 
 For migrations using `disable_ddl_transaction!`, you can implement command-specific lock retry behavior. This is useful when different DDL operations have different locking characteristics:
 
-- `add_index` with `algorithm: :concurrently` uses `ShareUpdateExclusiveLock` (less restrictive), so can use longer timeouts
+- `validate_foreign_key` uses `ShareUpdateExclusiveLock` (less restrictive), so can use longer timeouts
 - `add_foreign_key` uses `AccessExclusiveLock` (blocks all access), so should use shorter timeouts to fail fast
 
 **Note**: Command-specific configuration only works for migrations with `disable_ddl_transaction!`. For migrations running within transactions (the default), the lock retrier wraps the entire transaction and doesn't have visibility into individual DDL commands.
+
+**Note**: Do not match `add_reference` or `add_reference_concurrently` here to relax the timeout for
+the index they build. Those commands also run an `ADD COLUMN`, which would get the same long timeout
+and queue application queries behind it. Use
+[`concurrent_lock_timeout`](#concurrent-index-lock-timeout) instead.
 
 ```ruby
 module OnlineMigrations
@@ -128,8 +133,8 @@ module OnlineMigrations
     # You can vary the number of attempts based on the command
     def attempts(command = nil, arguments = [])
       case command
-      when :add_index
-        # Concurrent index creation uses longer individual timeouts,
+      when :validate_foreign_key
+        # Validation uses longer individual timeouts,
         # so fewer attempts are needed to reach the same overall window
         10
       when :add_foreign_key
@@ -144,8 +149,8 @@ module OnlineMigrations
 
     def lock_timeout(attempt, command = nil, arguments = [])
       case command
-      when :add_index
-        # Concurrent index creation is less restrictive, use longer timeout
+      when :validate_foreign_key
+        # Validation is less restrictive, use longer timeout
         30.seconds
       when :add_foreign_key
         # Foreign keys block all access, use shorter timeout to fail fast
@@ -158,8 +163,8 @@ module OnlineMigrations
 
     def delay(attempt, command = nil, arguments = [])
       case command
-      when :add_index
-        # Longer delay for index operations since they take time anyway
+      when :validate_foreign_key
+        # Longer delay for validation since it takes time anyway
         3.seconds
       when :add_foreign_key
         # Shorter delay to retry faster for quick FK operations
@@ -176,7 +181,7 @@ config.lock_retrier = OnlineMigrations::CommandAwareLockRetrier.new
 ```
 
 All three methods (`attempts`, `lock_timeout`, and `delay`) can receive command-specific parameters:
-- `command` - the migration method being called (e.g., `:add_index`, `:add_column`, `:add_foreign_key`), or `nil` for transaction-wrapped migrations
+- `command` - the migration method being called (e.g., `:add_column`, `:add_foreign_key`, `:validate_foreign_key`), or `nil` for transaction-wrapped migrations
 - `arguments` - an array of arguments passed to the migration method
 
 Additionally, `lock_timeout` and `delay` receive:
@@ -194,7 +199,7 @@ For simpler use cases, you can use a configuration hash instead of case statemen
 module OnlineMigrations
   class ConfigurableLockRetrier < LockRetrier
     COMMAND_CONFIGS = {
-      add_index: {
+      validate_foreign_key: {
         attempts: 10,
         lock_timeout: 30.seconds,
         delay: 3.seconds
@@ -235,6 +240,40 @@ config.lock_retrier = OnlineMigrations::ConfigurableLockRetrier.new
 ```
 
 This approach is more concise and easier to maintain when you have simple static configurations per command. The case statement approach (shown above) is better when you need conditional logic or want to use the `attempt` parameter dynamically.
+
+### Concurrent index lock timeout
+
+To use a different lock timeout for `CREATE INDEX CONCURRENTLY` and `DROP INDEX CONCURRENTLY`, set
+`concurrent_lock_timeout`:
+
+```ruby
+config.lock_retrier = OnlineMigrations::ExponentialLockRetrier.new(
+  attempts: 30,
+  base_delay: 0.01.seconds,
+  max_delay: 1.minute,
+  lock_timeout: 0.2.seconds,          # "ACCESS EXCLUSIVE" statements, which block traffic while they wait
+  concurrent_lock_timeout: 10.minutes # "CREATE INDEX CONCURRENTLY" / "DROP INDEX CONCURRENTLY"
+)
+```
+
+It is applied around the index statement itself, so it covers the build wherever it runs - called
+directly from a migration, or from inside `add_reference` or `add_reference_concurrently`. The
+`ADD COLUMN` and foreign key steps of those helpers keep the shorter `lock_timeout`.
+
+Leave it unset (the default) to keep concurrent index statements on `lock_timeout`.
+
+Keep the value below `config.statement_timeout`. A statement waiting for a lock counts against both,
+and a `statement_timeout` abort is not retried. A value above PostgreSQL's `deadlock_timeout` (1s by
+default) also means `log_lock_waits` will log what a waiting build is blocked on, which is usually
+how the blocking session is found.
+
+A concurrent build needs a longer timeout than other statements because it waits differently.
+`CREATE INDEX CONCURRENTLY` takes only a `ShareUpdateExclusiveLock` and never blocks reads or writes,
+but it cannot finish until every transaction in the database holding a snapshot older than its own
+has ended - whatever table those transactions touch - and PostgreSQL counts that wait against
+`lock_timeout`. A timeout short enough for `AccessExclusiveLock` statements therefore cancels the
+build whenever any transaction anywhere in the database has been open longer than it. Table size
+plays no part.
 
 To temporarily disable lock retries while running migrations, set `DISABLE_LOCK_RETRIES` env variable. This is useful when you are deploying a hotfix and do not want to wait too long while the lock retrier safely tries to acquire the lock, but try to acquire the lock immediately with the default configured lock timeout value.
 
