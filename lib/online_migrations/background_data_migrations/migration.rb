@@ -177,12 +177,12 @@ module OnlineMigrations
         true
       end
 
-      # Pause this data migration. No-op if migration is completed.
+      # Pause this data migration. No-op if migration is completed or already paused.
       #
       # @return [Boolean] whether this data migration was paused.
       #
       def pause
-        return false if completed?
+        return false if paused? || completed?
 
         if pending? || enqueued? || delayed? || stuck? || errored?
           paused!
