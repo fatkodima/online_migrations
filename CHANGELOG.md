@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Fix compatibility with future Rails 8.2
 - Fix pausing already paused background data migrations
 
 ## 0.36.0 (2026-07-20)

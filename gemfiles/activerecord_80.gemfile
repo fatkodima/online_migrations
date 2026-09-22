@@ -3,3 +3,4 @@
 @ar_gem_requirement = "~> 8.0.0"
 
 eval_gemfile "../Gemfile"
+gem "json", "< 3"
