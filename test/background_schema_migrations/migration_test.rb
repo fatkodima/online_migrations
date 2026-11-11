@@ -99,6 +99,15 @@ module BackgroundSchemaMigrations
       assert_nil m.backtrace
     end
 
+    def test_force_restart
+      m = create_migration
+      m.update_columns(status: :failed, error_class: "NameError")
+
+      assert m.force_restart
+      assert m.pending?
+      assert_nil m.error_class
+    end
+
     private
       def create_migration(**attributes)
         m = build_migration(**attributes)

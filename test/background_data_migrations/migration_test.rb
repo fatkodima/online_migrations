@@ -93,6 +93,16 @@ module BackgroundDataMigrations
       assert_equal "value", m.cursor
     end
 
+    def test_force_restart
+      m = create_migration
+      m.update_columns(status: :failed, error_class: "NameError", jid: "deadbeef")
+
+      assert m.force_restart
+      assert m.pending?
+      assert_nil m.error_class
+      assert_nil m.jid
+    end
+
     def test_retry
       m = create_migration
       m.update_column(:status, :succeeded)

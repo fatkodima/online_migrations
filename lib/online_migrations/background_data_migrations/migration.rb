@@ -240,6 +240,24 @@ module OnlineMigrations
         true
       end
 
+      # Force restart this data migration.
+      #
+      def force_restart
+        update_columns(
+          status: :pending,
+          cursor: nil,
+          jid: nil,
+          started_at: nil,
+          finished_at: nil,
+          tick_total: nil,
+          tick_count: 0,
+          time_running: 0.0,
+          error_class: nil,
+          error_message: nil,
+          backtrace: nil
+        )
+      end
+
       # @private
       def persist_progress(cursor, number_of_ticks, duration)
         update!(

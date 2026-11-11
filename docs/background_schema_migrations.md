@@ -77,7 +77,7 @@ You shouldn't depend on the schema until the background schema migration is fini
 To retry a failed migration, run:
 
 ```ruby
-migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.find(id)
+migration = OnlineMigrations::SchemaMigrations::Migration.find(id)
 migration.retry # => `true` if scheduled to be retried, `false` - if not
 ```
 
@@ -88,9 +88,21 @@ The migration will be retried on the next Scheduler run.
 To cancel an existing migration from future performing, run:
 
 ```ruby
-migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.find(id)
+migration = OnlineMigrations::SchemaMigrations::Migration.find(id)
 migration.cancel
 ```
+
+## Restarting a migration
+
+To restart a migration, run:
+
+```ruby
+migration = OnlineMigrations::SchemaMigrations::Migration.find(id)
+migration.force_restart
+```
+
+It ignores any previous status and marks the migration for the restart. Can be useful if the migration is stuck or
+you need to rerun a cancelled migration.
 
 ## Instrumentation
 
@@ -156,7 +168,7 @@ Check the [source code](https://github.com/fatkodima/online_migrations/blob/mast
 **Note**: You can dynamically change certain migration parameters while the migration is run.
 For example,
 ```ruby
-migration = OnlineMigrations::BackgroundSchemaMigrations::Migration.find(id)
+migration = OnlineMigrations::SchemaMigrations::Migration.find(id)
 migration.update!(
   statement_timeout: 2.hours,  # The statement timeout value used when running the migration
   max_attempts: 10             # The # of attempts the failing migration will be retried
@@ -182,7 +194,7 @@ end
 The error handler should be a lambda that accepts 2 arguments:
 
 * `error`: The exception that was raised.
-* `errored_migration`: An `OnlineMigrations::BackgroundSchemaMigrations::Migration` object that represents a failed migration.
+* `errored_migration`: An `OnlineMigrations::SchemaMigrations::Migration` object that represents a failed migration.
 
 ### Multiple databases and sharding
 

@@ -135,6 +135,20 @@ module OnlineMigrations
         end
       end
 
+      # Force restart this schema migration.
+      #
+      def force_restart
+        update_columns(
+          status: :pending,
+          started_at: nil,
+          finished_at: nil,
+          attempts: 0,
+          error_class: nil,
+          error_message: nil,
+          backtrace: nil
+        )
+      end
+
       def index_addition?
         definition.match?(/create (unique )?index/i)
       end

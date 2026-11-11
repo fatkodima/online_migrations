@@ -354,6 +354,18 @@ migration.retry # => `true` if scheduled to be retried, `false` - if not
 
 The migration will be retried on the next Scheduler run.
 
+## Restarting a migration
+
+To restart a migration, run:
+
+```ruby
+migration = OnlineMigrations::DataMigrations::Migration.find(id)
+migration.force_restart
+```
+
+It ignores any previous status and marks the migration for the restart. Can be useful if the migration is stuck or
+you need to rerun an already finished migration etc.
+
 ## Configuring
 
 There are a few configurable options for the data migrations. Custom configurations should be placed in a `online_migrations.rb` initializer.
