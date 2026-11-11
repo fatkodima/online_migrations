@@ -490,9 +490,10 @@ module OnlineMigrations
         bad_index = index && !concurrently_set
 
         foreign_key = options.fetch(:foreign_key, false)
+        foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
 
         if foreign_key
-          foreign_table_name = Utils.foreign_table_name(ref_name, options)
+          foreign_table_name = Utils.foreign_table_name(ref_name, foreign_key_options)
           @foreign_key_tables << foreign_table_name.to_s
         end
 
@@ -519,9 +520,10 @@ module OnlineMigrations
 
       def add_reference_concurrently(table_name, ref_name, **options)
         foreign_key = options.fetch(:foreign_key, false)
+        foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
 
         if foreign_key
-          foreign_table_name = Utils.foreign_table_name(ref_name, options)
+          foreign_table_name = Utils.foreign_table_name(ref_name, foreign_key_options)
           @foreign_key_tables << foreign_table_name.to_s
         end
 
@@ -529,7 +531,6 @@ module OnlineMigrations
           type = (options[:type] || :bigint).to_sym
           column_name = "#{ref_name}_id"
 
-          foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
           check_mismatched_foreign_key_type(table_name, column_name, type, **foreign_key_options)
         end
       end

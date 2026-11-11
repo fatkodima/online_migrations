@@ -18,9 +18,12 @@ module OnlineMigrations
     end
 
     def references(*ref_names, **options)
-      if options[:foreign_key]
+      foreign_key = options[:foreign_key]
+
+      if foreign_key
+        foreign_key_options = foreign_key.is_a?(Hash) ? foreign_key : {}
         ref_names.each do |ref_name|
-          @referenced_tables << Utils.foreign_table_name(ref_name, options)
+          @referenced_tables << Utils.foreign_table_name(ref_name, foreign_key_options)
         end
       end
     end

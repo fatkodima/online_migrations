@@ -159,8 +159,11 @@ module CommandChecker
 
     class CreateTableOneFk < TestMigration
       def change
+        create_table :posts
+
         create_table :user_posts do |t|
           t.references :user, foreign_key: true
+          t.references :blog_post, foreign_key: { to_table: :posts } # explicit `to_table`
         end
       end
     end
