@@ -79,6 +79,14 @@ module OnlineMigrations
         new_column = old_column.dup
         # Active Record defines only reader for :name
         new_column.instance_variable_set(:@name, new_column_name)
+
+        # https://github.com/rails/rails/commit/0c5b92705960ceff44324e69a921e760f1646503
+        # New in Active Record 8.2+.
+        if new_column.respond_to?(:slot)
+          max_slot = columns.map(&:slot).max
+          new_column.instance_variable_set(:@slot, max_slot + 1)
+        end
+
         # Correspond to the Active Record freezing of each column
         columns << new_column.freeze
       end
