@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module OnlineMigrations
-  VERSION = "0.36.1"
+  VERSION = "0.37.0"
 end

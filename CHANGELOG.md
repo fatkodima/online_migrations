@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.37.0 (2026-09-23)
+
 - Add ability to restart background migrations
 - Fix collecting referenced tables when using `foreign_key: { to_table: ... }`
 
